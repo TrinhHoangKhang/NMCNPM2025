@@ -1,0 +1,27 @@
+# Build artifacts
+/build
+/dist
+/npm-debug.log
+*.tgz
+
+# IDE and editor files
+.idea/
+.vscode/
+*.suo
+*.user
+*.bak
+
+# Dependency directories
+/node_modules
+
+# Environment variables
+.env
+.env*.local
+
+# Testing
+/coverage
+
+# Misc
+.DS_Store
+Thumbs.db
+/temp

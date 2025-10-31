@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  # The Express Backend Service
+  server:
+    build: ./server
+    ports:
+      - "3001:3001" # Expose backend port 3001 to the host machine
+    volumes:
+      - ./server/src:/usr/src/app/src # Mount src for live-reloading (optional)
+
+  # The React Web Client Service
+  client:
+    build: ./client
+    ports:
+      - "8080:80" # Expose Nginx port 80 to the host machine as port 8080
+    depends_on:
+      - server # Wait for the server to be healthy before starting
