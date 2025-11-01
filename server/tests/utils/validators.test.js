@@ -1,20 +1,20 @@
-// Import the function we want to test
+// Import the function to test
 const { isValidEmail } = require('../../src/utils/validators');
 
-// 'describe' groups related tests together
-describe('Utility: isValidEmail', () => {
+// 'describe' groups related tests
+describe('Validation Utils', () => {
 
-    // 'test' (or 'it') defines a single test case
-    test('should return true for a valid email', () => {
-        // expect(...).toBe(...) is an "assertion"
-        // It checks if the result is what you expect.
-        expect(isValidEmail('test@example.com')).toBe(true);
-        expect(isValidEmail('user.name+tag@gmail.com')).toBe(true);
-    });
+  // 'test' or 'it' defines a single test case
+  test('isValidEmail should return true for valid emails', () => {
+    // 'expect' is your assertion
+    expect(isValidEmail('test@example.com')).toBe(true);
+    expect(isValidEmail('user.name@domain.co')).toBe(true);
+  });
 
-    test('should return false for an invalid email', () => {
-        expect(isValidEmail('not-an-email')).toBe(false);
-        expect(isValidEmail('test@domain')).toBe(false);
-        expect(isValidEmail('@example.com')).toBe(false);
-    });
+  test('isValidEmail should return false for invalid emails', () => {
+    expect(isValidEmail('not-an-email')).toBe(false);
+    expect(isValidEmail('test@domain')).toBe(false);
+    expect(isValidEmail(null)).toBe(false);
+    expect(isValidEmail(123)).toBe(false);
+  });
 });
