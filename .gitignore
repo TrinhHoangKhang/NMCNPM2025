@@ -1,27 +1,35 @@
-# Build artifacts
-/build
-/dist
-/npm-debug.log
-*.tgz
-
-# IDE and editor files
-.idea/
-.vscode/
-*.suo
-*.user
-*.bak
-
-# Dependency directories
-/node_modules
-
-# Environment variables
+# ==================================
+# Node / NPM
+# ==================================
+# All node_modules folders in the entire project
+node_modules/
+# All .env files (NEVER commit secrets)
 .env
-.env*.local
+.env.*
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
 
-# Testing
-/coverage
+# ==================================
+# Build Artifacts
+# ==================================
+dist/
+build/
+.cache/
 
-# Misc
+# ==================================
+# React Native / Expo
+# ==================================
+.expo/
+*.jks
+*.keystore
+# The web build of an Expo app
+packages/mobile/web-build/
+
+# ==================================
+# OS Files
+# ==================================
 .DS_Store
 Thumbs.db
-/temp
