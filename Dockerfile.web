@@ -1,0 +1,26 @@
+# Stage 1: "Builder" - Build the React static files
+FROM node:18-alpine AS builder
+WORKDIR /app
+
+# Copy all package.json files
+COPY package.json package-lock.json ./
+COPY packages/web/package.json ./packages/web/
+COPY shared/package.json ./shared/
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the source code
+COPY . .
+
+# Run the build script for the "web" package
+RUN npm run build -w web
+
+# ---
+# Stage 2: "Final" - Serve files with Nginx
+FROM nginx:alpine
+# Copy the built React app (from packages/web/dist) 
+# into the folder Nginx serves by default
+COPY --from=builder /app/packages/web/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

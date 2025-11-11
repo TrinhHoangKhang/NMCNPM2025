@@ -1,0 +1,12 @@
+# Ignore Git
+.git
+.gitignore
+
+# Ignore all node_modules (we will install fresh in the container)
+node_modules
+
+# We don't need the mobile app for our server/web builds
+packages/mobile
+
+# OS files
+.DS_Store
