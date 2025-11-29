@@ -1,0 +1,63 @@
+Before using the code below, you must set up a project in the Google Cloud Console:
+
+- Create a Project in the Google Cloud Console.
+- Enable APIs: Search for and enable both the Maps JavaScript API and the Directions API.
+- Get an API Key: Create credentials to get your unique API Key string.
+
+
+
+
+It is important to understand that there are two different "maps" in this scenario, and knowing the difference is key to how your app works.
+
+1. Whose map is it? (The "API Map")
+When you build this web app, the client (your user) is NOT using their personal Google Maps app (the one installed on their phone). They are using your map, which is embedded inside your website.
+
+The Container: You provide the "frame" (the <div> in your HTML).
+
+The Content: Your code asks Google's servers to fill that frame with map images ("tiles") based on your API key.
+
+The Control: You have total control. You decide if they can zoom, if they see street view, and importantly, you decide what lines and markers are drawn on top.
+
+2. How does it show the path? (The "Overlay" Concept)
+Think of the map as a sandwich with transparent layers.
+
+Bottom Layer (Base Map): These are the standard map tiles (roads, water, parks) fetched from Google. You cannot change these; you just look at them.
+
+Top Layer (Overlay): This is where the DirectionsRenderer works. It draws a Polyline (a colored line) on a transparent sheet on top of the base map.
+
+
+When the API sends back a route, it is just a list of GPS coordinates (e.g., [[lat1, lng1], [lat2, lng2], ...]). The DirectionsRenderer simply connects these dots with a blue line on the Top Layer.
+
+3. How does it update the path?
+This is the most critical part. The map does not know where the user is automatically. You have to tell it.
+
+A. The Visual Update (Moving the Car/Person)
+This happens on the Client Side (in the user's browser) and is instant and free.
+
+The browser's navigator.geolocation says: "Hey, the user moved 5 meters north."
+
+Your JavaScript code catches this and says: "Okay, move the marker icon 5 pixels up."
+
+Result: The user sees their "car" move smoothly along the blue line.
+
+B. The Logical Update (Recalculating the Route)
+Client check if current user is not following current path
+Client check user location drift off from path
+Client send request to update path, with current location and destination
+
+This happens on the Server Side (Google's computers) and costs money.
+
+Your code calculates: "Is the user's new position more than 50 meters away from the blue line?"
+
+If YES: Your code fires a new request to the Directions API: "User is lost! Calculate a new path from their CURRENT location to the DESTINATION."
+
+The Update: Google sends back a new list of dots.
+
+The Redraw: The DirectionsRenderer erases the old blue line and draws the new one.
+
+Summary
+The Map: Belongs to you (the developer), powered by Google's tiles.
+
+The Path: Is a drawing (Overlay) that sits on top of the map.
+
+The Update: Your code moves the marker instantly, but only asks Google for a new path when the user takes a wrong turn.
