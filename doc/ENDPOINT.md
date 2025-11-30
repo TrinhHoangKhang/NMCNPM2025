@@ -1,4 +1,11 @@
-# Endpoint for app
+# Endpoint for api, call from mobile
+
+- `/api`
+- `/api/auth`: Get authorization
+- `/api`
+- `/api`
+- `/api`
+- `/api`
 
 ## Dashboard
 - `GET /dashboard` - Get dashboard overview

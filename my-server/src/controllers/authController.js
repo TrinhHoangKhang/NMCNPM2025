@@ -76,3 +76,32 @@ exports.login = async (req, res) => {
         });
     }
 };
+
+const jwt = require('jsonwebtoken');
+
+exports.googleCallback = async (req, res) => {
+    // 1. Get the user data (from your previous Google Auth step)
+    const user = req.user; 
+
+    // 2. Create the Payload (What info do you want inside the token?)
+    // Keep it small! Don't put the whole user history here.
+    const payload = {
+        userId: user.uid,
+        email: user.email,
+        role: "DRIVER" // or "RIDER"
+    };
+
+    // 3. Sign the Token
+    const token = jwt.sign(
+        payload, 
+        process.env.JWT_SECRET, 
+        { expiresIn: '7d' } // Token dies in 7 days
+    );
+
+    // 4. Send it to the Mobile App
+    res.status(200).json({
+        success: true,
+        token: token,
+        message: "Login successful"
+    });
+};
