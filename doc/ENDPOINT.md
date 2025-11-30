@@ -2,10 +2,14 @@
 
 - `/api`
 - `/api/auth`: Get authorization
+- `/api/users/:id`
 - `/api`
 - `/api`
-- `/api`
-- `/api`
+- `/api/messages/...`
+
+
+
+
 
 ## Dashboard
 - `GET /dashboard` - Get dashboard overview
