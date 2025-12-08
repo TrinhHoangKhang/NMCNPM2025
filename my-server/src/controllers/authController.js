@@ -12,8 +12,8 @@ exports.register = async (req, res) => {
         }
 
         // 3. Call the Service
-        const newUser = await authService.registerUser({ 
-            email, password, name, phone, role 
+        const newUser = await authService.registerUser({
+            email, password, name, phone, role
         });
 
         // 4. Send Success Response
@@ -25,9 +25,9 @@ exports.register = async (req, res) => {
 
     } catch (error) {
         // Handle specifics like "Email already exists"
-        res.status(500).json({ 
-            success: false, 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            error: error.message
         });
     }
 };
@@ -69,19 +69,18 @@ exports.login = async (req, res) => {
     } catch (error) {
         // Handle Invalid Password vs Server Error
         const statusCode = error.message === "INVALID_LOGIN" ? 401 : 500;
-        
-        res.status(statusCode).json({ 
-            success: false, 
-            error: error.message === "INVALID_LOGIN" ? "Invalid email or password" : error.message 
+
+        res.status(statusCode).json({
+            success: false,
+            error: error.message === "INVALID_LOGIN" ? "Invalid email or password" : error.message
         });
     }
 };
 
-const jwt = require('jsonwebtoken');
 
 exports.googleCallback = async (req, res) => {
     // 1. Get the user data (from your previous Google Auth step)
-    const user = req.user; 
+    const user = req.user;
 
     // 2. Create the Payload (What info do you want inside the token?)
     // Keep it small! Don't put the whole user history here.
@@ -93,8 +92,8 @@ exports.googleCallback = async (req, res) => {
 
     // 3. Sign the Token
     const token = jwt.sign(
-        payload, 
-        process.env.JWT_SECRET, 
+        payload,
+        process.env.JWT_SECRET,
         { expiresIn: '7d' } // Token dies in 7 days
     );
 

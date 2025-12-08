@@ -13,7 +13,7 @@ dotenv.config();
 
 // Initialize Firebase (Database)
 // We don't need to save this to a variable here, just running the file is enough
-require('./src/config/firebaseConfig'); 
+require('./src/config/firebaseConfig');
 
 // Initialize Passport (Authentication Strategies)
 // We pass the 'passport' library instance to our config file to set it up
@@ -35,7 +35,7 @@ app.use(express.urlencoded({ extended: true })); // Reads Form Data (name=john) 
 // Session Support
 // Passport needs this to temporarily store the user state during the Google login process
 app.use(session({
-    secret: process.env.SESSION_SECRET, 
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { secure: false } // Set to true if using HTTPS
@@ -52,6 +52,9 @@ app.use(passport.session());
 const authRoutes = require('./src/routes/authRoutes');
 const chatRoutes = require('./src/routes/chatRoutes');
 const mapRoutes = require('./src/routes/mapRoutes');
+const driverRoutes = require('./src/routes/driverRoutes');
+const tripRoutes = require('./src/routes/tripRoutes');
+const userRoutes = require('./src/routes/userRoutes');
 
 // ==========================================
 // 4. ROUTE DEFINITIONS
@@ -69,6 +72,18 @@ app.use('/api/chat', chatRoutes);
 // Endpoints: POST /api/maps/calculate
 app.use('/api/maps', mapRoutes);
 
+// D. Driver Routes
+// Endpoints: GET /api/drivers/:id, PATCH /api/drivers/:id, etc.
+app.use('/api/drivers', driverRoutes);
+
+// E. Trip Routes
+// Endpoints: POST /api/trips/request, PATCH /api/trips/:id/accept
+app.use('/api/trips', tripRoutes);
+
+// F. User Routes
+// Endpoints: GET /api/users/:id
+app.use('/api/users', userRoutes);
+
 // D. Health Check (Optional)
 // Good for testing if your server is alive without complex logic
 app.get('/', (req, res) => {
@@ -82,10 +97,10 @@ app.get('/', (req, res) => {
 // If a Route or Service throws an error, it ends up here
 app.use((err, req, res, next) => {
     console.error("Server Error:", err.stack);
-    res.status(500).json({ 
-        success: false, 
-        message: "Internal Server Error", 
-        error: err.message 
+    res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+        error: err.message
     });
 });
 
@@ -95,7 +110,11 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV}`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+        console.log(`Environment: ${process.env.NODE_ENV}`);
+    });
+}
+
+module.exports = app;

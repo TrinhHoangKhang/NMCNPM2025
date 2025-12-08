@@ -1,52 +1,34 @@
 # Endpoint for api, call from mobile
 
-- `/api`
-- `/api/auth`: Get authorization
-- `/api/users/:id`
-- `/api`
-- `/api`
-- `/api/messages/...`
-
-
-
-
-
-## Dashboard
-- `GET /dashboard` - Get dashboard overview
-
-## Users
-- `GET /users` - List all users
-- `POST /users` - Create new user
-- `GET /users/:id` - Get user details
-- `PUT /users/:id` - Update user
-- `DELETE /users/:id` - Delete user
-
-## Drivers
-- `GET /drivers` - List all drivers
-- `POST /drivers` - Create new driver
-- `GET /drivers/:id` - Get driver details
-- `PUT /drivers/:id` - Update driver
-- `DELETE /drivers/:id` - Delete driver
-- `GET /drivers/:id/trips` - Get driver's trips
-- `PATCH /drivers/:id/status` - Update driver status (active/inactive)
-
-## Trips/Routes
-- `GET /trips` - List all trips
-- `POST /trips` - Create new trip
-- `GET /trips/:id` - Get trip details
-- `PUT /trips/:id` - Update trip
-- `DELETE /trips/:id` - Delete trip
-- `PATCH /trips/:id/status` - Update trip status
-
-## Vehicles
-- `GET /vehicles` - List all vehicles
-- `POST /vehicles` - Create new vehicle
-- `GET /vehicles/:id` - Get vehicle details
-- `PUT /vehicles/:id` - Update vehicle
-- `DELETE /vehicles/:id` - Delete vehicle
-- `PATCH /vehicles/:id/assign` - Assign vehicle to driver
-
-## Authentication
-- `POST /auth/login` - User login
-- `POST /auth/logout` - User logout
-- `POST /auth/register` - User registration
+- `GET /api/dashboard` - Get dashboard overview
+- `GET /api/users` - List all users
+- `POST /api/users` - Create new user
+- `GET /api/users/:id` - Get user details
+- `PUT /api/users/:id` - Update user
+- `DELETE /api/users/:id` - Delete user
+- `GET /api/drivers` - List all drivers
+- `POST /api/drivers` - Create new driver
+- `GET /api/drivers/:id` - Get driver details
+- `PUT /api/drivers/:id` - Update driver
+- `DELETE /api/drivers/:id` - Delete driver
+- `GET /api/drivers/:id/trips` - Get driver's trips
+- `PATCH /api/drivers/:id/status` - Update driver status (active/inactive)
+- `PATCH /api/drivers/:id/location` - Update driver location (lat, lng)
+- `GET /api/trips` - List all trips
+- `POST /api/trips` - Create new trip
+- `GET /api/trips/:id` - Get trip details
+- `PUT /api/trips/:id` - Update trip
+- `DELETE /api/trips/:id` - Delete trip
+- `PATCH /api/trips/:id/status` - Update trip status
+- `GET /api/vehicles` - List all vehicles
+- `POST /api/vehicles` - Create new vehicle
+- `GET /api/vehicles/:id` - Get vehicle details
+- `PUT /api/vehicles/:id` - Update vehicle
+- `DELETE /api/vehicles/:id` - Delete vehicle
+- `PATCH /api/vehicles/:id/assign` - Assign vehicle to driver
+- `POST /api/maps/calculate-route` - Calculate distance and duration (params: origin, destination)
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `POST /api/auth/register` - User registration
+- `GET /api/auth/google` - Initiate Google Login
+- `GET /api/auth/google/callback` - Google Login Callback

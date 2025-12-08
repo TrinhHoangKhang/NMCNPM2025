@@ -1,46 +1,22 @@
-# Configuration File
+# Configuration
 
-This document outlines the configuration settings for the project.
+This project uses environment variables for configuration. Copy `.env.example` to `.env` in the `my-server` directory.
 
-## Table of Contents
+## Backend (`my-server/.env`)
 
-- [Configuration File](#configuration-file)
-  - [Table of Contents](#table-of-contents)
-  - [General Settings](#general-settings)
-  - [Database Configuration](#database-configuration)
-  - [API Endpoints](#api-endpoints)
-  - [Logging](#logging)
+| Variable | Description | Required | Source |
+| :--- | :--- | :--- | :--- |
+| `PORT` | Server port | No (default 3000) | Application |
+| `NODE_ENV` | Environment (dev, test, production) | No | Application |
+| `SESSION_SECRET` | Secret for session signing | **Yes** | Generated string |
+| `JWT_SECRET` | Secret for JWT signing | **Yes** | Generated string |
+| `GOOGLE_CLIENT_ID` | OAuth2 Client ID | **Yes** | Google Cloud Console |
+| `GOOGLE_CLIENT_SECRET` | OAuth2 Client Secret | **Yes** | Google Cloud Console |
+| `GOOGLE_CALLBACK_URL` | OAuth2 Callback URL | **Yes** | `http://localhost:3000/auth/google/callback` |
+| `GOOGLE_MAPS_API_KEY` | API Key for Maps SDK | **Yes** | Google Cloud Console |
+| `FIREBASE_PROJECT_ID` | Firebase Project ID | **Yes** | Firebase Console |
+| `FIREBASE_CLIENT_EMAIL` | Service Account Email | **Yes** | Firebase Console (Service Accounts) |
+| `FIREBASE_PRIVATE_KEY` | Service Account Private Key | **Yes** | Firebase Console (Service Accounts) |
 
-## General Settings
-
-| Setting Name      | Description                                     | Default Value |
-| :---------------- | :---------------------------------------------- | :------------ |
-| `APP_NAME`        | The name of the application.                    | `MyApplication` |
-| `ENVIRONMENT`     | The current operating environment (e.g., `dev`, `prod`, ``test`). | `dev`         |
-| `DEBUG_MODE`      | Enables or disables debug mode.                 | `true`        |
-| `PORT`            | The port on which the application will listen.  | `3000`        |
-
-## Database Configuration
-
-| Setting Name      | Description                                     | Default Value |
-| :---------------- | :---------------------------------------------- | :------------ |
-| `DB_CONNECTION`   | The type of database connection (e.g., `mysql`, `postgresql`, `sqlite`). | `mysql`       |
-| `DB_HOST`         | The database host address.                      | `localhost`   |
-| `DB_PORT`         | The database port.                              | `3306`        |
-| `DB_DATABASE`     | The name of the database.                       | `mydb`        |
-| `DB_USERNAME`     | The username for database access.               | `root`        |
-| `DB_PASSWORD`     | The password for database access.               | `password`    |
-
-## API Endpoints
-
-| Setting Name      | Description                                     | Default Value |
-| :---------------- | :---------------------------------------------- | :------------ |
-| `API_BASE_URL`    | The base URL for all API requests.              | `/api/v1`     |
-| `AUTH_ENDPOINT`   | The endpoint for user authentication.           | `/auth`       |
-| `USERS_ENDPOINT`  | The endpoint for user management.               | `/users`      |
-
-## Logging
-
-| Setting Name      | Description                                     | Default Value |
-| :---------------- | :---------------------------------------------- | :------------ |
-| `LOG_LEVEL
+> [!IMPORTANT]
+> The `FIREBASE_PRIVATE_KEY` must handle newlines correctly. If typing directly in `.env`, ensure it is in quotes or properly formatted.

@@ -1,14 +1,14 @@
 # TODO List - Driver Management System
 
 ## Backend Development
-- [ ] Setup project structure and dependencies
-- [ ] Create database schema for drivers, vehicles, trips
-- [ ] Implement authentication & authorization
-- [ ] Create API endpoints for users
-- [ ] Create API endpoints for drivers
+- [x] Setup project structure and dependencies
+- [x] Create database schema for drivers, vehicles, trips
+- [x] Implement authentication & authorization
+- [x] Create API endpoints for users
+- [x] Create API endpoints for drivers
 - [ ] Create API endpoints for vehicles
 - [ ] Create API endpoints for trips
-- [ ] Add input validation and error handling
+- [x] Add input validation and error handling
 - [ ] Implement logging system
 - [ ] Create unit tests for all endpoints
 - [ ] Setup API documentation (Swagger/OpenAPI)

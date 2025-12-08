@@ -13,15 +13,16 @@ my-fullstack-monorepo/
 │   │
 │   └── server/                # 📡 Express.js Backend (MVC)
 │       ├── src/
-│       │   ├── config/        # MongoDB connection
-│       │   ├── controllers/   # C (Controller)
-│       │   ├── models/        # M (Model)
-│       │   ├── routes/        # V (View-in-API-context)
-│       │   ├── services/
-│       │   └── app.js         # Main Express app
-│       ├── .env
+│       │   ├── config/        # Firebase & Passport Config
+│       │   ├── controllers/   # Request Handlers (Auth, Driver, Map)
+│       │   ├── models/        # Data Models (Driver, Trip)
+│       │   ├── routes/        # API Routes Definition
+│       │   ├── services/      # Business Logic (Google Maps, Firebase interactions)
+│       │   └── app.js         # Main Express Application
+│       ├── tests/             # Jest Unit Tests
+│       ├── .env               # Environment Variables (Gitignored)
 │       ├── package.json
-│       └── server.js        # Entry point
+│       └── server.js          # Entry point (optional, usually app.js used directly)
 │
 └── shared/                    # 🤝 Shared code
     ├── src/

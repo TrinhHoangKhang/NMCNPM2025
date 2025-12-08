@@ -61,3 +61,27 @@ The Map: Belongs to you (the developer), powered by Google's tiles.
 The Path: Is a drawing (Overlay) that sits on top of the map.
 
 The Update: Your code moves the marker instantly, but only asks Google for a new path when the user takes a wrong turn.
+## Server Implementation
+We have implemented a backend service to handle route calculations securely (hiding the API key).
+
+### Endpoint
+`POST /api/maps/calculate-route`
+
+### Request Body
+```json
+{
+  "origin": "10.762622, 106.660172",
+  "destination": "10.823099, 106.629664"
+}
+```
+
+### Response
+```json
+{
+  "success": true,
+  "data": {
+    "distance": { "text": "15 km", "value": 15000 },
+    "duration": { "text": "30 mins", "value": 1800 }
+  }
+}
+```

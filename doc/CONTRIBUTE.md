@@ -1,50 +1,69 @@
 # Contributing to NMCNPM2025
 
-We welcome contributions to the NMCNPM2025 project! By contributing, you help us improve and grow. Please take a moment to review this document to understand how to contribute effectively.
+We welcome contributions to the **NMCNPM2025** Driver Management Platform! This guide will help you set up your development environment and understand our workflow.
 
-## Table of Contents
+## 🚀 Getting Started
 
-- [Contributing to NMCNPM2025](#contributing-to-nmcnpm2025)
-  - [Table of Contents](#table-of-contents)
-  - [Code of Conduct](#code-of-conduct)
-  - [How to Contribute](#how-to-contribute)
-    - [Reporting Bugs](#reporting-bugs)
-    - [Suggesting Enhancements](#suggesting-enhancements)
-    - [Submitting Pull Requests](#submitting-pull-requests)
+### Prerequisites
+- **Node.js** (v18 or higher)
+- **npm** (v9 or higher)
+- **Firebase Account** (for backend database)
+- **Google Cloud Account** (for Maps API and OAuth)
 
-## Code of Conduct
+### Installation
 
-Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project, you agree to abide by its terms.
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/your-username/NMCNPM2025.git
+    cd NMCNPM2025
+    ```
 
-## How to Contribute
+2.  **Install Dependencies**
+    We use a workspace structure. You can install all dependencies from the root or individual packages.
+    ```bash
+    # For the backend specifically
+    cd my-server
+    npm install
+    ```
 
-There are several ways you can contribute to NMCNPM2025:
+3.  **Environment Configuration**
+    You must configure your environment variables for the server to run.
+    1.  Copy `.env.example` to `.env` inside `my-server/`.
+    2.  Fill in the required keys.
+    > See [CONFIG.md](CONFIG.md) for a detailed list of required variables.
 
-### Reporting Bugs
+### Running the App
 
-If you find a bug, please help us by submitting an issue to our [issue tracker](https://github.com/your-username/NMCNPM2025/issues). Before submitting, please check if a similar issue already exists.
+To start the backend server in development mode:
+```bash
+cd my-server
+npm run dev
+```
+The server will start on `http://localhost:3000`.
 
-When reporting a bug, please include:
+## 🧪 Testing
 
-- A clear and concise description of the bug.
-- Steps to reproduce the behavior.
-- Expected behavior.
-- Actual behavior.
-- Screenshots or error messages if applicable.
-- Your operating system and browser version (if applicable).
+We use **Jest** for unit testing. Before submitting a PR, ensure all tests pass.
 
-### Suggesting Enhancements
+```bash
+cd my-server
+npm test
+```
 
-We love to hear your ideas for improving NMCNPM2025! You can suggest enhancements by opening an issue in our [issue tracker](https://github.com/your-username/NMCNPM2025/issues).
+## 🤝 Contribution Workflow
 
-When suggesting an enhancement, please include:
+1.  **Fork** the repository.
+2.  Create a **Feature Branch** (`git checkout -b feature/amazing-feature`).
+3.  Commit your changes (`git commit -m 'Add some amazing feature'`).
+4.  Push to the branch (`git push origin feature/amazing-feature`).
+5.  Open a **Pull Request**.
 
-- A clear and concise description of the enhancement.
-- Why you think this enhancement would be valuable.
-- Any potential alternatives or considerations.
+## 📚 Documentation
+- [Structure Guide](STRUCTURE.md): Understanding the folder layout.
+- [API Endpoints](ENDPOINT.md): List of available API routes.
+- [Configuration](CONFIG.md): Environment variable details.
+- [Troubleshooting](TROUBLESHOOTING.md): Common setup issues.
 
-### Submitting Pull Requests
-
-We welcome pull requests for bug fixes, new features, and improvements. To submit a pull request:
-
-1.  **Fork the repository:** Click the "Fork" button at the top right of the [NMCNPM2025 repository](https://github.com/your-username
+## Other Resources
+- [Google Maps API Guide](GOOGLEMAPAPI.md)
+- [Authentication Flow](AUTHENTICATION.md)
