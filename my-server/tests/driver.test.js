@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../app');
+const app = require('../src/app');
 const driverService = require('../src/services/driverService');
 
 // Mock the Service to avoid calling real Firebase

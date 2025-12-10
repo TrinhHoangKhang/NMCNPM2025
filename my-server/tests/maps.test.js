@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../app');
+const app = require('../src/app');
 const mapsService = require('../src/services/mapsService');
 
 jest.mock('../src/services/mapsService');

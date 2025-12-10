@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../app');
+const app = require('../src/app');
 const userService = require('../src/services/userService');
 
 // Mock specific services
