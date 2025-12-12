@@ -1,0 +1,12 @@
+node_modules/
+.expo/
+dist/
+web-build/
+.env
+.DS_Store
+*.jks
+*.keystore
+*.pem
+android/app/debug.keystore
+android/app/build/
+ios/Pods/

@@ -1,0 +1,66 @@
+
+
+services:
+  server:
+    build: ./server
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/rideshare
+    depends_on:
+      - mongo
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+
+  # Instance 1: User (Rider)
+  client-user:
+    build: ./client-web
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+      - VITE_INSTANCE_TYPE=user
+    depends_on:
+      - server
+    volumes:
+      - ./client-web:/app
+      - /app/node_modules
+
+  # Instance 2: Driver
+  client-driver:
+    build: ./client-web
+    ports:
+      - "5174:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+      - VITE_INSTANCE_TYPE=driver
+    depends_on:
+      - server
+    volumes:
+      - ./client-web:/app
+      - /app/node_modules
+
+  # Instance 3: Admin
+  client-admin:
+    build: ./client-web
+    ports:
+      - "5175:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+      - VITE_INSTANCE_TYPE=admin
+    depends_on:
+      - server
+    volumes:
+      - ./client-web:/app
+      - /app/node_modules
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
