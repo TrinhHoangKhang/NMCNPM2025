@@ -23,7 +23,7 @@ const corsOptions = require('./config/cors');
 // Middleware
 app.use(helmet());
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Enable pre-flight for all routes
+app.options(/(.*)/, cors(corsOptions)); // Enable pre-flight for all routes
 app.use(morgan('dev'));
 app.use(express.json());
 
