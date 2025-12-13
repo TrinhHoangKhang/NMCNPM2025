@@ -3,10 +3,10 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 
 // Mocks
-jest.mock('../config/db', () => jest.fn()); // Disable real DB connection
-jest.mock('../models/User');
-jest.mock('../models/Driver');
-jest.mock('../middleware/authMiddleware', () => ({
+jest.mock('../src/config/db', () => jest.fn()); // Disable real DB connection
+jest.mock('../src/models/User');
+jest.mock('../src/models/Driver');
+jest.mock('../src/middleware/authMiddleware', () => ({
     protect: (req, res, next) => {
         // Mock authenticated user
         req.user = { _id: 'mockUserId', role: 'rider' };
@@ -15,9 +15,9 @@ jest.mock('../middleware/authMiddleware', () => ({
     authorize: (...roles) => (req, res, next) => next()
 }));
 
-const app = require('../app');
-const Driver = require('../models/Driver');
-const User = require('../models/User');
+const app = require('../src/app');
+const Driver = require('../src/models/Driver');
+const User = require('../src/models/User');
 
 describe('Server Integration Tests (Mocked DB)', () => {
 

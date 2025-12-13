@@ -1,9 +1,9 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app');
-const User = require('../models/User');
-const Trip = require('../models/Trip');
-const Driver = require('../models/Driver');
+const app = require('../src/app');
+const User = require('../src/models/User');
+const Trip = require('../src/models/Trip');
+const Driver = require('../src/models/Driver');
 
 describe('Ride Endpoints', () => {
     let riderToken, driverToken, riderId, driverId, riderUser, driverUser;

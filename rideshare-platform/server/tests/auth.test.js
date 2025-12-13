@@ -1,7 +1,7 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../app'); // We need to export app from index.js
-const User = require('../models/User');
+const app = require('../src/app'); // We need to export app from index.js
+const User = require('../src/models/User');
 
 // Connect to a test database or mock it? 
 // For integration tests, connecting to a test DB is better.

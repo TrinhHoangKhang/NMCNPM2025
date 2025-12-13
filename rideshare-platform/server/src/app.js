@@ -18,21 +18,7 @@ const io = new Server(server, {
     }
 });
 
-const corsOptions = {
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        const allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5000'];
-        if (allowedOrigins.indexOf(origin) !== -1 || origin.startsWith('http://192.168.')) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    credentials: true,
-    optionsSuccessStatus: 200
-};
+const corsOptions = require('./config/cors');
 
 // Middleware
 app.use(helmet());
