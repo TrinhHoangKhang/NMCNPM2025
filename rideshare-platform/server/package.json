@@ -7,7 +7,7 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "test": "jest",
-    "seed": "node seed.js"
+    "seed": "node src/seed.js"
   },
   "dependencies": {
     "bcryptjs": "3.0.3",

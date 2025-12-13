@@ -27,6 +27,12 @@ try {
     // Ignore if already registered
 }
 
+try {
+    User.discriminator('driver', BaseDiscriminatorSchema);
+} catch (e) {
+    // Ignore if already registered
+}
+
 // Config
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/rideshare';
 const OUTPUT_FILE = path.join(__dirname, 'test_user.example');
@@ -103,13 +109,19 @@ const seedData = async () => {
             const driverIdx = i;
             // Driver needs to be created using Driver model to set discriminator key properly?
             // Actually, usually Model.create with discriminator logic works if using Base but better use Driver model directly
-            const driver = await Driver.create({
+            // First create the User
+            const user = await User.create({
                 username: `driver${driverIdx}`,
                 email: `driver${driverIdx}@example.com`,
                 phone: `+1555999${1000 + driverIdx}`,
                 password: 'password123',
-                role: 'driver', // Explicitly set role, though Driver model sets it
-                realName: `Test Driver ${driverIdx}`,
+                role: 'driver',
+                realName: `Test Driver ${driverIdx}`
+            });
+
+            // Then create the Driver profile linked to the User
+            const driver = await Driver.create({
+                user: user._id,
                 vehicle: {
                     make: getRandomItem(makes),
                     model: 'Sedan',
@@ -117,7 +129,7 @@ const seedData = async () => {
                     color: getRandomItem(['Black', 'White', 'Silver']),
                     type: getRandomItem(vehicleTypes)
                 },
-                isOnline: true, // Make them online
+                isOnline: true,
                 status: 'available',
                 currentLocation: {
                     type: 'Point',

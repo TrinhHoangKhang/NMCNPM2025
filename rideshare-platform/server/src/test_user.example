@@ -1,0 +1,31 @@
+# Test Accounts Created By Seed Script
+# Date: 2025-12-13T19:09:39.217Z
+
+## Admin
+Username: admin
+Email: admin@rideshare.com
+Password: password123
+
+## Riders
+- Username: rider1 / Email: rider1@example.com / Pass: password123
+- Username: rider2 / Email: rider2@example.com / Pass: password123
+- Username: rider3 / Email: rider3@example.com / Pass: password123
+- Username: rider4 / Email: rider4@example.com / Pass: password123
+- Username: rider5 / Email: rider5@example.com / Pass: password123
+
+## Drivers
+- Username: undefined / Email: undefined / Pass: password123 / Vehicle: Toyota Sedan
+- Username: undefined / Email: undefined / Pass: password123 / Vehicle: Ford Sedan
+- Username: undefined / Email: undefined / Pass: password123 / Vehicle: Toyota Sedan
+
+## History Logs
+- Log #1: COMPLETED | Rider: rider1 | Driver: undefined | Fare: $49 | Date: 2025-12-08
+- Log #2: COMPLETED | Rider: rider4 | Driver: undefined | Fare: $35 | Date: 2025-12-08
+- Log #3: COMPLETED | Rider: rider3 | Driver: undefined | Fare: $49 | Date: 2025-12-13
+- Log #4: CANCELLED | Rider: rider5 | Driver: undefined | Fare: $52 | Date: 2025-12-11
+- Log #5: COMPLETED | Rider: rider5 | Driver: undefined | Fare: $60 | Date: 2025-12-07
+- Log #6: COMPLETED | Rider: rider4 | Driver: undefined | Fare: $37 | Date: 2025-12-07
+- Log #7: COMPLETED | Rider: rider3 | Driver: undefined | Fare: $30 | Date: 2025-12-10
+- Log #8: CANCELLED | Rider: rider5 | Driver: undefined | Fare: $57 | Date: 2025-12-09
+- Log #9: COMPLETED | Rider: rider5 | Driver: undefined | Fare: $54 | Date: 2025-12-12
+- Log #10: COMPLETED | Rider: rider1 | Driver: undefined | Fare: $19 | Date: 2025-12-11
