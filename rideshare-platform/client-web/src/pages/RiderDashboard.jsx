@@ -23,7 +23,7 @@ const RiderDashboard = () => {
     // or we can keep it here if we want to control it from top level, 
     // but the extracted component handles it.
 
-    const { socket } = useSocket();
+    const { socket, connectSocket } = useSocket();
     const { showToast } = useToast();
     const navigate = useNavigate();
 
@@ -60,6 +60,9 @@ const RiderDashboard = () => {
             showToast('Please select pickup and dropoff locations.', 'warning');
             return;
         }
+
+        // Ensure socket is connected before requesting
+        connectSocket();
 
         const distanceMeters = route.distance;
         const estimatedFare = (distanceMeters / 1000) * 1.5 + 5;

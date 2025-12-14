@@ -69,17 +69,6 @@ const requestRide = async (req, res) => {
             nearbyDrivers = await Driver.find({ isOnline: true, status: 'available' }).limit(5);
         }
 
-        // Emit socket event to these specific drivers only
-        nearbyDrivers.forEach(driver => {
-            console.log(`Notifying driver ${driver._id} (${driver.vehicle.plateNumber})`);
-            req.io.to(`driver_${driver._id}`).emit('new_ride_request', {
-                tripId: trip._id,
-                pickupLocation,
-                fare,
-                distance
-            });
-        });
-
         if (nearbyDrivers.length === 0) {
             console.log("No drivers found nearby.");
         }
@@ -185,4 +174,49 @@ const getRideHistory = async (req, res) => {
     }
 };
 
-module.exports = { requestRide, acceptRide, getRideDetails, getRideHistory };
+// @desc    Get available rides for polling
+// @route   GET /api/rides/available
+// @access  Private (Driver)
+const getAvailableRides = async (req, res) => {
+    try {
+        const driver = await Driver.findOne({ user: req.user._id });
+
+        if (!driver) {
+            return res.status(403).json({ message: 'User is not a driver' });
+        }
+
+        // Check if driver is online and available
+        // If driver matches criteria for a ride even if offline?, no logic says they must be online to SEE them, but probably yes.
+        // For polling, we just return requested rides nearby.
+
+        // Use Driver's last known location.
+        // If they haven't updated location recently, this might be stale, but good enough for polling.
+        const longitude = driver.currentLocation?.coordinates[0];
+        const latitude = driver.currentLocation?.coordinates[1];
+
+        if (!longitude || !latitude) {
+            return res.status(400).json({ message: 'Driver location unknown' });
+        }
+
+        const rides = await Trip.find({
+            status: 'requested',
+            'pickupLocation.coordinates': {
+                $near: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: [longitude, latitude]
+                    },
+                    $maxDistance: 5000 // 5km radius
+                }
+            }
+        }).limit(10); // Limit to 10 for safety
+
+        res.json(rides);
+    } catch (error) {
+        console.error("Get Available Rides Error:", error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+module.exports = { requestRide, acceptRide, getRideDetails, getRideHistory, getAvailableRides };

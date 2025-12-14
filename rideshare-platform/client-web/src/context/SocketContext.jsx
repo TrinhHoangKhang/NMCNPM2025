@@ -12,27 +12,35 @@ export const SocketProvider = ({ children }) => {
     const { user } = useContext(AuthContext);
     const [isConnected, setIsConnected] = useState(false);
 
-    useEffect(() => {
-        if (user) {
-            socket.auth = { token: localStorage.getItem(`userToken_${window.location.port}`) };
-            socket.connect();
+    const connectSocket = () => {
+        if (!user) return;
+        if (socket.connected) return;
 
-            const onConnect = () => setIsConnected(true);
-            const onDisconnect = () => setIsConnected(false);
+        socket.auth = { token: localStorage.getItem(`userToken_${window.location.port}`) };
+        socket.connect();
+    };
 
-            socket.on('connect', onConnect);
-            socket.on('disconnect', onDisconnect);
-
-            return () => {
-                socket.off('connect', onConnect);
-                socket.off('disconnect', onDisconnect);
-                socket.disconnect();
-            };
+    const disconnectSocket = () => {
+        if (socket.connected) {
+            socket.disconnect();
         }
-    }, [user]);
+    };
+
+    useEffect(() => {
+        const onConnect = () => setIsConnected(true);
+        const onDisconnect = () => setIsConnected(false);
+
+        socket.on('connect', onConnect);
+        socket.on('disconnect', onDisconnect);
+
+        return () => {
+            socket.off('connect', onConnect);
+            socket.off('disconnect', onDisconnect);
+        };
+    }, []);
 
     return (
-        <SocketContext.Provider value={{ socket, isConnected }}>
+        <SocketContext.Provider value={{ socket, isConnected, connectSocket, disconnectSocket }}>
             {children}
         </SocketContext.Provider>
     );

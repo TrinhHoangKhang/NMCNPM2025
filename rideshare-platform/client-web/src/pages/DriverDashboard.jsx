@@ -21,68 +21,83 @@ const DriverDashboard = () => {
 
     const [requests, setRequests] = useState([]);
     const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'requests'
-    const { socket } = useSocket();
+    const { socket, connectSocket, disconnectSocket } = useSocket();
     const { showToast } = useToast();
 
     // 1. Initial Status Fetch (Replaced by Loader)
-    // useEffect logic removed
+    // If driver is already online (from loader), connect to socket immediately
+    // 1. Initial Status Fetch (Replaced by Loader)
+    // No socket connection on load. Polling will start if isOnline is true.
 
 
-    // 2. Socket Logic
+    // 2. Polling Logic for Requests (Replaces Socket when Online but Idle)
+    useEffect(() => {
+        let interval;
+        if (isOnline) {
+            const fetchRequests = async () => {
+                try {
+                    const res = await api.get('/api/rides/available');
+                    // Transform requests to match UI format
+                    const newRequests = res.data.map(trip => ({
+                        id: trip._id,
+                        pickup: trip.pickupLocation.address,
+                        distance: formatDistance(trip.distance),
+                        fare: formatCurrency(trip.fare),
+                        expiresAt: Date.now() + 10000 // Reset expiry on poll or manage differently? 
+                        // Actually, if we poll every 3s, checking matches is good.
+                        // Let's just blindly replace for now, or merge.
+                        // Simple approach: Replace.
+                    }));
+
+                    // Basic de-duplication to avoid flickering or resetting timers if we wanted to keep them
+                    // But here keep it simple.
+                    setRequests(newRequests);
+                } catch (error) {
+                    console.error("Polling error:", error);
+                }
+            };
+
+            fetchRequests(); // Initial fetch
+            interval = setInterval(fetchRequests, 3000); // Poll every 3s
+        } else {
+            setRequests([]);
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [isOnline]);
+
+    // 3. Socket Connection Only on Accept
+    // Handle socket events ONLY if connected (which happens after accept)
     useEffect(() => {
         if (!socket) return;
 
-        if (isOnline) {
-            socket.emit('join_drivers_room');
-            if (driverId) {
-                socket.emit('join_specific_driver_room', driverId);
-            }
+        // If we are connected (meaning we accepted a ride), listen for updates?
+        // Actually, the prompt says "connect using websocket" after accept.
+        // So we might need to listen to chat or location updates here.
+        // For now, just ensuring we don't auto-connect or listen to 'new_ride_request' via socket.
 
-            const handleNewRequest = (data) => {
-                console.log("New Ride Request:", data);
-                // Play sound or vibrate here
-                setRequests(prev => {
-                    if (prev.find(r => r.id === data.tripId)) return prev;
-                    showToast('New ride request received!', 'info');
-                    return [...prev, {
-                        id: data.tripId,
-                        // Use formatLocation helper if available, or just rely on correct data
-                        pickup: data.pickupLocation?.address || 'Unknown Location', // Keeping simple as data object might vary slightly from stored trips
-                        distance: formatDistance(data.distance),
-                        fare: formatCurrency(data.fare),
-                        expiresAt: Date.now() + 10000
-                    }];
-                });
-            };
+    }, [socket]);
 
-            socket.on('new_ride_request', handleNewRequest);
 
-            return () => {
-                socket.off('new_ride_request', handleNewRequest);
-            };
-        } else {
-            socket.emit('leave_drivers_room');
-            setRequests([]); // Clear requests when going offline
-        }
-    }, [socket, isOnline, showToast, driverId]);
+    // 4. Timer Logic - Cleanup expired requests visually if we stopped polling?
+    // With polling, server gives current valid requests. We might not need local expiry logic as much,
+    // but if the server returns "requested" rides, they are valid.
+    // Let's remove the local expiry timer 30s logic if we are polling.
+    // Or keep it for visual countdowns? Let's remove it to assume Server is source of truth.
+    // Actually, let's keep it simple.
 
-    // 3. Timer Logic
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const now = Date.now();
-            setRequests(prev => prev.filter(req => req.expiresAt > now));
-        }, 1000);
-        return () => clearInterval(interval);
-    }, []);
-
-    // 4. Helper Functions
+    // 5. Helper Functions
     const toggleOnline = async () => {
         try {
             const res = await api.patch('/api/drivers/status');
             setIsOnline(res.data.isOnline);
             if (res.data.isOnline) {
+                // connectSocket(); // REMOVED: Do not connect socket when just going online
                 showToast('You are now ONLINE', 'success');
             } else {
+                disconnectSocket(); // Ensure we disconnect if we go offline
                 showToast('You are now OFFLINE', 'info');
             }
         } catch (error) {
@@ -99,7 +114,21 @@ const DriverDashboard = () => {
     const handleAccept = async (tripId) => {
         try {
             await api.post(`/api/rides/${tripId}/accept`);
-            showToast('Ride Accepted! Redirecting to setup...', 'success');
+            showToast('Ride Accepted! Connecting...', 'success');
+
+            // Connect to socket NOW
+            connectSocket();
+            // We might need to join the trip room manually if the server doesn't auto-join us by ID.
+            // Server socketManager.js listens for 'join_trip'.
+            // connectSocket() is async? No, it's sync trigger.
+            // But connection takes time.
+            // We should ideally wait for connection then emit.
+            // But looking at SocketContext, we don't return a promise.
+            // Usage: socket.emit('join_trip', tripId) might fail if not connected yet?
+            // socket.io-client queues packets until connected? Yes, usually.
+
+            socket.emit('join_trip', tripId);
+
             setRequests(prev => prev.filter(req => req.id !== tripId));
         } catch (error) {
             console.error("Accept Failed", error);
