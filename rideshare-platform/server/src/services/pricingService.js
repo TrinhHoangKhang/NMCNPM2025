@@ -27,4 +27,4 @@ const calculateFare = (distanceMeters, durationSeconds, vehicleType = 'standard'
     return Math.round(fare * 100) / 100; // Round to 2 decimals
 };
 
-module.exports = { calculateFare };
+module.exports = { calculateFare, calculateCancellationFee: (trip) => 5.00 }; // Flat fee for now

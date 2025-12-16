@@ -5,9 +5,11 @@ const TripSchema = new mongoose.Schema({
     driver: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver' },
     status: {
         type: String,
-        enum: ['requested', 'accepted', 'arrived', 'in_progress', 'completed', 'cancelled'],
-        default: 'requested'
+        enum: ['CREATED', 'SEARCHING', 'OFFERED', 'ACCEPTED', 'ARRIVING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
+        default: 'CREATED'
     },
+    cancellationFee: { type: Number, default: 0 },
+    cancellationReason: String,
     pickupLocation: {
         address: String,
         coordinates: { type: [Number], required: true } // [lng, lat]
