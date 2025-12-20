@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.ridego.databinding.ActivityRiderMainBinding
-
 class RiderMainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityRiderMainBinding
