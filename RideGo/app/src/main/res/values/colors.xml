@@ -15,4 +15,5 @@
     <color name="bg_service_orange">#FFF3E0</color>
     <color name="bg_service_blue">#E3F2FD</color>
     <color name="gray_100">#F5F5F5</color>
+    <color name="white_translucent_border">#80FFFFFF</color>
 </resources>

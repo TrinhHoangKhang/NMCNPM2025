@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.ridego.databinding.ActivityLoginBinding
-import com.example.ridego.ui.rider.main.RiderMainActivity // Màn hình Home (Sẽ tạo sau)
+import com.example.ridego.ui.rider.main.RiderMainActivity
 
 class LoginActivity : AppCompatActivity() {
 
@@ -16,17 +16,17 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Tuyệt đối KHÔNG thêm dòng WindowCompat.setDecorFitsSystemWindows ở đây
+        // Để file XML tự xử lý khoảng cách an toàn.
+
         setupEvents()
     }
 
     private fun setupEvents() {
-        // 1. Nút Tiếp tục (Xử lý Đăng ký/Đăng nhập SĐT)
+        // 1. Nút Tiếp tục
         binding.btnContinue.setOnClickListener {
             val phoneNumber = binding.edtPhoneNumber.text.toString()
             if (phoneNumber.isNotEmpty()) {
-                // TODO: Gọi API kiểm tra SĐT hoặc gửi OTP
-                Toast.makeText(this, "Đang xử lý SĐT: $phoneNumber", Toast.LENGTH_SHORT).show()
-
                 // Giả lập đăng nhập thành công -> Vào Home
                 navigateToHome()
             } else {
@@ -37,7 +37,6 @@ class LoginActivity : AppCompatActivity() {
         // 2. Nút Google
         binding.btnGoogle.setOnClickListener {
             Toast.makeText(this, "Chức năng đăng nhập Google đang phát triển", Toast.LENGTH_SHORT).show()
-            // Logic Firebase Google Auth sẽ viết ở đây sau này
         }
 
         // 3. Nút Bỏ qua -> Vào thẳng Home
@@ -47,12 +46,9 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun navigateToHome() {
-        // Vì chưa có màn hình Home, mình sẽ hiển thị thông báo
-        Toast.makeText(this, "Chuyển đến màn hình Home!", Toast.LENGTH_SHORT).show()
-
-        // KHI NÀO CÓ HOME ACTIVITY, BỎ COMMENT DÒNG DƯỚI:
+        // ĐÃ MỞ KHÓA CODE CHUYỂN MÀN HÌNH:
         val intent = Intent(this, RiderMainActivity::class.java)
         startActivity(intent)
-        finishAffinity() // Xóa hết stack để không back lại được màn Login
+        finishAffinity() // Đóng Login lại để user không bấm Back quay lại được
     }
 }
