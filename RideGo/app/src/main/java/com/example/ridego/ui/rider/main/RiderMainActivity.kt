@@ -1,6 +1,7 @@
 package com.example.ridego.ui.rider.main
 
 import android.app.Dialog
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
@@ -11,6 +12,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.ridego.R
 import com.example.ridego.databinding.ActivityRiderMainBinding
+import com.example.ridego.ui.history.HistoryActivity
+import com.example.ridego.ui.rider.location.SetLocationActivity
 
 class RiderMainActivity : AppCompatActivity() {
 
@@ -21,37 +24,70 @@ class RiderMainActivity : AppCompatActivity() {
         binding = ActivityRiderMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // ... Các code setup BottomNav cũ giữ nguyên ...
+        // 1. Cấu hình thanh điều hướng thủ công (Manual Bottom Nav)
+        setupManualBottomNav()
 
-        // Kiểm tra và hiển thị luồng xin vị trí (Giả lập là lần đầu tiên)
+        // 2. Chạy luồng xin quyền vị trí ngay khi vào App
         showLocationPermissionDialog()
+    }
+
+    // --- XỬ LÝ SỰ KIỆN CLICK CHO THANH ĐIỀU HƯỚNG MỚI ---
+    private fun setupManualBottomNav() {
+        // Nút Trang chủ (btnHome)
+        binding.btnHome.setOnClickListener {
+            // Đang ở Home rồi thì có thể reload hoặc không làm gì
+            Toast.makeText(this, "Đang ở Trang chủ", Toast.LENGTH_SHORT).show()
+        }
+
+        // Nút Hoạt động (btnActivity) -> MỞ MÀN HÌNH LỊCH SỬ
+        binding.btnActivity.setOnClickListener {
+            val intent = Intent(this, HistoryActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Nút Ưu đãi (btnPromotion)
+        binding.btnPromotion.setOnClickListener {
+            Toast.makeText(this, "Tính năng Ưu đãi đang phát triển", Toast.LENGTH_SHORT).show()
+        }
+
+        // Nút Tài khoản (btnAccount)
+        binding.btnAccount.setOnClickListener {
+            Toast.makeText(this, "Tính năng Tài khoản đang phát triển", Toast.LENGTH_SHORT).show()
+        }
+
+        // Nút Đặt xe to ở giữa (fabBooking)
+        binding.fabBooking.setOnClickListener {
+            Toast.makeText(this, "Bạn hãy chọn điểm đến trên bản đồ", Toast.LENGTH_SHORT).show()
+            // Có thể mở nhanh màn hình đặt xe tại đây nếu muốn
+        }
     }
 
     // --- BƯỚC 1: DIALOG XIN QUYỀN VỊ TRÍ ---
     private fun showLocationPermissionDialog() {
         val dialog = Dialog(this)
         dialog.setContentView(R.layout.dialog_location_permission)
+
+        // Làm trong suốt nền dialog để thấy bo góc
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setLayout(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
-        // Hiển thị dialog ở giữa màn hình, có margin 2 bên
+
         val params = dialog.window?.attributes
         params?.gravity = Gravity.CENTER
-        // params?.horizontalMargin = 0.1f // Nếu cần thụt lề thêm
 
         dialog.setCancelable(false) // Bắt buộc user phải chọn
 
-        // Xử lý sự kiện nút bấm
+        // Ánh xạ các nút trong Dialog
         val btnWhileUsing = dialog.findViewById<TextView>(R.id.btnAllowWhileUsing)
         val btnAllowOnce = dialog.findViewById<TextView>(R.id.btnAllowOnce)
         val btnDeny = dialog.findViewById<TextView>(R.id.btnDeny)
 
+        // Xử lý sự kiện
         btnWhileUsing.setOnClickListener {
             dialog.dismiss()
-            // TODO: Ở đây gọi lệnh xin quyền hệ thống thực tế (ActivityCompat.requestPermissions...)
-            // Sau khi xin xong thì hiện tiếp Dialog 2
+            // Sau khi đồng ý -> Hiện tiếp Dialog chọn điểm đón
             showPickupLocationDialog()
         }
 
@@ -62,7 +98,7 @@ class RiderMainActivity : AppCompatActivity() {
 
         btnDeny.setOnClickListener {
             dialog.dismiss()
-            Toast.makeText(this, "Bạn cần cấp quyền để đặt xe!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Bạn cần cấp quyền để sử dụng RideGo!", Toast.LENGTH_SHORT).show()
         }
 
         dialog.show()
@@ -72,31 +108,29 @@ class RiderMainActivity : AppCompatActivity() {
     private fun showPickupLocationDialog() {
         val dialog = Dialog(this)
         dialog.setContentView(R.layout.dialog_confirm_pickup)
+
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setLayout(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
-        // Tạo hiệu ứng dim mờ phía sau
-        dialog.window?.setDimAmount(0.6f)
-
+        dialog.window?.setDimAmount(0.6f) // Làm tối màn hình phía sau
         dialog.setCancelable(false)
 
         val btnEnter = dialog.findViewById<TextView>(R.id.btnEnterLocation)
         val btnConfirm = dialog.findViewById<TextView>(R.id.btnConfirmLocation)
 
-        // Nút Nhập vị trí
+        // Nút "Nhập vị trí"
         btnEnter.setOnClickListener {
             dialog.dismiss()
             Toast.makeText(this, "Mở màn hình tìm kiếm...", Toast.LENGTH_SHORT).show()
-            // Code mở màn hình Search
         }
 
-        // Nút Tiếp tục (Lấy GPS hiện tại)
+        // Nút "Tiếp tục" -> MỞ MÀN HÌNH BẢN ĐỒ (SetLocationActivity)
         btnConfirm.setOnClickListener {
             dialog.dismiss()
-            Toast.makeText(this, "Đang định vị bạn...", Toast.LENGTH_SHORT).show()
-            // Code update vị trí lên bản đồ
+            val intent = Intent(this, SetLocationActivity::class.java)
+            startActivity(intent)
         }
 
         dialog.show()
