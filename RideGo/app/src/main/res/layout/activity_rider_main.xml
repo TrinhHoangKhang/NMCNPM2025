@@ -22,7 +22,7 @@
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:background="@color/white"
-        android:elevation="8dp"
+        android:elevation="16dp"
         android:outlineProvider="background"
         app:layout_constraintBottom_toBottomOf="parent">
 
@@ -33,22 +33,30 @@
             android:weightSum="5">
 
             <LinearLayout
+                android:id="@+id/btnHome"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
                 android:orientation="vertical">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🏠" android:textSize="20sp"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Trang chủ" android:textSize="10sp" android:textColor="@color/purple_500"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🏠" android:textSize="22sp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Trang chủ" android:textSize="10sp" android:textColor="@color/purple_500" android:textStyle="bold"/>
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/btnActivity"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
                 android:orientation="vertical">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="📄" android:textSize="20sp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="📄" android:textSize="22sp"/>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Hoạt động" android:textSize="10sp" android:textColor="#757575"/>
             </LinearLayout>
 
@@ -58,22 +66,30 @@
                 android:layout_weight="1"/>
 
             <LinearLayout
+                android:id="@+id/btnPromotion"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
                 android:orientation="vertical">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎁" android:textSize="20sp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎁" android:textSize="22sp"/>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ưu đãi" android:textSize="10sp" android:textColor="#757575"/>
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/btnAccount"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground"
                 android:orientation="vertical">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="👤" android:textSize="20sp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="👤" android:textSize="22sp"/>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Tài khoản" android:textSize="10sp" android:textColor="#757575"/>
             </LinearLayout>
         </LinearLayout>
@@ -83,13 +99,13 @@
         android:id="@+id/fabBooking"
         android:layout_width="64dp"
         android:layout_height="64dp"
+        android:layout_marginBottom="20dp"
         android:background="@drawable/bg_circle_orange"
         android:elevation="20dp"
         android:outlineProvider="background"
-        app:layout_constraintBottom_toTopOf="@+id/bottomNavContainer"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/bottomNavContainer">
+        app:layout_constraintStart_toStartOf="parent">
 
         <TextView
             android:layout_width="wrap_content"
@@ -107,7 +123,7 @@
         android:elevation="20dp"
         android:text="Đặt xe"
         android:textColor="@color/purple_500"
-        android:textSize="11sp"
+        android:textSize="12sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="@+id/fabBooking"
         app:layout_constraintStart_toStartOf="@+id/fabBooking"
