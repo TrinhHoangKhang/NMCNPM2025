@@ -14,6 +14,8 @@ import com.example.ridego.R
 import com.example.ridego.databinding.ActivityRiderMainBinding
 import com.example.ridego.ui.history.HistoryActivity
 import com.example.ridego.ui.rider.location.SetLocationActivity
+import com.example.ridego.ui.promotion.PromotionActivity
+
 
 class RiderMainActivity : AppCompatActivity() {
 
@@ -47,7 +49,8 @@ class RiderMainActivity : AppCompatActivity() {
 
         // Nút Ưu đãi (btnPromotion)
         binding.btnPromotion.setOnClickListener {
-            Toast.makeText(this, "Tính năng Ưu đãi đang phát triển", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, PromotionActivity::class.java) // Đảm bảo đã import PromotionActivity
+            startActivity(intent)
         }
 
         // Nút Tài khoản (btnAccount)
