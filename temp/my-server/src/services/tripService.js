@@ -1,48 +1,58 @@
 const { db } = require('../config/firebaseConfig');
 const Trip = require('../models/Trip');
-const mapsService = require('./mapsService');
-const { v4: uuidv4 } = require('uuid'); // Need to install uuid, or just use Firestore auto-ID
+//const mapsService = require('./mapsService');
+//const { v4: uuidv4 } = require('uuid'); // Need to install uuid, or just use Firestore auto-ID
 
 // Pricing Config (could be a separate file)
 const PRICING = {
-    BASE_FARE: 2.00,
-    PER_KM: 1.00,
-    PER_MINUTE: 0.25
+    'MOTORBIKE': { BASE: 1.00, PER_KM: 0.50 },
+    '4 SEAT': { BASE: 2.00, PER_KM: 1.00 },
+    '7 SEAT': { BASE: 5.00, PER_KM: 2.00 }
 };
 
 class TripService {
 
-    // 1. Create a Trip Request
-    async createTripRequest(riderId, pickup, dropoff) {
-        // A. Calculate Route Details
-        // origin/dest can be "lat,lng" strings
-        const routeData = await mapsService.calculateRoute(
-            `${pickup.lat},${pickup.lng}`,
-            `${dropoff.lat},${dropoff.lng}`
-        );
+    // 1. Create a Trip Request (Updated with Vehicle Type and Payment Method)
+    async createTripRequest(riderId, pickup, dropoff, vehicleType, paymentMethod) {
+        // Check if user already has an active trip
+        const existingTrip = await this.getCurrentTripForUser(riderId);
+        if (existingTrip) {
+            throw new Error("Cant create new trip: existing active trip found");
+        }
 
+        // Since we don't have actual Maps integration here, we'll mock the route calculation
+        const routeData = {
+            distance: { value: 10000 }, // 10 KM
+            duration: { value: 900 }     // 15 minutes
+        };
+
+        // A. Get route from Maps
+        // const routeData = await mapsService.calculateRoute(
+        //     `${pickup.lat},${pickup.lng}`,
+        //     `${dropoff.lat},${dropoff.lng}`
+        // );
+
+        // Calculate the distance in KM
         const distanceKm = routeData.distance.value / 1000;
-        const durationMin = routeData.duration.value / 60;
-
-        // B. Calculate Fare
-        let fare = PRICING.BASE_FARE +
-            (distanceKm * PRICING.PER_KM) +
-            (durationMin * PRICING.PER_MINUTE);
-
-        fare = Math.round(fare * 100) / 100; // Round to 2 decimal places
+        
+        // B. Calculate Fare based on vehicle type
+        const rates = PRICING[vehicleType] || PRICING['4 SEAT'];
+        let fare = rates.BASE + (distanceKm * rates.PER_KM);
+        fare = Math.round(fare * 100) / 100;
 
         // C. Save to DB
-        // We let Firestore generate the ID or use uuid
         const tripRef = db.collection('trips').doc();
-
         const tripData = {
             riderId,
             pickupLocation: pickup,
             dropoffLocation: dropoff,
+            vehicleType,
+            paymentMethod,
+            paymentStatus: 'PENDING',
             fare,
-            distance: routeData.distance.text,
-            duration: routeData.duration.text,
-            status: 'REQUESTED',
+            distance: routeData.distance.value,
+            duration: routeData.duration.value,
+            status: 'REQUESTED', 
             createdAt: new Date().toISOString()
         };
 
@@ -52,33 +62,185 @@ class TripService {
         return newTrip;
     }
 
-    // 2. Accept a Trip (Driver)
-    async acceptTrip(tripId, driverId) {
+    // 1b. Estimate Trip (Before creating a request)
+    async estimateTrip(pickup, dropoff, vehicleType) {
+        // Since we don't have actual Maps integration here, we'll mock the route calculation
+        const routeData = {
+            distance: { value: 10000 }, // 10 KM
+            duration: { value: 900 }     // 15 minutes
+        };
+        // const routeData = await mapsService.calculateRoute(
+        //     `${pickup.lat},${pickup.lng}`,
+        //     `${dropoff.lat},${dropoff.lng}`
+        // );
+
+        const distanceKm = routeData.distance.value / 1000;
+        const rates = PRICING[vehicleType] || PRICING['4 SEAT'];
+        let fare = rates.BASE + (distanceKm * rates.PER_KM);
+        fare = Math.round(fare * 100) / 100;
+
+        return {
+            pickupLocation: pickup,
+            dropoffLocation: dropoff,
+            vehicleType,
+            fare,
+            distance: routeData.distance.value,
+            duration: routeData.duration.value
+        };
+    }
+
+    // 2. Get Trip History for a specific User
+    async getUserTripHistory(userId) {
+        const snapshot = await db.collection('trips')
+            .where('riderId', '==', userId)
+            .orderBy('createdAt', 'desc')
+            .get();
+
+        return snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
+    }
+
+    // 2c. Get Trip History for a specific Driver
+    async getDriverTripHistory(driverId) {
+        const snapshot = await db.collection('trips')
+            .where('driverId', '==', driverId)
+            .orderBy('createdAt', 'desc')
+            .get();
+
+        return snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
+    }
+
+    // 2b. Get current (active) trip for a user
+    async getCurrentTripForUser(userId) {
+        const query = db.collection('trips')
+            .where('riderId', '==', userId)
+            .where('status', 'in', ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS'])
+            .orderBy('createdAt', 'desc')
+            .limit(1);
+
+        const snapshot = await query.get();
+        if (snapshot.empty) return null;
+        const doc = snapshot.docs[0];
+        return new Trip(doc.id, doc.data());
+    }
+
+    // 2d. Get available trips for drivers (status REQUESTED)
+    async getAvailableTrips(limit = 50) {
+        const snapshot = await db.collection('trips')
+            .where('status', '==', 'REQUESTED')
+            .orderBy('createdAt', 'desc')
+            .limit(limit)
+            .get();
+
+        return snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
+    }
+
+    // 3. Cancel Trip (User Action)
+    async cancelTrip(tripId, userId) {
         const tripRef = db.collection('trips').doc(tripId);
         const doc = await tripRef.get();
 
         if (!doc.exists) throw new Error("Trip not found");
-        if (doc.data().status !== 'REQUESTED') throw new Error("Trip is no longer available");
+        if (doc.data().riderId !== userId) throw new Error("Unauthorized");
+        
+        // LOG
+        console.log(`Cancelling trip ${tripId} for user ${userId}`);
+        
+        // Can only cancel if status is REQUESTED or ACCEPTED
+        const currentStatus = doc.data().status;
+        if (!['REQUESTED', 'ACCEPTED'].includes(currentStatus)) {
+            throw new Error(`Cannot cancel a trip with status ${currentStatus}. Only REQUESTED or ACCEPTED trips can be cancelled.`);
+        }
+
+        // Hard delete the trip document
+        await tripRef.delete();
+        return { success: true, deleted: true };
+    }
+
+    // 4. Update Status (Driver Action - with Payment Logic)
+    async updateStatus(tripId, status, paymentStatus) {
+        const tripRef = db.collection('trips').doc(tripId);
+        const updateData = { status };
+
+        if (paymentStatus) {
+            updateData.paymentStatus = paymentStatus;
+        }
+
+        if (status === 'COMPLETED') {
+            updateData.completedAt = new Date().toISOString();
+            // Logic for E-Wallet payment would be triggered here
+        }
+
+        await tripRef.update(updateData);
+        return { success: true, status, paymentStatus: updateData.paymentStatus };
+    }
+
+    // 4a. Driver accepts a trip
+    async acceptTrip(tripId, driverId) {
+        const tripRef = db.collection('trips').doc(tripId);
+        const doc = await tripRef.get();
+        if (!doc.exists) throw new Error('Trip not found');
+
+        const data = doc.data();
+        if (data.status !== 'REQUESTED') {
+            throw new Error(`Cannot accept trip with status ${data.status}`);
+        }
 
         await tripRef.update({
             status: 'ACCEPTED',
-            driverId: driverId
+            driverId,
+            acceptedAt: new Date().toISOString()
         });
 
-        return { success: true, tripId, status: 'ACCEPTED', driverId };
+        const updated = await tripRef.get();
+        return new Trip(tripId, updated.data());
     }
 
-    // 3. Update Status (Progress/Complete)
-    async updateStatus(tripId, status) {
-        const VALID_STATUSES = ['IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
-        if (!VALID_STATUSES.includes(status)) throw new Error("Invalid status");
+    // 4b. Driver marks pickup (arrived / ride started)
+    async markTripPickup(tripId, driverId) {
+        const tripRef = db.collection('trips').doc(tripId);
+        const doc = await tripRef.get();
+        if (!doc.exists) throw new Error('Trip not found');
 
-        await db.collection('trips').doc(tripId).update({ status });
-        return { success: true, tripId, status };
+        const data = doc.data();
+        if (data.driverId !== driverId) throw new Error('Unauthorized');
+        if (data.status !== 'ACCEPTED') {
+            throw new Error(`Cannot mark pickup when status is ${data.status}`);
+        }
+
+        await tripRef.update({
+            status: 'IN_PROGRESS',
+            pickupAt: new Date().toISOString()
+        });
+
+        const updated = await tripRef.get();
+        return new Trip(tripId, updated.data());
     }
 
-    // 4. Get Trip Details
+    // 4c. Driver marks trip complete
+    async markTripComplete(tripId, driverId) {
+        const tripRef = db.collection('trips').doc(tripId);
+        const doc = await tripRef.get();
+        if (!doc.exists) throw new Error('Trip not found');
+
+        const data = doc.data();
+        if (data.driverId !== driverId) throw new Error('Unauthorized');
+        if (data.status !== 'IN_PROGRESS') {
+            throw new Error(`Cannot complete trip when status is ${data.status}`);
+        }
+
+        await tripRef.update({
+            status: 'COMPLETED',
+            completedAt: new Date().toISOString(),
+            paymentStatus: data.paymentStatus || 'PENDING'
+        });
+
+        const updated = await tripRef.get();
+        return new Trip(tripId, updated.data());
+    }
+    
+    // 5. Get Trip Details by ID
     async getTrip(tripId) {
+        console.log("Fetching trip with ID:", tripId);
         const doc = await db.collection('trips').doc(tripId).get();
         if (!doc.exists) throw new Error("Trip not found");
         return new Trip(tripId, doc.data());
