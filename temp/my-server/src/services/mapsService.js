@@ -1,41 +1,63 @@
 const axios = require('axios');
 
 class MapsService {
+    constructor() {
+        this.apiKey = process.env.GRAPHHOPPER_API_KEY;
+        this.baseUrl = process.env.GRAPHHOPPER_BASE_URL || 'https://graphhopper.com/api/1/route';
+    }
+
+    formatPoint(point) {
+        if (typeof point === 'string') return point;
+        if (point && typeof point.lat !== 'undefined' && typeof point.lng !== 'undefined') {
+            return `${point.lat},${point.lng}`;
+        }
+        throw new Error('Invalid point; expected {lat,lng} or "lat,lng" string');
+    }
+
     async calculateRoute(origin, destination) {
-        if (!process.env.GOOGLE_MAPS_API_KEY) {
-            throw new Error("Missing Google Maps API Key");
+        if (!this.apiKey) {
+            throw new Error('GRAPHHOPPER_API_KEY is missing');
         }
 
-        const url = `https://maps.googleapis.com/maps/api/distancematrix/json`;
+        const originStr = this.formatPoint(origin);
+        const destStr = this.formatPoint(destination);
 
         try {
-            const response = await axios.get(url, {
-                params: {
-                    origins: origin,
-                    destinations: destination,
-                    key: process.env.GOOGLE_MAPS_API_KEY
-                }
+            const params = new URLSearchParams();
+            params.append('point', originStr);
+            params.append('point', destStr);
+            params.append('vehicle', 'car');
+            params.append('locale', 'en');
+            params.append('key', this.apiKey);
+            params.append('type', 'json');
+            params.append('points_encoded', 'false');
+
+            const response = await axios.get(this.baseUrl, {
+                params,
+                timeout: 8000
             });
 
-            if (response.data.status !== 'OK') {
-                throw new Error(response.data.error_message || "Failed to fetch route data");
-            }
-
-            // Extract the first element
-            const element = response.data.rows[0].elements[0];
-
-            if (element.status !== 'OK') {
-                throw new Error("No route found between these locations");
+            const path = response.data?.paths?.[0];
+            if (!path) {
+                throw new Error('No route returned from GraphHopper');
             }
 
             return {
-                distance: element.distance, // { text: "10 km", value: 10000 }
-                duration: element.duration  // { text: "15 mins", value: 900 }
+                distance: {
+                    text: `${(path.distance / 1000).toFixed(1)} km`,
+                    value: path.distance
+                },
+                duration: {
+                    text: `${Math.round(path.time / 60000)} mins`,
+                    value: Math.round(path.time / 1000)
+                }
             };
-
         } catch (error) {
-            console.error("Maps Service Error:", error.message);
-            throw error;
+            const status = error.response?.status;
+            const body = error.response?.data;
+            console.error('GraphHopper Error:', status, body || error.message);
+            const detail = status ? `status ${status}` : error.message;
+            throw new Error(`Failed to calculate route via GraphHopper (${detail})`);
         }
     }
 }

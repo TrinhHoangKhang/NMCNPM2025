@@ -1,6 +1,6 @@
 const { db } = require('../config/firebaseConfig');
 const Trip = require('../models/Trip');
-//const mapsService = require('./mapsService');
+const mapsService = require('./mapsService');
 //const { v4: uuidv4 } = require('uuid'); // Need to install uuid, or just use Firestore auto-ID
 
 // Pricing Config (could be a separate file)
@@ -20,17 +20,7 @@ class TripService {
             throw new Error("Cant create new trip: existing active trip found");
         }
 
-        // Since we don't have actual Maps integration here, we'll mock the route calculation
-        const routeData = {
-            distance: { value: 10000 }, // 10 KM
-            duration: { value: 900 }     // 15 minutes
-        };
-
-        // A. Get route from Maps
-        // const routeData = await mapsService.calculateRoute(
-        //     `${pickup.lat},${pickup.lng}`,
-        //     `${dropoff.lat},${dropoff.lng}`
-        // );
+        const routeData = await mapsService.calculateRoute(pickup, dropoff);
 
         // Calculate the distance in KM
         const distanceKm = routeData.distance.value / 1000;
@@ -64,15 +54,7 @@ class TripService {
 
     // 1b. Estimate Trip (Before creating a request)
     async estimateTrip(pickup, dropoff, vehicleType) {
-        // Since we don't have actual Maps integration here, we'll mock the route calculation
-        const routeData = {
-            distance: { value: 10000 }, // 10 KM
-            duration: { value: 900 }     // 15 minutes
-        };
-        // const routeData = await mapsService.calculateRoute(
-        //     `${pickup.lat},${pickup.lng}`,
-        //     `${dropoff.lat},${dropoff.lng}`
-        // );
+        const routeData = await mapsService.calculateRoute(pickup, dropoff);
 
         const distanceKm = routeData.distance.value / 1000;
         const rates = PRICING[vehicleType] || PRICING['4 SEAT'];
