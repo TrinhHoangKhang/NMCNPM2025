@@ -66,6 +66,7 @@ const mapRoutes = require('./routes/mapRoutes');
 const driverRoutes = require('./routes/driverRoutes');
 const tripRoutes = require('./routes/tripRoutes');
 const userRoutes = require('./routes/userRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 // ==========================================
 // 4. ROUTE DEFINITIONS
@@ -77,6 +78,7 @@ app.use('/api/maps', mapRoutes);
 app.use('/api/drivers', driverRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health Check
 app.get('/', (req, res) => {

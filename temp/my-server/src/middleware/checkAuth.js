@@ -20,8 +20,9 @@ module.exports = (req, res, next) => {
 
         // 5. Success! Attach user data to the request
         // Now valid, so we let the controller know WHO this is.
-        req.userData = { 
-            userId: decodedToken.userId, 
+        // JWT payload uses 'id' (from authController login), map it to 'uid'
+        req.user = { 
+            uid: decodedToken.id, 
             role: decodedToken.role 
         };
 
