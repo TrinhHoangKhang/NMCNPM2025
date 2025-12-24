@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -55,4 +56,12 @@ dependencies {
     implementation("org.osmdroid:osmdroid-android:6.1.16")
     implementation("com.github.MKergall:osmbonuspack:6.9.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
+    // Firebase (BOM + Auth)
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx") // optional
+    implementation("com.google.android.gms:play-services-auth:20.7.0") // optional: Google Sign-In
+
+    // hỗ trợ dùng Tasks.await() với Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.1.1")
 }

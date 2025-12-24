@@ -6,11 +6,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white"
-
     android:paddingTop="100dp"
     android:paddingBottom="60dp"
     android:paddingHorizontal="24dp"
-
     tools:context=".ui.auth.LoginActivity">
 
     <TextView
@@ -38,6 +36,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
 
+    <!-- PHONE INPUT (giữ nguyên) -->
     <LinearLayout
         android:id="@+id/layoutPhoneInput"
         android:layout_width="match_parent"
@@ -117,6 +116,85 @@
         <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="#E0E0E0" />
     </LinearLayout>
 
+    <!-- Toggle để hiển thị form Email -->
+    <TextView
+        android:id="@+id/tvEmailLogin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Đăng nhập bằng Email"
+        android:textColor="@color/purple_500"
+        android:textSize="14sp"
+        android:layout_marginTop="12dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintTop_toBottomOf="@+id/layoutDivider"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- EMAIL INPUT - ẩn mặc định -->
+    <LinearLayout
+        android:id="@+id/layoutEmailInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginTop="12dp"
+        app:layout_constraintTop_toBottomOf="@+id/tvEmailLogin">
+
+        <EditText
+            android:id="@+id/edtEmail"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_input_field"
+            android:hint="Email"
+            android:inputType="textEmailAddress"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/black"
+            android:textColorHint="#9E9E9E"
+            android:textSize="16sp" />
+
+        <Space android:layout_width="match_parent" android:layout_height="8dp"/>
+
+        <EditText
+            android:id="@+id/edtPassword"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_input_field"
+            android:hint="Mật khẩu"
+            android:inputType="textPassword"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/black"
+            android:textColorHint="#9E9E9E"
+            android:textSize="16sp" />
+
+        <Space android:layout_width="match_parent" android:layout_height="12dp"/>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnLogin"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_button_gradient"
+            android:text="Đăng nhập bằng Email"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvRegister"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Chưa có tài khoản? Đăng ký ngay"
+            android:textColor="#FF5722"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:padding="8dp"
+            app:layout_constraintTop_toBottomOf="@+id/tvTerms"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+    </LinearLayout>
+
+    <!-- Nút Google hiện có -->
     <LinearLayout
         android:id="@+id/btnGoogle"
         android:layout_width="match_parent"
@@ -127,7 +205,7 @@
         android:clickable="true"
         android:focusable="true"
         android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@+id/layoutDivider">
+        app:layout_constraintTop_toBottomOf="@+id/layoutEmailInput">
 
         <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_google" />
         <TextView
@@ -164,7 +242,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvTerms" />
-
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
