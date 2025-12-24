@@ -67,7 +67,8 @@ class TripService {
             vehicleType,
             fare,
             distance: routeData.distance.value,
-            duration: routeData.duration.value
+            duration: routeData.duration.value,
+            path: routeData.geometry
         };
     }
 

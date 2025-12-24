@@ -17,8 +17,17 @@ router.post('/request', tripController.requestTrip);
 // Input: none (Chỉ cần jwt token)
 router.get('/current', tripController.getCurrentTrip);
 
-// POST /api/trips/estimate - Ước tính chi phí, khoảng cách và thời gian chuyến đi (TRƯỚC KHI BẤM XÁC NHẬN - REQUEST)
+// POST /api/trips/estimate - Ước tính chi phí, khoảng cách, thời gian và lộ trình chuyến đi (TRƯỚC KHI BẤM XÁC NHẬN - REQUEST)
 // Input: { pickupLocation: { lat, lng }, dropoffLocation: { lat, lng }, vehicleType: "MOTORBIKE|4 SEAT|7 SEAT" }
+// NOTE: Path trả về sẽ có dạng:
+// {
+//   "type": "LineString",
+//   "coordinates": [
+//     { "lat": 10.1234, "lng": 106.1234 },
+//     { "lat": 10.1240, "lng": 106.1250 },
+//     ...
+//   ]
+// }
 router.post('/estimate', tripController.getTripEstimate);
 
 // GET /api/trips/history - Trả về lịch sử các chuyến đi của người dùng

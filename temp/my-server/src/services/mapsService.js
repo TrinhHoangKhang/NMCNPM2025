@@ -42,6 +42,10 @@ class MapsService {
                 throw new Error('No route returned from GraphHopper');
             }
 
+            // GraphHopper returns GeoJSON when points_encoded=false; coordinates are [lng, lat]
+            const coordinatesLngLat = path.points?.coordinates || [];
+            const coordinatesLatLng = coordinatesLngLat.map(([lng, lat]) => ({ lat, lng }));
+
             return {
                 distance: {
                     text: `${(path.distance / 1000).toFixed(1)} km`,
@@ -50,7 +54,12 @@ class MapsService {
                 duration: {
                     text: `${Math.round(path.time / 60000)} mins`,
                     value: Math.round(path.time / 1000)
-                }
+                },
+                geometry: {
+                    type: 'LineString',
+                    coordinates: coordinatesLatLng
+                },
+                bbox: path.bbox || null
             };
         } catch (error) {
             const status = error.response?.status;
