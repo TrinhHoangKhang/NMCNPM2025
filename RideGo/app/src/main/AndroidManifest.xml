@@ -61,6 +61,10 @@
             android:name=".ui.promotion.PromotionActivity"
             android:exported="false"/>
 
+        <activity
+            android:name=".ui.profile.ProfileActivity"
+            android:exported="false"/>
+
     </application>
 
 </manifest>

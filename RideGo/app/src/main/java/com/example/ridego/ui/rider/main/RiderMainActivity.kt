@@ -55,7 +55,8 @@ class RiderMainActivity : AppCompatActivity() {
 
         // Nút Tài khoản (btnAccount)
         binding.btnAccount.setOnClickListener {
-            Toast.makeText(this, "Tính năng Tài khoản đang phát triển", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, com.example.ridego.ui.profile.ProfileActivity::class.java)
+            startActivity(intent)
         }
 
         // Nút Đặt xe to ở giữa (fabBooking)
