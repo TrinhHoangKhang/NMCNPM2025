@@ -65,6 +65,10 @@
             android:name=".ui.profile.ProfileActivity"
             android:exported="false"/>
 
+        <activity
+            android:name=".ui.booking.BookingActivity"
+            android:exported="false"/>
+
     </application>
 
 </manifest>
