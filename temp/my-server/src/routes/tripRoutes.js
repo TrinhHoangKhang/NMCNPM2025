@@ -11,6 +11,7 @@ router.use(checkAuth);
 //====== RIDER SIDE ======//
 // POST /api/trips/request - Người dùng yêu cầu tạo một chuyến đi mới
 // Input: { pickupLocation: { lat, lng }, dropoffLocation: { lat, lng }, vehicleType: "MOTORBIKE|4 SEAT|7 SEAT", paymentMethod: "CASH|WALLET" }
+// NOTE: Hàm này trả về kết quả của route /estimate luôn 
 router.post('/request', tripController.requestTrip);
 
 // GET /api/trips/current - Lấy thông tin chuyến đi hiện tại mới vừa request
