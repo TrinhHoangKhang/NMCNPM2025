@@ -9,6 +9,7 @@ class Trip {
         this.fare = data.fare || 0;
         this.distance = data.distance || 0; // in meters
         this.duration = data.duration || 0; // in seconds
+        this.path = data.path || null; // GeoJSON-like LineString with {lat,lng} coordinates
         this.status = data.status || 'REQUESTED'; // REQUESTED, ACCEPTED, IN_PROGRESS, COMPLETED
         this.createdAt = data.createdAt || new Date().toISOString();
         this.completedAt = data.completedAt || null;
@@ -28,6 +29,7 @@ class Trip {
             fare: this.fare,
             distance: this.distance,
             duration: this.duration,
+            path: this.path,
             status: this.status,
             createdAt: this.createdAt,
             completedAt: this.completedAt,
