@@ -22,13 +22,13 @@ We welcome contributions to the **NMCNPM2025** Driver Management Platform! This 
     We use a workspace structure. You can install all dependencies from the root or individual packages.
     ```bash
     # For the backend specifically
-    cd my-server
+    cd server
     npm install
     ```
 
 3.  **Environment Configuration**
     You must configure your environment variables for the server to run.
-    1.  Copy `.env.example` to `.env` inside `my-server/`.
+    1.  Copy `.env.example` to `.env` inside `server/`.
     2.  Fill in the required keys.
     > See [CONFIG.md](CONFIG.md) for a detailed list of required variables.
 
@@ -36,7 +36,7 @@ We welcome contributions to the **NMCNPM2025** Driver Management Platform! This 
 
 To start the backend server in development mode:
 ```bash
-cd my-server
+cd server
 npm run dev
 ```
 The server will start on `http://localhost:3000`.
@@ -46,7 +46,7 @@ The server will start on `http://localhost:3000`.
 We use **Jest** for unit testing. Before submitting a PR, ensure all tests pass.
 
 ```bash
-cd my-server
+cd server
 npm test
 ```
 

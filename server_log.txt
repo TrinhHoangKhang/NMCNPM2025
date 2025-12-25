@@ -1,0 +1,10 @@
+[dotenv@17.2.3] injecting env (8) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+Failed to initialize Firebase: Failed to parse private key: Error: Too few bytes to parse DER.
+WARNING: Firebase is not properly configured. Using mock data.
+WARNING: GEMINI_API_KEY is not set. AI Features will be disabled.
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+Server running on port 3002
+Environment: development
+[0mGET / [32m200[0m 12.303 ms - 26[0m
+[0mPOST /api/fares/estimate [33m401[0m 7.732 ms - 31[0m

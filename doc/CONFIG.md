@@ -1,8 +1,8 @@
 # Configuration
 
-This project uses environment variables for configuration. Copy `.env.example` to `.env` in the `my-server` directory.
+This project uses environment variables for configuration. Copy `.env.example` to `.env` in the `server` directory.
 
-## Backend (`my-server/.env`)
+## Backend (`server/.env`)
 
 | Variable | Description | Required | Source |
 | :--- | :--- | :--- | :--- |
