@@ -12,7 +12,20 @@
           "package_name": "com.example.ridego"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "185412908380-8qmbji6f2fkv662qhoflpv4ob49j8amr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ridego",
+            "certificate_hash": "c176f8302c1197d53b4b2faa664a4b2c39cb08d4"
+          }
+        },
+        {
+          "client_id": "185412908380-5vjdgvgcitj6el7cdt1nl8mvr07c87nf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCwk1Xrt7OIfoR9kF7GPzGILcs6L3Za3A4"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "185412908380-5vjdgvgcitj6el7cdt1nl8mvr07c87nf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

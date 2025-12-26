@@ -6,11 +6,17 @@ import android.os.CountDownTimer
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.ridego.data.AuthRepository
 import com.example.ridego.databinding.ActivityLoginBinding
 import com.example.ridego.ui.rider.main.RiderMainActivity
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
@@ -21,12 +27,30 @@ class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private val viewModel: AuthViewModel by viewModels { AuthViewModelFactory(AuthRepository()) }
+    private lateinit var googleSignInClient: GoogleSignInClient
 
     private var cooldownTimer: CountDownTimer? = null
     private val defaultCooldownMs: Long = 60_000L
 
     private val isAddPhoneMode: Boolean
         get() = intent.getStringExtra("MODE") == "ADD_PHONE"
+
+    private val googleSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            account?.idToken?.let { idToken ->
+                viewModel.signInWithGoogle(idToken)
+            } ?: run {
+                Toast.makeText(this, "Không lấy được ID Token", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: ApiException) {
+            Toast.makeText(this, "Đăng nhập Google thất bại: ${e.message}", Toast.LENGTH_LONG).show()
+            Log.e(TAG, "Google sign in failed", e)
+        }
+    }
 
     private val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
         override fun onVerificationCompleted(credential: PhoneAuthCredential) {
@@ -73,6 +97,13 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Khởi tạo Google Sign-In
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(com.example.ridego.R.string.google_web_client_id))
+            .requestEmail()
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
         setupEvents()
         observeViewModel()
     }
@@ -88,15 +119,19 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.tvEmailLogin.setOnClickListener {
-            if (binding.layoutEmailInput.visibility == View.GONE) {
-                binding.layoutEmailInput.visibility = View.VISIBLE
-                binding.layoutPhoneInput.visibility = View.GONE
-                binding.btnContinue.visibility = View.GONE
-            } else {
-                binding.layoutEmailInput.visibility = View.GONE
-                binding.layoutPhoneInput.visibility = View.VISIBLE
-                binding.btnContinue.visibility = View.VISIBLE
-            }
+            binding.layoutEmailInput.visibility = View.VISIBLE
+            binding.layoutPhoneInput.visibility = View.GONE
+            binding.btnContinue.visibility = View.GONE
+            binding.tvEmailLogin.visibility = View.GONE
+            binding.layoutDivider.visibility = View.GONE
+        }
+
+        binding.tvBackToPhone.setOnClickListener {
+            binding.layoutEmailInput.visibility = View.GONE
+            binding.layoutPhoneInput.visibility = View.VISIBLE
+            binding.btnContinue.visibility = View.VISIBLE
+            binding.tvEmailLogin.visibility = View.VISIBLE
+            binding.layoutDivider.visibility = View.VISIBLE
         }
 
         binding.btnLogin.setOnClickListener {
@@ -113,8 +148,8 @@ class LoginActivity : AppCompatActivity() {
             startActivity(Intent(this, RegisterActivity::class.java))
         }
 
-        binding.tvSkipLogin.setOnClickListener {
-            navigateToHome()
+        binding.btnGoogle.setOnClickListener {
+            signInWithGoogle()
         }
     }
 
@@ -232,6 +267,14 @@ class LoginActivity : AppCompatActivity() {
             return if (withoutZero.all { it.isDigit() }) "+$defaultCountryCode$withoutZero" else null
         }
         return if (s.all { it.isDigit() }) "+$defaultCountryCode$s" else null
+    }
+
+    private fun signInWithGoogle() {
+        // Sign out trước để luôn hiển thị màn hình chọn tài khoản
+        googleSignInClient.signOut().addOnCompleteListener(this) {
+            val signInIntent = googleSignInClient.signInIntent
+            googleSignInLauncher.launch(signInIntent)
+        }
     }
 
     companion object {

@@ -37,6 +37,18 @@ class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
         }
     }
 
+    fun signInWithGoogle(idToken: String) {
+        _authState.value = AuthState.Loading
+        viewModelScope.launch {
+            val res = repo.signInWithGoogle(idToken)
+            if (res.isSuccess) {
+                _authState.value = AuthState.Success(res.getOrThrow())
+            } else {
+                _authState.value = AuthState.Error(res.exceptionOrNull()?.message ?: "Lỗi đăng nhập Google")
+            }
+        }
+    }
+
     fun register(name: String?, email: String, password: String) {
         _authState.value = AuthState.Loading
         viewModelScope.launch {

@@ -2,6 +2,7 @@ package com.example.ridego.data
 
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
@@ -40,6 +41,28 @@ class AuthRepository(
         return try {
             val result = auth.signInWithEmailAndPassword(email, password).await()
             val user = result.user ?: throw Exception("No user")
+            Result.success(UserProfile(user.uid, user.displayName, user.email))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // Sign in with Google
+    suspend fun signInWithGoogle(idToken: String): Result<UserProfile> {
+        return try {
+            val credential = GoogleAuthProvider.getCredential(idToken, null)
+            val result = auth.signInWithCredential(credential).await()
+            val user = result.user ?: throw Exception("No user")
+
+            // Lưu thông tin vào Firestore
+            val profile = mapOf(
+                "uid" to user.uid,
+                "name" to (user.displayName ?: ""),
+                "email" to (user.email ?: ""),
+                "photoUrl" to (user.photoUrl?.toString() ?: "")
+            )
+            db.collection("users").document(user.uid).set(profile).await()
+
             Result.success(UserProfile(user.uid, user.displayName, user.email))
         } catch (e: Exception) {
             Result.failure(e)

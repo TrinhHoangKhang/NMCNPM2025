@@ -45,6 +45,10 @@ class RegisterActivity : AppCompatActivity() {
                 viewModel.register(name, email, password)  // Bình thường
             }
         }
+
+        binding.tvLogin.setOnClickListener {
+            finish()
+        }
     }
     private fun observeViewModel() {
         viewModel.authState.observe(this, Observer { state ->
