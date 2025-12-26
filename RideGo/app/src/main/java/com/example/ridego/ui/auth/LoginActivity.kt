@@ -166,10 +166,22 @@ class LoginActivity : AppCompatActivity() {
                     } else {
                         Toast.makeText(this, "Đăng nhập thành công", Toast.LENGTH_SHORT).show()
                         val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-                        if (currentUser?.displayName.isNullOrBlank()) {
-                            startActivity(Intent(this, CompleteProfileActivity::class.java))
-                        } else {
-                            navigateToHome()
+                        
+                        // Kiểm tra xem cần hoàn thiện thông tin không
+                        when {
+                            currentUser?.displayName.isNullOrBlank() -> {
+                                // Chưa có tên -> hoàn thiện profile
+                                startActivity(Intent(this, CompleteProfileActivity::class.java))
+                            }
+                            currentUser?.phoneNumber.isNullOrBlank() -> {
+                                // Chưa có SĐT (đăng nhập bằng Google/Email) -> yêu cầu thêm SĐT
+                                val intent = Intent(this, AddPhoneActivity::class.java)
+                                startActivity(intent)
+                            }
+                            else -> {
+                                // Đã đủ thông tin -> vào app
+                                navigateToHome()
+                            }
                         }
                     }
                     finishAffinity()
