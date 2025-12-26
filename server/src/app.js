@@ -16,11 +16,14 @@ import authRoutes from './routes/authRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import mapRoutes from './routes/mapRoutes.js';
 import driverRoutes from './routes/driverRoutes.js';
-import tripRoutes from './routes/tripRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import fareRoutes from './routes/fareRoutes.js';
 import rideRoutes from './routes/rideRoutes.js';
+import devRoutes from './routes/devRoutes.js';
+
+// Middleware
+import { notFoundHandler, errorHandler } from './middleware/errorMiddleware.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -68,15 +71,15 @@ app.use(passport.session());
 // 4. ROUTE DEFINITIONS
 // ==========================================
 
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/maps', mapRoutes);
 app.use('/api/drivers', driverRoutes);
-app.use('/api/trips', tripRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/fares', fareRoutes);
 app.use('/api/rides', rideRoutes);
+app.use('/api/dev', devRoutes);
 
 // Health Check
 app.get('/', (req, res) => {
@@ -87,13 +90,10 @@ app.get('/', (req, res) => {
 // 5. ERROR HANDLING
 // ==========================================
 
-app.use((err, req, res, next) => {
-    console.error("Server Error:", err.stack);
-    res.status(500).json({
-        success: false,
-        message: "Internal Server Error",
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
-});
+// Handler for unknown API routes (404)
+app.use(notFoundHandler);
+
+// Global Error Handler
+app.use(errorHandler);
 
 export default app;

@@ -1,0 +1,12 @@
+nohup: ignoring input
+
+> client-ride@0.0.0 dev
+> vite --port 5173 --host 0.0.0.0
+
+
+  VITE v7.2.7  ready in 145 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://10.0.109.120:5173/
+  ➜  Network: http://172.18.0.1:5173/
+  ➜  Network: http://192.168.12.1:5173/

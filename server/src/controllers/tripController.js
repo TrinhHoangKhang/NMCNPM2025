@@ -1,5 +1,13 @@
 import tripService from '../services/tripService.js';
 
+const normalizeLocation = (loc) => {
+    if (!loc) return null;
+    const lat = loc.lat;
+    const lng = loc.lng || loc.long || loc.lon;
+    if (lat === undefined || lng === undefined) return null;
+    return { lat, lng };
+};
+
 class TripController {
     // 1. POST /api/trips/request
     async requestTrip(req, res) {
@@ -10,20 +18,13 @@ class TripController {
                 vehicleType, paymentMethod, fare_id
             } = req.body;
 
-            const finalPickup = pickupLocation || pickup_location;
-            const finalDropoff = dropoffLocation || destination_location;
+            const finalPickup = normalizeLocation(pickupLocation || pickup_location);
+            const finalDropoff = normalizeLocation(dropoffLocation || destination_location);
 
             // Validate required fields
             if (!finalPickup || !finalDropoff || !vehicleType || !paymentMethod) {
                 return res.status(400).json({
-                    error: "Missing required fields: pickupLocation, dropoffLocation, vehicleType, paymentMethod"
-                });
-            }
-
-            // Validate location structure
-            if (!finalPickup.lat || !finalPickup.lng || !finalDropoff.lat || !finalDropoff.lng) {
-                return res.status(400).json({
-                    error: "Location objects must contain lat and lng properties"
+                    error: "Missing or invalid required fields: pickupLocation, dropoffLocation, vehicleType, paymentMethod"
                 });
             }
 
@@ -51,11 +52,11 @@ class TripController {
         try {
             const { pickupLocation, pickup_location, dropoffLocation, destination_location, vehicleType } = req.body;
 
-            const finalPickup = pickupLocation || pickup_location;
-            const finalDropoff = dropoffLocation || destination_location;
+            const finalPickup = normalizeLocation(pickupLocation || pickup_location);
+            const finalDropoff = normalizeLocation(dropoffLocation || destination_location);
 
             if (!finalPickup || !finalDropoff) {
-                return res.status(400).json({ error: "Missing pickup or destination location" });
+                return res.status(400).json({ error: "Missing or invalid pickup or destination location" });
             }
 
             const estimate = await tripService.estimateTrip(

@@ -42,20 +42,28 @@ export const loginUser = async (email, password) => {
 
     let firebaseUid;
 
-    try {
-        const response = await axios.post(verifyUrl, {
-            email: email,
-            password: password,
-            returnSecureToken: true
-        });
+    // IF WE ARE IN MOCK MODE (No real Firebase Key)
+    if (!apiKey || apiKey === 'YOUR_FIREBASE_WEB_API_KEY') {
+        console.warn("MOCK LOGIN: Using mock UID for", email);
+        firebaseUid = 'mock-user-id';
+    } else {
+        try {
+            const response = await axios.post(verifyUrl, {
+                email: email,
+                password: password,
+                returnSecureToken: true
+            });
 
-        // If successful, Firebase returns the localId (UID)
-        firebaseUid = response.data.localId;
+            // If successful, Firebase returns the localId (UID)
+            firebaseUid = response.data.localId;
 
-    } catch (error) {
-        // If axios fails (wrong password), throw a specific error
-        console.error("Firebase Auth Error:", error.response?.data?.error?.message);
-        throw new Error("INVALID_LOGIN");
+        } catch (error) {
+            // If axios fails (wrong password), throw a specific error
+            console.error("Firebase Auth Error:", error.response?.data?.error?.message);
+            // Even if it fails, maybe allow 'test@example.com' with 'password' for testing? 
+            // Better to just throw if key is provided but login fails.
+            throw new Error("INVALID_LOGIN");
+        }
     }
 
     // STEP 2: Fetch extra details from YOUR Firestore Database

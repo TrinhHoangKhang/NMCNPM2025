@@ -1,4 +1,31 @@
 import driverService from '../services/driverService.js';
+import locationService from '../services/locationService.js';
+
+export const createDriver = async (req, res) => {
+    try {
+        const uid = req.user.uid;
+        const driver = await driverService.registerDriver(uid, req.body);
+        res.status(201).json({ success: true, data: driver });
+    } catch (error) {
+        res.status(400).json({ success: false, error: error.message });
+    }
+};
+
+export const getNearbyDrivers = async (req, res) => {
+    try {
+        const { lat, lng, radius } = req.query;
+        if (!lat || !lng) {
+            return res.status(400).json({ success: false, error: "Latitude and Longitude are required" });
+        }
+        const drivers = await locationService.findNearbyDrivers(
+            { lat: parseFloat(lat), lng: parseFloat(lng) },
+            radius ? parseInt(radius) : 5000
+        );
+        res.status(200).json(drivers); // Return array directly to match frontend expectation
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
 
 export const getDriver = async (req, res) => {
     try {

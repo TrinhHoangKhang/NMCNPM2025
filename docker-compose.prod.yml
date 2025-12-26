@@ -13,7 +13,7 @@ services:
   # Instance 1: User (Rider)
   client-user:
     build:
-      context: ./client
+      context: ./client-ride
       target: production
       args:
         - VITE_API_URL=http://localhost:5000
@@ -26,7 +26,7 @@ services:
   # Instance 2: Driver
   client-driver:
     build:
-      context: ./client
+      context: ./client-driver
       target: production
       args:
         - VITE_API_URL=http://localhost:5000
@@ -39,7 +39,7 @@ services:
   # Instance 3: Admin
   client-admin:
     build:
-      context: ./client
+      context: ./client-ride
       target: production
       args:
         - VITE_API_URL=http://localhost:5000

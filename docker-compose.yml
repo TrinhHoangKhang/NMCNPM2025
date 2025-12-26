@@ -17,49 +17,64 @@ services:
   # Instance 1: User (Rider)
   client-user:
     build: 
-      context: ./client
+      context: ./client-ride
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://localhost:3000
+      - VITE_API_URL=http://localhost:3002
       - VITE_INSTANCE_TYPE=user
     depends_on:
       - server
     volumes:
-      - ./client:/app
+      - ./client-ride:/app
       - /app/node_modules
 
   # Instance 2: Driver
   client-driver:
     build: 
-      context: ./client
+      context: ./client-driver
       dockerfile: Dockerfile
     ports:
       - "5174:5173"
     environment:
-      - VITE_API_URL=http://localhost:3000
+      - VITE_API_URL=http://localhost:3002
       - VITE_INSTANCE_TYPE=driver
     depends_on:
       - server
     volumes:
-      - ./client:/app
+      - ./client-driver:/app
       - /app/node_modules
 
-  # Instance 3: Admin
+  # Instance 3: Admin (Web Client based)
   client-admin:
     build: 
-      context: ./client
+      context: ./client-ride
       dockerfile: Dockerfile
     ports:
       - "5175:5173"
     environment:
-      - VITE_API_URL=http://localhost:3000
+      - VITE_API_URL=http://localhost:3002
       - VITE_INSTANCE_TYPE=admin
     depends_on:
       - server
     volumes:
-      - ./client:/app
+      - ./client-ride:/app
+      - /app/node_modules
+
+  # Dedicated Admin Console (Localhost only tool)
+  admin-console:
+    build: 
+      context: ./admin-console
+      dockerfile: Dockerfile
+    ports:
+      - "5176:5174"
+    environment:
+      - VITE_API_URL=http://localhost:3002/api
+    depends_on:
+      - server
+    volumes:
+      - ./admin-console:/app
       - /app/node_modules
 
   mongo:
