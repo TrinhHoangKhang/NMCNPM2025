@@ -15,15 +15,11 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             const data = await loginUser(email, password);
-            // Attempt to recover role from storage if exists (hack for now)
-            const storedInfo = JSON.parse(localStorage.getItem(getKey('userInfo')) || '{}');
-            const role = storedInfo.role || 'RIDER'; // Default to RIDER if unknown
-
-            const userWithRole = { ...data.user, role };
-            setUser(userWithRole);
+            const loggedInUser = data.user;
+            setUser(loggedInUser);
 
             // Persist for page reloads
-            localStorage.setItem(getKey('userInfo'), JSON.stringify(userWithRole));
+            localStorage.setItem(getKey('userInfo'), JSON.stringify(loggedInUser));
 
             return data;
         } catch (error) {
@@ -34,12 +30,11 @@ export const AuthProvider = ({ children }) => {
     const register = async (userData) => {
         try {
             const data = await registerUser(userData);
-            // registerUser returns the role, so we use it
-            const userWithRole = { ...data.user, role: userData.role };
-            setUser(userWithRole);
+            const registeredUser = data.user;
+            setUser(registeredUser);
 
             // Persist for page reloads
-            localStorage.setItem(getKey('userInfo'), JSON.stringify(userWithRole));
+            localStorage.setItem(getKey('userInfo'), JSON.stringify(registeredUser));
 
             return data;
         } catch (error) {

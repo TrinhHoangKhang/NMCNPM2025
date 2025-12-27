@@ -1,9 +1,17 @@
-const request = require('supertest');
-const app = require('../src/app');
-const userService = require('../src/services/userService');
+import { jest } from '@jest/globals';
+import request from 'supertest';
 
-// Mock specific services
-jest.mock('../src/services/userService');
+// 1. Mock the module BEFORE importing it
+jest.unstable_mockModule('../src/modules/users/userService.js', () => ({
+    default: {
+        getUser: jest.fn(),
+        updateUser: jest.fn(),
+    },
+}));
+
+// 2. Dynamically import after mocking
+const { default: userService } = await import('../src/modules/users/userService.js');
+const { default: app } = await import('../src/app.js');
 
 describe('User API', () => {
 

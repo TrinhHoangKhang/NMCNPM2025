@@ -1,7 +1,7 @@
 import app from './app.js';
 import dotenv from 'dotenv';
 import http from 'http';
-import { initSocket } from './services/socketService.js';
+import { initSocket } from './shared/services/socketService.js';
 
 // Load environment variables
 dotenv.config();
@@ -15,7 +15,7 @@ initSocket(server);
 // Clean up: Reset all users to offline on startup
 const cleanupPresence = async () => {
     try {
-        const { db } = await import('./config/firebaseConfig.js');
+        const { db } = await import('./core/loaders/firebaseLoader.js');
         const usersRef = db.collection('users');
         const onlineUsers = await usersRef.where('is_online', '==', true).get();
 

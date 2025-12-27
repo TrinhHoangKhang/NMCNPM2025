@@ -1,9 +1,17 @@
-const request = require('supertest');
-const app = require('../src/app');
-const driverService = require('../src/services/driverService');
+import { jest } from '@jest/globals';
+import request from 'supertest';
 
-// Mock the Service to avoid calling real Firebase
-jest.mock('../src/services/driverService');
+// 1. Mock the module BEFORE importing it
+jest.unstable_mockModule('../src/modules/drivers/driverService.js', () => ({
+    default: {
+        getDriver: jest.fn(),
+        updateStatus: jest.fn(),
+    },
+}));
+
+// 2. Dynamically import after mocking
+const { default: driverService } = await import('../src/modules/drivers/driverService.js');
+const { default: app } = await import('../src/app.js');
 
 describe('Driver API', () => {
 
@@ -35,7 +43,7 @@ describe('Driver API', () => {
             const res = await request(app).patch('/api/drivers/driver123/status').send({ status: "ONLINE" });
 
             expect(res.statusCode).toBe(200);
-            expect(res.body.data.status).toBe("ONLINE");
+            expect(res.body.isOnline).toBe(true);
         });
     });
 });

@@ -8,22 +8,14 @@ import session from 'express-session';
 import passport from 'passport';
 
 // Configurations
-import './config/firebaseConfig.js';
-import configurePassport from './config/passportConfig.js';
+import './core/loaders/firebaseLoader.js';
+import configurePassport from './core/loaders/passportLoader.js';
 
 // Routes
-import authRoutes from './routes/authRoutes.js';
-import chatRoutes from './routes/chatRoutes.js';
-import mapRoutes from './routes/mapRoutes.js';
-import driverRoutes from './routes/driverRoutes.js';
-import userRoutes from './routes/userRoutes.js';
-import aiRoutes from './routes/aiRoutes.js';
-import fareRoutes from './routes/fareRoutes.js';
-import rideRoutes from './routes/rideRoutes.js';
-import devRoutes from './routes/devRoutes.js';
+import apiRouter from './api/routes/index.js';
 
 // Middleware
-import { notFoundHandler, errorHandler } from './middleware/errorMiddleware.js';
+import { notFoundHandler, errorHandler } from './api/middlewares/errorMiddleware.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -71,15 +63,7 @@ app.use(passport.session());
 // 4. ROUTE DEFINITIONS
 // ==========================================
 
-app.use('/api/auth', authRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/maps', mapRoutes);
-app.use('/api/drivers', driverRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/fares', fareRoutes);
-app.use('/api/rides', rideRoutes);
-app.use('/api/dev', devRoutes);
+app.use('/api', apiRouter);
 
 // Health Check
 app.get('/', (req, res) => {

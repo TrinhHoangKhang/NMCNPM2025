@@ -10,15 +10,31 @@ const getStorageKey = (key) => {
     return `${key}_${window.location.port}`;
 };
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
+
 export const loginUser = async (email, password) => {
+    // 1. Authenticate with Firebase first
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-    const token = await user.getIdToken();
+    const idToken = await user.getIdToken();
 
-    // Note: Roles are not stored in Firebase Auth default profile. 
-    // You would typically fetch them from your backend or Firestore here.
+    // 2. Sync with our Backend to get profile/session
+    const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken })
+    });
 
-    return { user, token };
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Backend sync failed');
+
+    // Store the ID Token for all future API calls
+    localStorage.setItem(getStorageKey('userToken'), idToken);
+
+    return {
+        user: { ...user, ...data.user },
+        token: idToken
+    };
 };
 
 export const registerUser = async (userData) => {
@@ -32,13 +48,25 @@ export const registerUser = async (userData) => {
         });
     }
 
-    const token = await user.getIdToken();
+    const idToken = await user.getIdToken();
 
-    // Return user mixed with role for immediate context usage
-    // In a real app, you should save this role to your database
+    // Also register in our backend (Firestore)
+    const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...userData, idToken })
+    });
+
+    if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Server registration failed');
+    }
+
+    localStorage.setItem(getStorageKey('userToken'), idToken);
+
     return {
         user: { ...user, displayName: name, role },
-        token
+        token: idToken
     };
 };
 

@@ -1,8 +1,16 @@
-const request = require('supertest');
-const app = require('../src/app');
-const mapsService = require('../src/services/mapsService');
+import { jest } from '@jest/globals';
+import request from 'supertest';
 
-jest.mock('../src/services/mapsService');
+// 1. Mock the module BEFORE importing it
+jest.unstable_mockModule('../src/modules/maps/mapsService.js', () => ({
+    default: {
+        calculateRoute: jest.fn(),
+    },
+}));
+
+// 2. Dynamically import after mocking
+const { default: mapsService } = await import('../src/modules/maps/mapsService.js');
+const { default: app } = await import('../src/app.js');
 
 describe('Maps API', () => {
     describe('POST /api/maps/calculate-route', () => {
