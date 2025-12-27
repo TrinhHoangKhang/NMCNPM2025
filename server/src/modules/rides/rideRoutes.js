@@ -13,6 +13,9 @@ router.post('/request', tripController.requestTrip);
 // GET /api/rides/current
 router.get('/current', tripController.getCurrentTrip);
 
+// POST /api/rides/estimate
+router.post('/estimate', tripController.getTripEstimate);
+
 // GET /api/rides/history
 router.get('/history', tripController.getTripHistory);
 

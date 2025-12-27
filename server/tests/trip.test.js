@@ -16,7 +16,11 @@ const queryMock = {
     where: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
-    get: jest.fn().mockResolvedValue({ empty: true, docs: [] })
+    get: jest.fn().mockResolvedValue({
+        empty: true,
+        docs: [],
+        forEach: jest.fn()
+    })
 };
 
 jest.unstable_mockModule('../src/core/loaders/firebaseLoader.js', () => ({
@@ -85,6 +89,33 @@ describe('Trip API', () => {
 
             expect(res.statusCode).toBe(201);
             expect(res.body.fare).toBe(12.00);
+        });
+    });
+
+    describe('POST /api/rides/estimate', () => {
+        it('should return trip estimate without creating a record', async () => {
+            mapsService.calculateRoute.mockResolvedValue({
+                distance: { text: "10 km", value: 10000 },
+                duration: { text: "20 mins", value: 1200 },
+                geometry: "some-geometry"
+            });
+
+            const res = await request(app)
+                .post('/api/rides/estimate')
+                .set('Authorization', 'Bearer user-token')
+                .send({
+                    pickupLocation: { lat: 10, lng: 10 },
+                    dropoffLocation: { lat: 11, lng: 11 },
+                    vehicleType: "4 SEAT"
+                });
+
+            if (res.statusCode !== 200) {
+                console.log("ESTIMATE ERROR BODY:", JSON.stringify(res.body));
+            }
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.fare).toBe(12.00);
+            expect(res.body.distance).toBe(10000);
         });
     });
 

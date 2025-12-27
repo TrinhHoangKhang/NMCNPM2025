@@ -1,16 +1,20 @@
-import axios from 'axios';
+/**
+ * Chat Service
+ * Handles real-time messaging and session persistence.
+ * Currently a placeholder for future implementation.
+ */
 
-export const getDistance = async (origin, destination) => {
-    const apiKey = process.env.GOOGLE_MAPS_KEY;
-
-    // 1. Plug the key into the URL string
-    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origin}&destinations=${destination}&key=${apiKey}`;
-
-    try {
-        const response = await axios.get(url);
-        return response.data;
-    } catch (error) {
-        console.error("Maps Error:", error);
-        throw error;
+class ChatService {
+    async saveMessage(sessionId, messageData) {
+        // TODO: Implement Firestore persistence for chat messages
+        console.log(`[ChatService] Mock save message for session ${sessionId}`);
+        return { success: true, id: 'mock-msg-id' };
     }
-};
+
+    async getChatHistory(sessionId) {
+        // TODO: Implement history retrieval
+        return [];
+    }
+}
+
+export default new ChatService();

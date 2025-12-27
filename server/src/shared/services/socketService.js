@@ -2,12 +2,9 @@ import { Server } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import admin from '../../core/loaders/firebaseAdmin.js';
 import redisClient from '../../core/loaders/redis.js';
-import { db } from '../../core/loaders/firebaseLoader.js';
+import { handleUserSocket } from '../../modules/users/userSocket.js';
 
 let io;
-const PRESENCE_PREFIX = 'presence:';
-const PRESENCE_TTL = 300; // 5 minutes
-const fallbackPresence = new Map();
 
 export const initSocket = (server) => {
     io = new Server(server, {
@@ -17,17 +14,22 @@ export const initSocket = (server) => {
         }
     });
 
-    // Setup Redis Adapter for horizontal scaling
     const setupRedis = async () => {
+        // Only attempt adapter setup if Redis is intended to be used (i.e. REDIS_URL is provided)
+        if (!process.env.REDIS_URL) {
+            console.log('Socket.io: No REDIS_URL provided. Operating in single-node mode with local adapter.');
+            return;
+        }
+
         try {
             const pubClient = redisClient.duplicate();
             const subClient = redisClient.duplicate();
 
             await Promise.all([pubClient.connect(), subClient.connect()]);
             io.adapter(createAdapter(pubClient, subClient));
-            console.log('Socket.io Redis adapter initialized');
+            console.log('Socket.io: Redis adapter initialized successfully.');
         } catch (err) {
-            console.warn('Socket.io Redis adapter setup failed. Using local adapter.');
+            console.warn('Socket.io: Redis adapter setup failed (Redis may be offline). Falling back to local adapter.');
         }
     };
 
@@ -36,9 +38,7 @@ export const initSocket = (server) => {
     // Middleware to verify Firebase Token
     io.use(async (socket, next) => {
         const token = socket.handshake.auth.token;
-        if (!token) {
-            return next(new Error('Authentication error: Token missing'));
-        }
+        if (!token) return next(new Error('Authentication error: Token missing'));
 
         try {
             const decodedToken = await admin.auth().verifyIdToken(token);
@@ -50,78 +50,18 @@ export const initSocket = (server) => {
         }
     });
 
-    io.on('connection', async (socket) => {
-        const user = socket.user;
-        const userId = user.uid;
-        const { role } = socket.handshake.query;
+    io.on('connection', (socket) => {
+        console.log(`User connected: ${socket.user.email} (${socket.user.uid})`);
 
-        console.log(`User connected: ${user.email} (${userId})`);
-
-        // Store presence in Redis with TTL or fallback to Map
-        const presenceData = {
-            userId,
-            email: user.email,
-            role: role || 'USER',
-            socketId: socket.id,
-            connectedAt: new Date()
-        };
-
-        const setPresence = async () => {
-            try {
-                // Perform Parallel Updates (Redis for real-time, Firestore for persistence)
-                const redisUpdate = redisClient.isOpen
-                    ? redisClient.set(`${PRESENCE_PREFIX}${userId}`, JSON.stringify(presenceData), { EX: PRESENCE_TTL })
-                    : Promise.resolve();
-
-                const firestoreUpdate = db.collection('users').doc(userId).update({
-                    is_online: true
-                }).catch(err => console.error('Firestore Presence Error (Connect):', err.message));
-
-                if (!redisClient.isOpen) {
-                    fallbackPresence.set(userId, { ...presenceData, lastSeen: new Date() });
-                }
-
-                await Promise.all([redisUpdate, firestoreUpdate]);
-            } catch (err) {
-                console.error('Error setting presence:', err.message);
-            }
-        };
-
-        await setPresence();
-
-        socket.on('heartbeat', async () => {
-            await setPresence();
-        });
-
-        socket.on('disconnect', async () => {
-            console.log(`User disconnected: ${user.email}`);
-            try {
-                const redisCleanup = redisClient.isOpen
-                    ? redisClient.del(`${PRESENCE_PREFIX}${userId}`)
-                    : Promise.resolve();
-
-                const firestoreCleanup = db.collection('users').doc(userId).update({
-                    is_online: false,
-                    last_seen_at: admin.firestore.FieldValue.serverTimestamp()
-                }).catch(err => console.error('Firestore Presence Error (Disconnect):', err.message));
-
-                if (!redisClient.isOpen) {
-                    fallbackPresence.delete(userId);
-                }
-
-                await Promise.all([redisCleanup, firestoreCleanup]);
-            } catch (err) {
-                console.error('Error removing presence:', err.message);
-            }
-        });
+        // Delegate to domain handlers
+        handleUserSocket(socket, io);
+        // handleRideSocket(socket, io); // To be implemented
     });
 
     return io;
 };
 
 export const getIO = () => {
-    if (!io) {
-        throw new Error('Socket.io not initialized!');
-    }
+    if (!io) throw new Error('Socket.io not initialized!');
     return io;
 };

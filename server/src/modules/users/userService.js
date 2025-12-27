@@ -1,12 +1,12 @@
-import { db } from '../../core/loaders/firebaseLoader.js';
+import userRepository from './userRepository.js';
 
 class UserService {
 
     // 1. Get User Profile
     async getUser(userId) {
-        const doc = await db.collection('users').doc(userId).get();
-        if (!doc.exists) throw new Error("User not found");
-        return doc.data();
+        const user = await userRepository.findById(userId);
+        if (!user) throw new Error("User not found");
+        return user;
     }
 
     // 2. Update User Profile
@@ -15,11 +15,7 @@ class UserService {
         delete updates.uid;
         delete updates.role; // Typically roles shouldn't be self-updated
 
-        const docRef = db.collection('users').doc(userId);
-        await docRef.update(updates);
-
-        const updatedDoc = await docRef.get();
-        return updatedDoc.data();
+        return userRepository.update(userId, updates);
     }
 }
 

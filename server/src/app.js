@@ -4,12 +4,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import session from 'express-session';
-import passport from 'passport';
 
 // Configurations
 import './core/loaders/firebaseLoader.js';
-import configurePassport from './core/loaders/passportLoader.js';
 
 // Routes
 import apiRouter from './api/routes/index.js';
@@ -19,9 +16,6 @@ import { notFoundHandler, errorHandler } from './api/middlewares/errorMiddleware
 
 // Load environment variables from .env file
 dotenv.config();
-
-// Initialize Passport (Authentication Strategies)
-configurePassport(passport);
 
 const app = express();
 
@@ -46,18 +40,6 @@ app.use(cors());
 // Body Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Session Support
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production' }
-}));
-
-// Initialize Passport Middleware
-app.use(passport.initialize());
-app.use(passport.session());
 
 // ==========================================
 // 4. ROUTE DEFINITIONS

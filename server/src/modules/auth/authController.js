@@ -1,5 +1,4 @@
 import * as authService from './authService.js';
-import jwt from 'jsonwebtoken';
 
 export const register = async (req, res) => {
     try {
@@ -57,30 +56,58 @@ export const login = async (req, res) => {
     }
 };
 
+export const registerTraditional = async (req, res) => {
+    try {
+        const { email, password, name, phone, role } = req.body;
 
-export const googleCallback = async (req, res) => {
-    // 1. Get the user data (from your previous Google Auth step)
-    const user = req.user;
+        if (!email || !password || !name) {
+            return res.status(400).json({ error: "Missing required fields (email, password, name)" });
+        }
 
-    // 2. Create the Payload (What info do you want inside the token?)
-    // Keep it small! Don't put the whole user history here.
-    const payload = {
-        userId: user.uid,
-        email: user.email,
-        role: "DRIVER" // or "RIDER"
-    };
+        const newUser = await authService.registerUserTraditional({
+            email, password, name, phone, role
+        });
 
-    // 3. Sign the Token
-    const token = jwt.sign(
-        payload,
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' } // Token dies in 7 days
-    );
+        res.status(201).json({
+            success: true,
+            message: "User registered successfully",
+            data: newUser
+        });
 
-    // 4. Send it to the Mobile App
-    res.status(200).json({
-        success: true,
-        token: token,
-        message: "Login successful"
-    });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+};
+
+export const loginTraditional = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and Password are required" });
+        }
+
+        const user = await authService.loginUserTraditional(email, password);
+
+        res.status(200).json({
+            success: true,
+            message: "Login successful",
+            idToken: user.idToken,
+            user: {
+                id: user.uid,
+                name: user.name,
+                role: user.role
+            }
+        });
+
+    } catch (error) {
+        const statusCode = error.message === "INVALID_LOGIN" ? 401 : 500;
+        res.status(statusCode).json({
+            success: false,
+            error: error.message === "INVALID_LOGIN" ? "Invalid email or password" : error.message
+        });
+    }
 };

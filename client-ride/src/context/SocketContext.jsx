@@ -16,12 +16,16 @@ export const SocketProvider = ({ children }) => {
         const initSocketConnection = async () => {
             if (user) {
                 try {
-                    const token = await user.getIdToken();
-                    socket.auth = { token };
-                    socket.io.opts.query = { role: user.role };
+                    // Support both Firebase User objects (getIdToken) and traditional User objects (direct token)
+                    const token = typeof user.getIdToken === 'function' ? await user.getIdToken() : user.token;
 
-                    if (!socket.connected) {
-                        socket.connect();
+                    if (token) {
+                        socket.auth = { token };
+                        socket.io.opts.query = { role: user.role };
+
+                        if (!socket.connected) {
+                            socket.connect();
+                        }
                     }
                 } catch (error) {
                     console.error("Socket auth setup failed", error);
