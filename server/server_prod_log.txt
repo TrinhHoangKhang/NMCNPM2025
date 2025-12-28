@@ -1,0 +1,28 @@
+
+> server@1.0.0 start
+> node src/index.js
+
+[dotenv@17.2.3] injecting env (9) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+Firebase initialized successfully.
+WARNING: GEMINI_API_KEY is not set. AI Features will be disabled.
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+Socket.io: No REDIS_URL provided. Operating in single-node mode with local adapter.
+Server running on port 3002
+Environment: development
+[0mGET / [32m200[0m 5.419 ms - 26[0m
+[SERVER ERROR] GET /favicon.ico Error: Not Found - /favicon.ico
+    at notFoundHandler (file:///home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/server/src/api/middlewares/errorMiddleware.js:5:19)
+    at Layer.handleRequest (/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/server/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/server/node_modules/router/index.js:342:13)
+    at /home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/server/node_modules/router/index.js:297:9
+    at processParams (/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/server/node_modules/router/index.js:582:12)
+    at next (/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/server/node_modules/router/index.js:291:5)
+    at read (/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/server/node_modules/body-parser/lib/read.js:54:5)
+    at urlencodedParser (/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/server/node_modules/body-parser/lib/types/urlencoded.js:58:5)
+    at Layer.handleRequest (/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/server/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/server/node_modules/router/index.js:342:13)
+[0mGET /favicon.ico [33m404[0m 1.766 ms - 54[0m
+[0mGET / [36m304[0m 0.708 ms - -[0m

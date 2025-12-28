@@ -1,7 +1,12 @@
 import express from 'express';
 import * as driverController from './driverController.js';
+import checkAuth from '../../api/middlewares/checkAuth.js';
 
 const router = express.Router();
+
+// Apply checkAuth to all routes below
+router.use(checkAuth);
+
 
 // POST /api/drivers - Create/Register Driver Profile
 router.post('/', driverController.createDriver);

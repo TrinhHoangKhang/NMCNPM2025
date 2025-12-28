@@ -18,7 +18,7 @@ const RideBookingPanel = ({
 }) => {
     const nearbyDrivers = estimate?.nearbyDrivers || [];
     return (
-        <div className="w-1/3 p-4 z-10 shadow-xl bg-gray-800 flex flex-col gap-4 overflow-y-auto">
+        <div className="w-full md:w-1/3 h-auto md:h-full p-4 z-10 shadow-xl bg-gray-800 flex flex-col gap-4 overflow-y-auto order-2 md:order-1 border-t md:border-t-0 md:border-r border-gray-700">
             <h1 className="text-2xl font-bold mb-4 text-white">Ride Details</h1>
 
             <div
@@ -123,7 +123,7 @@ const RideBookingPanel = ({
                         onClick={handleRequestRide}
                         className="w-full mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded shadow-lg transition transform hover:scale-[1.02]"
                     >
-                        Request Now
+                        Order Ride
                     </button>
                 </div>
             )}

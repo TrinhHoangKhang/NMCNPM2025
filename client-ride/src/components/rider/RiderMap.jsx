@@ -62,7 +62,7 @@ const RiderMap = ({
     setAvailableDrivers
 }) => {
     return (
-        <div className="w-2/3 relative h-full">
+        <div className="w-full relative h-full">
             {/* Fixed Overlay for Selection Confirmation */}
             {tempSelection && (
                 <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-white text-gray-900 p-4 rounded-lg shadow-2xl border border-gray-200 flex flex-col items-center gap-3 max-w-lg w-10/12 animate-in slide-in-from-top">

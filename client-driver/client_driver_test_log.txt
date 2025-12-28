@@ -1,0 +1,21 @@
+
+> client-driver@0.0.0 test
+> vitest
+
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: ENOSPC: System limit for number of file watchers reached, watch '/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/client-driver/vitest.config.js'[39m
+[90m [2m❯[22m FSWatcher.<computed> node:internal/fs/watchers:[2m254:19[22m[39m
+[90m [2m❯[22m Object.watch node:fs:[2m2539:36[22m[39m
+[90m [2m❯[22m createFsWatchInstance node_modules/vite/dist/node/chunks/config.js:[2m12941:16[22m[39m
+[90m [2m❯[22m setFsWatchListener node_modules/vite/dist/node/chunks/config.js:[2m12983:14[22m[39m
+[90m [2m❯[22m NodeFsHandler$1._watchWithNodeFs node_modules/vite/dist/node/chunks/config.js:[2m13097:20[22m[39m
+[90m [2m❯[22m NodeFsHandler$1._handleFile node_modules/vite/dist/node/chunks/config.js:[2m13141:24[22m[39m
+[90m [2m❯[22m NodeFsHandler$1._addToNodeFs node_modules/vite/dist/node/chunks/config.js:[2m13315:26[22m[39m
+[90m [2m❯[22m node_modules/vite/dist/node/chunks/config.js:[2m13957:18[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ errno: -28, syscall: 'watch', code: 'ENOSPC', path: '/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/client-driver/vitest.config.js', filename: '/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/client-driver/vitest.config.js' }[39m
+
+
+

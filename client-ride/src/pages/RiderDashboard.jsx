@@ -131,7 +131,7 @@ const RiderDashboard = () => {
 
     return (
         <DashboardLayout role="user" title="Book a Ride" fullWidth>
-            <div className="flex h-full relative">
+            <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] relative">
 
                 {/* Searching Overlay */}
                 {isSearching && (
@@ -156,18 +156,20 @@ const RiderDashboard = () => {
                 />
 
                 {/* Map Area */}
-                <RiderMap
-                    activeField={activeField}
-                    pickup={pickup}
-                    dropoff={dropoff}
-                    route={route}
-                    setRoute={setRoute}
-                    tempSelection={tempSelection}
-                    setTempSelection={setTempSelection}
-                    confirmLocation={confirmLocation}
-                    availableDrivers={availableDrivers}
-                    setAvailableDrivers={setAvailableDrivers}
-                />
+                <div className="flex-1 h-full relative order-1 md:order-2">
+                    <RiderMap
+                        activeField={activeField}
+                        pickup={pickup}
+                        dropoff={dropoff}
+                        route={route}
+                        setRoute={setRoute}
+                        tempSelection={tempSelection}
+                        setTempSelection={setTempSelection}
+                        confirmLocation={confirmLocation}
+                        availableDrivers={availableDrivers}
+                        setAvailableDrivers={setAvailableDrivers}
+                    />
+                </div>
             </div>
         </DashboardLayout>
     );

@@ -32,7 +32,14 @@ export const loginUser = async (email, password) => {
     localStorage.setItem(getStorageKey('userToken'), idToken);
 
     return {
-        user: { ...user, ...data.user },
+        user: {
+            uid: user.uid,
+            email: user.email,
+            emailVerified: user.emailVerified,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            ...data.user
+        },
         token: idToken
     };
 };
@@ -65,7 +72,14 @@ export const registerUser = async (userData) => {
     localStorage.setItem(getStorageKey('userToken'), idToken);
 
     return {
-        user: { ...user, displayName: name, role },
+        user: {
+            uid: user.uid,
+            email: user.email,
+            emailVerified: user.emailVerified,
+            displayName: name || user.displayName,
+            photoURL: user.photoURL,
+            role
+        },
         token: idToken
     };
 };

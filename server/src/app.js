@@ -30,9 +30,10 @@ app.use(morgan('dev'));
 // Rate Limiting (Basic Protection)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 1000, // Increased for development testing
 });
 app.use(limiter);
+
 
 // CORS: Allows your Mobile App to talk to this server
 app.use(cors());

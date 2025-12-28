@@ -1,11 +1,12 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import LoadingScreen from '../../components/shared/LoadingScreen';
 
 const PublicRoute = ({ children }) => {
     const { user, loading } = useAuth();
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <LoadingScreen message="Checking session..." />;
 
     if (user) {
         const role = user.role?.toUpperCase();

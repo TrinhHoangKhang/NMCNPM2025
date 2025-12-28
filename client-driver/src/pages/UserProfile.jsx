@@ -25,20 +25,24 @@ const UserProfile = () => {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            if (user?._id) {
+            const uid = user?.uid || user?._id;
+            if (uid) {
                 try {
-                    const data = await getUserById(user._id);
-                    const userData = data.user || data;
+                    const response = await getUserById(uid);
+                    const userData = response.data || response.user || response;
                     setProfileData(userData);
                 } catch (error) {
                     console.error("Failed to fetch profile", error);
                 } finally {
                     setLoading(false);
                 }
+            } else if (user === null) {
+                setLoading(false);
             }
         };
         fetchProfile();
     }, [user]);
+
 
     // Check for query params to auto-trigger events (e.g. from Dashboard)
     useEffect(() => {

@@ -38,7 +38,13 @@ const UserHome = () => {
                         <h1 className="text-3xl font-bold text-gray-800">
                             Welcome back, {user?.name || user?.username || user?.realName}!
                         </h1>
-                        <p className="text-gray-600 mt-2">Where would you like to go today?</p>
+                        <p className="text-gray-600 mt-2 mb-6">Where would you like to go today?</p>
+                        <Link
+                            to="/map"
+                            className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all hover:scale-105"
+                        >
+                            Order Ride ➔
+                        </Link>
                     </div>
                     {user?.profilePicture && (
                         <img

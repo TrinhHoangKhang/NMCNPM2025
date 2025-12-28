@@ -7,7 +7,7 @@ export const getUserById = async (id) => {
 
 // Placeholder for future update
 export const updateUserProfile = async (id, userData) => {
-    const { data } = await api.put(`/api/users/${id}`, userData);
+    const { data } = await api.patch(`/api/users/${id}`, userData);
     return data;
 };
 export const getUsers = async () => {
