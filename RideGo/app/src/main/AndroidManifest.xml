@@ -34,6 +34,15 @@
         <activity
             android:name=".ui.auth.LoginActivity"
             android:exported="false" />
+        <activity android:name=".ui.auth.OtpVerifyActivity" />
+        <activity android:name=".ui.auth.EmailVerificationActivity"/>
+        <activity android:name=".ui.auth.CompleteProfileActivity" />
+        <activity android:name=".ui.auth.RegisterActivity" android:exported="false" />
+        <activity android:name=".ui.auth.AddPhoneActivity" />
+        <activity android:name=".ui.auth.AddEmailActivity" />
+
+
+
 
         <activity
             android:name=".ui.rider.main.RiderMainActivity"
@@ -50,6 +59,14 @@
 
         <activity
             android:name=".ui.promotion.PromotionActivity"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ui.profile.ProfileActivity"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ui.booking.BookingActivity"
             android:exported="false"/>
 
     </application>

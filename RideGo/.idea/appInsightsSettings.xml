@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.ridego" />
+                  <option name="mobileSdkAppId" value="1:185412908380:android:1c1482d4cb291f23f6bd99" />
+                  <option name="projectId" value="rideg-84578" />
+                  <option name="projectNumber" value="185412908380" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

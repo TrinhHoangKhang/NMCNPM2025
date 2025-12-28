@@ -7,20 +7,21 @@
     android:paddingVertical="12dp"
     android:background="?attr/selectableItemBackground"
     android:clickable="true"
-    android:focusable="true">
+    android:focusable="true"
+    android:orientation="horizontal"> <ImageView
+    android:id="@+id/imgIcon"
+    android:layout_width="36dp"
+    android:layout_height="36dp"
+    android:padding="8dp"
+    android:background="@drawable/bg_white_rounded_16dp"
+    android:backgroundTint="#F5F5F5"
+    android:src="@drawable/ic_onboarding_location"
+    app:tint="#757575" />
 
-    <ImageView
-        android:id="@+id/imgIcon"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:padding="8dp"
-        android:background="@drawable/bg_search_bar"
-        android:backgroundTint="#F5F5F5"
-        android:src="@drawable/ic_onboarding_location"
-        app:tint="#757575" />
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:layout_marginStart="16dp"
         android:orientation="vertical">
 
@@ -28,19 +29,22 @@
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Công Bắc"
+            android:text="Công viên 23/9"
             android:textColor="@color/black"
             android:textStyle="bold"
-            android:textSize="14sp" />
+            android:textSize="14sp"
+            android:maxLines="1"
+            android:ellipsize="end"/>
 
         <TextView
             android:id="@+id/tvAddress"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:text="Lê Duẩn, Q.1, Hồ Chí Minh"
+            android:text="Phạm Ngũ Lão, Q.1, TP.HCM"
             android:textColor="#757575"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:ellipsize="end"/>
     </LinearLayout>
+
 </LinearLayout>
