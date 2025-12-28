@@ -56,13 +56,13 @@
             app:layout_constraintTop_toBottomOf="@+id/btnBack">
 
             <TextView
-                android:id="@+id/tvAvatar"
+                android:id="@+id/tvUserAvatar"
                 android:layout_width="60dp"
                 android:layout_height="60dp"
                 android:background="@drawable/bg_circle_app_color"
                 android:backgroundTint="#FF80AB"
                 android:gravity="center"
-                android:text="NV"
+                android:text="U"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold"
@@ -77,22 +77,24 @@
                 android:orientation="vertical"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/tvAvatar"
+                app:layout_constraintStart_toEndOf="@+id/tvUserAvatar"
                 app:layout_constraintTop_toTopOf="parent">
 
                 <TextView
+                    android:id="@+id/tvUserName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Nguyễn Văn A"
+                    android:text="User"
                     android:textColor="@color/white"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvUserPhone"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="+84 123 456 789"
+                    android:text=""
                     android:textColor="#F0F0F0"
                     android:textSize="14sp" />
 

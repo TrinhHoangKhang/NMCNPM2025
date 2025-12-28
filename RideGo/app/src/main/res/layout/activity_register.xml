@@ -95,20 +95,34 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Nút Đăng ký -->
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnRegister"
+    <FrameLayout
+        android:id="@+id/btnRegisterContainer"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:layout_marginTop="24dp"
-        android:background="@drawable/bg_button_gradient"
-        android:text="Đăng ký"
-        android:textAllCaps="false"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        android:textStyle="bold"
         app:layout_constraintTop_toBottomOf="@id/tilPassword"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnRegister"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_button_ripple"
+            android:text="Đăng ký"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <ProgressBar
+            android:id="@+id/progressBarRegister"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/white"
+            android:visibility="gone" />
+    </FrameLayout>
 
     <!-- Link quay lại đăng nhập -->
     <TextView
@@ -123,8 +137,8 @@
         android:padding="8dp"
         android:clickable="true"
         android:focusable="true"
-        android:background="?android:attr/selectableItemBackground"
-        app:layout_constraintTop_toBottomOf="@id/btnRegister"
+        android:background="@drawable/bg_ripple_transparent"
+        app:layout_constraintTop_toBottomOf="@id/btnRegisterContainer"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
