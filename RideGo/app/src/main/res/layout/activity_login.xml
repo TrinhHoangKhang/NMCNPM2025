@@ -89,18 +89,32 @@
             android:textSize="16sp" />
     </LinearLayout>
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnContinue"
+    <FrameLayout
+        android:id="@+id/btnContinueContainer"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:layout_marginTop="24dp"
-        android:background="@drawable/bg_button_gradient"
-        android:text="Tiếp tục"
-        android:textAllCaps="false"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toBottomOf="@+id/layoutPhoneInput" />
+        app:layout_constraintTop_toBottomOf="@+id/layoutPhoneInput">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnContinue"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_button_ripple"
+            android:text="Tiếp tục"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/white"
+            android:visibility="gone" />
+    </FrameLayout>
 
     <LinearLayout
         android:id="@+id/layoutDivider"
@@ -109,7 +123,7 @@
         android:layout_marginTop="24dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@+id/btnContinue">
+        app:layout_constraintTop_toBottomOf="@+id/btnContinueContainer">
 
         <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" android:background="#E0E0E0" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginHorizontal="16dp" android:text="Hoặc" android:textColor="#9E9E9E" android:textSize="12sp"/>
@@ -125,6 +139,11 @@
         android:textColor="@color/purple_500"
         android:textSize="14sp"
         android:layout_marginTop="12dp"
+        android:background="@drawable/bg_ripple_transparent"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
         android:clickable="true"
         android:focusable="true"
         app:layout_constraintTop_toBottomOf="@+id/layoutDivider"
@@ -140,17 +159,34 @@
         android:layout_marginTop="12dp"
         app:layout_constraintTop_toBottomOf="@+id/tvEmailLogin">
 
-        <TextView
-            android:id="@+id/tvBackToPhone"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="← Quay lại đăng nhập bằng SĐT"
-            android:textColor="@color/purple_500"
-            android:textSize="14sp"
-            android:layout_marginBottom="16dp"
-            android:clickable="true"
-            android:focusable="true"
-            android:padding="4dp" />
+        <!-- Nút quay lại với icon và background -->
+            <LinearLayout
+                android:id="@+id/btnBackToPhone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_ripple_transparent"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="8dp"
+                android:layout_marginBottom="16dp">
+            
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/ic_back_arrow"
+                app:tint="@color/purple_500" />
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Quay lại đăng nhập bằng SĐT"
+                android:textColor="@color/purple_500"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <EditText
             android:id="@+id/edtEmail"
@@ -164,7 +200,7 @@
             android:textColorHint="#9E9E9E"
             android:textSize="16sp" />
 
-        <Space android:layout_width="match_parent" android:layout_height="8dp"/>
+        <Space android:layout_width="match_parent" android:layout_height="10dp"/>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
@@ -188,30 +224,45 @@
 
         <Space android:layout_width="match_parent" android:layout_height="12dp"/>
 
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btnLogin"
+        <!-- Nút đăng nhập với loading -->
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:background="@drawable/bg_button_gradient"
-            android:text="Đăng nhập bằng Email"
-            android:textAllCaps="false"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:layout_height="50dp">
+            
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnLogin"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_button_ripple"
+                android:text="Đăng nhập"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+            
+            <ProgressBar
+                android:id="@+id/progressBarLogin"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:indeterminateTint="@color/white"
+                android:visibility="gone" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/tvRegister"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:layout_marginTop="12dp"
+            android:background="@drawable/bg_ripple_transparent"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="8dp"
             android:text="Chưa có tài khoản? Đăng ký ngay"
             android:textColor="@color/purple_500"
-            android:textStyle="bold"
             android:textSize="15sp"
-            android:padding="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/tvTerms"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            android:textStyle="bold" />
     </LinearLayout>
 
     <!-- Nút Google hiện có -->
@@ -220,7 +271,7 @@
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:layout_marginTop="24dp"
-        android:background="@drawable/bg_social_button"
+        android:background="@drawable/bg_social_button_ripple"
         android:gravity="center"
         android:clickable="true"
         android:focusable="true"

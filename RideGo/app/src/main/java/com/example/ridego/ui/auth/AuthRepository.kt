@@ -54,14 +54,25 @@ class AuthRepository(
             val result = auth.signInWithCredential(credential).await()
             val user = result.user ?: throw Exception("No user")
 
-            // Lưu thông tin vào Firestore
-            val profile = mapOf(
-                "uid" to user.uid,
-                "name" to (user.displayName ?: ""),
-                "email" to (user.email ?: ""),
-                "photoUrl" to (user.photoUrl?.toString() ?: "")
-            )
-            db.collection("users").document(user.uid).set(profile).await()
+            // Kiểm tra xem user đã tồn tại trong Firestore chưa
+            val userDoc = db.collection("users").document(user.uid).get().await()
+            
+            if (!userDoc.exists()) {
+                // Chưa có → Tạo mới với thông tin từ Google
+                val profile = mapOf(
+                    "uid" to user.uid,
+                    "name" to (user.displayName ?: ""),
+                    "email" to (user.email ?: ""),
+                    "photoUrl" to (user.photoUrl?.toString() ?: "")
+                )
+                db.collection("users").document(user.uid).set(profile).await()
+            } else {
+                // Đã có → Chỉ update photoUrl (giữ nguyên name, phone...)
+                val updates = mapOf(
+                    "photoUrl" to (user.photoUrl?.toString() ?: "")
+                )
+                db.collection("users").document(user.uid).update(updates).await()
+            }
 
             Result.success(UserProfile(user.uid, user.displayName, user.email))
         } catch (e: Exception) {

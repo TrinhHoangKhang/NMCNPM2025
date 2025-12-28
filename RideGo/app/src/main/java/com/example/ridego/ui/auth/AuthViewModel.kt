@@ -54,7 +54,7 @@ class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
         viewModelScope.launch {
             val res = repo.register(email, password, name)
             if (res.isSuccess) {
-                // gửi email xác thực
+                // Gửi email xác thực
                 val sendRes = repo.sendEmailVerification()
                 if (sendRes.isSuccess) {
                     _authState.value = AuthState.EmailVerificationNeeded(email)
