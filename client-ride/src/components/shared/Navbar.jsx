@@ -24,12 +24,7 @@ const Navbar = () => {
             { label: 'History', path: '/history' },
             { label: 'Profile', path: '/profile' }
         ],
-        ADMIN: [
-            { label: 'Home', path: '/home' },
-            { label: 'List', path: '/users' },
-            { label: 'Log', path: '/history' },
-            { label: 'Profile', path: '/profile' }
-        ],
+
         public: []
     };
 

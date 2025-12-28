@@ -16,7 +16,7 @@ const instanceType = import.meta.env.VITE_INSTANCE_TYPE || 'user';
 const titleMap = {
     'user': 'App',
     'driver': 'Driver',
-    'admin': 'Admin'
+
 };
 document.title = titleMap[instanceType] || 'RideShare';
 

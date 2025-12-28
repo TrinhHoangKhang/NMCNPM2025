@@ -23,12 +23,7 @@ const Navbar = () => {
             { label: 'History', path: '/history' },
             { label: 'Profile', path: '/profile' }
         ],
-        ADMIN: [
-            { label: 'Home', path: '/home' },
-            { label: 'List', path: '/users' },
-            { label: 'Log', path: '/history' }, // Placeholder for system logs
-            { label: 'Profile', path: '/profile' }
-        ],
+
         public: [] // Public users see Login/Register on the right side
     };
 

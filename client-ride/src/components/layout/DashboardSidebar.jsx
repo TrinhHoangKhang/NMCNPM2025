@@ -20,11 +20,7 @@ const DashboardSidebar = ({ role, isOpen, toggleSidebar }) => {
             { name: 'History', path: '/history', icon: '📜' },
             { name: 'Vehicle', path: '/profile?tab=vehicle', icon: '🚙' },
         ],
-        ADMIN: [
-            { name: 'Overview', path: '/home', icon: '📈' }, // Using /home for admin for now
-            { name: 'Users', path: '/users', icon: '👥' },
-            { name: 'Rides', path: '/history', icon: '🚖' },
-        ]
+
     };
 
     const links = [...(roleLinks[role?.toUpperCase()] || []), ...commonLinks];

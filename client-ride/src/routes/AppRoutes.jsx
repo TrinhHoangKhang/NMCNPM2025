@@ -12,10 +12,8 @@ import AuthLayout from '../layout/AuthLayout';
 
 // Pages
 import LandingPage from '../pages/LandingPage';
-import AdminDashboard from '../pages/AdminDashboard';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
-import UserManagement from '../pages/UserManagement';
 import HistoryPage from '../pages/HistoryPage';
 import UserProfile from '../pages/UserProfile';
 import DriverDashboard from '../pages/DriverDashboard';
@@ -68,7 +66,7 @@ const router = createBrowserRouter([
             {
                 path: "/home",
                 element: (
-                    <ProtectedRoute allowedRoles={['RIDER', 'ADMIN']}>
+                    <ProtectedRoute allowedRoles={['RIDER']}>
                         <UserHome />
                     </ProtectedRoute>
                 )
@@ -76,7 +74,7 @@ const router = createBrowserRouter([
             {
                 path: "/map",
                 element: (
-                    <ProtectedRoute allowedRoles={['RIDER', 'ADMIN']}>
+                    <ProtectedRoute allowedRoles={['RIDER']}>
                         <RiderDashboard />
                     </ProtectedRoute>
                 )
@@ -86,7 +84,7 @@ const router = createBrowserRouter([
             {
                 path: "/driver",
                 element: (
-                    <ProtectedRoute allowedRoles={['DRIVER', 'ADMIN']}>
+                    <ProtectedRoute allowedRoles={['DRIVER']}>
                         <DriverDashboard />
                     </ProtectedRoute>
                 ),
@@ -101,21 +99,13 @@ const router = createBrowserRouter([
                 )
             },
 
-            // Admin Routes
-            {
-                path: "/users",
-                element: (
-                    <ProtectedRoute allowedRoles={['ADMIN']}>
-                        <UserManagement />
-                    </ProtectedRoute>
-                )
-            },
+
 
             // Shared Routes
             {
                 path: "/dashboard",
                 element: (
-                    <ProtectedRoute allowedRoles={['RIDER', 'DRIVER', 'ADMIN']}>
+                    <ProtectedRoute allowedRoles={['RIDER', 'DRIVER']}>
                         {/* This will trigger the redirect logic in ProtectedRoute if role doesn't match the current path, but we want a dedicated component or logic here */}
                         <DashboardRedirect />
                     </ProtectedRoute>
@@ -124,7 +114,7 @@ const router = createBrowserRouter([
             {
                 path: "/history",
                 element: (
-                    <ProtectedRoute allowedRoles={['RIDER', 'DRIVER', 'ADMIN']}>
+                    <ProtectedRoute allowedRoles={['RIDER', 'DRIVER']}>
                         <HistoryPage />
                     </ProtectedRoute>
                 )
@@ -132,7 +122,7 @@ const router = createBrowserRouter([
             {
                 path: "/profile",
                 element: (
-                    <ProtectedRoute allowedRoles={['RIDER', 'DRIVER', 'ADMIN']}>
+                    <ProtectedRoute allowedRoles={['RIDER', 'DRIVER']}>
                         <UserProfile />
                     </ProtectedRoute>
                 )

@@ -125,7 +125,7 @@ const HistoryPage = () => {
         <div className="p-8 max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <h1 className="text-3xl font-bold">
-                    {user?.role === 'admin' ? 'System Logs (All Trips)' : 'Trip History'}
+                    Trip History
                 </h1>
 
                 <div className="flex gap-4 w-full md:w-auto">

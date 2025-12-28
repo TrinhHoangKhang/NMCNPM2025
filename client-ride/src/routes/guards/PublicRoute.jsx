@@ -12,7 +12,7 @@ const PublicRoute = ({ children }) => {
         const role = user.role?.toUpperCase();
         if (role === 'DRIVER') return <Navigate to="/driver" replace />;
         if (role === 'RIDER') return <Navigate to="/home" replace />;
-        if (role === 'ADMIN') return <Navigate to="/users" replace />;
+
     }
 
     return children;

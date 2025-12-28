@@ -23,11 +23,7 @@ const Header = () => {
             { label: 'History', path: '/driver/history' },
             { label: 'Profile', path: '/profile' }
         ],
-        admin: [
-            { label: 'Users', path: '/users' },
-            { label: 'System Logs', path: '/history' },
-            { label: 'Profile', path: '/profile' }
-        ],
+
         public: []
     };
 
@@ -43,8 +39,7 @@ const Header = () => {
                     {/* Title / Brand */}
                     <h2 className="text-xl font-semibold text-gray-800 capitalize">
                         {import.meta.env.VITE_INSTANCE_TYPE === 'user' ? 'App' :
-                            import.meta.env.VITE_INSTANCE_TYPE === 'driver' ? 'Driver' :
-                                import.meta.env.VITE_INSTANCE_TYPE === 'admin' ? 'Admin' : 'RideShare'}
+                            import.meta.env.VITE_INSTANCE_TYPE === 'driver' ? 'Driver' : 'RideShare'}
                     </h2>
 
                     {/* Top Navigation - Desktop */}

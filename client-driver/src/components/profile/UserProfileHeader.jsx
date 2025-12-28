@@ -22,8 +22,7 @@ const UserProfileHeader = ({ username, realName, role, profilePicture, onAvatarS
                     <h1 className="text-3xl font-bold text-gray-900">{realName || username}</h1>
                     <div className="flex items-center gap-2 text-gray-600">
                         <span className="text-sm">@{username}</span>
-                        <span className={`px-2 py-0.5 rounded text-xs uppercase font-bold tracking-wide ${role === 'admin' ? 'bg-red-100 text-red-800' :
-                            role === 'driver' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                        <span className={`px-2 py-0.5 rounded text-xs uppercase font-bold tracking-wide ${role === 'driver' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
                             }`}>
                             {role}
                         </span>
