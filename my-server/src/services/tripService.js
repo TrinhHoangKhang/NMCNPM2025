@@ -4,11 +4,22 @@ const mapsService = require('./mapsService');
 //const { v4: uuidv4 } = require('uuid'); // Need to install uuid, or just use Firestore auto-ID
 
 // Pricing Config (could be a separate file)
+// Pricing Config (loaded from .env)
 const PRICING = {
-    'MOTORBIKE': { BASE: 1.00, PER_KM: 0.50 },
-    '4 SEAT': { BASE: 2.00, PER_KM: 1.00 },
-    '7 SEAT': { BASE: 5.00, PER_KM: 2.00 }
+    'MOTORBIKE': {
+        BASE: parseFloat(process.env.PRICE_BASE_MOTORBIKE || '1.00'),
+        PER_KM: parseFloat(process.env.PRICE_KM_MOTORBIKE || '0.50')
+    },
+    '4 SEAT': {
+        BASE: parseFloat(process.env.PRICE_BASE_4SEAT || '2.00'),
+        PER_KM: parseFloat(process.env.PRICE_KM_4SEAT || '1.00')
+    },
+    '7 SEAT': {
+        BASE: parseFloat(process.env.PRICE_BASE_7SEAT || '5.00'),
+        PER_KM: parseFloat(process.env.PRICE_KM_7SEAT || '2.00')
+    }
 };
+
 
 class TripService {
 
@@ -24,7 +35,7 @@ class TripService {
 
         // Calculate the distance in KM
         const distanceKm = routeData.distance.value / 1000;
-        
+
         // B. Calculate Fare based on vehicle type
         const rates = PRICING[vehicleType] || PRICING['4 SEAT'];
         let fare = rates.BASE + (distanceKm * rates.PER_KM);
@@ -43,7 +54,7 @@ class TripService {
             distance: routeData.distance.value,
             duration: routeData.duration.value,
             path: routeData.geometry,
-            status: 'REQUESTED', 
+            status: 'REQUESTED',
             createdAt: new Date().toISOString()
         };
 
@@ -125,10 +136,10 @@ class TripService {
 
         if (!doc.exists) throw new Error("Trip not found");
         if (doc.data().riderId !== userId) throw new Error("Unauthorized");
-        
+
         // LOG
         console.log(`Cancelling trip ${tripId} for user ${userId}`);
-        
+
         // Can only cancel if status is REQUESTED or ACCEPTED
         const currentStatus = doc.data().status;
         if (!['REQUESTED', 'ACCEPTED'].includes(currentStatus)) {
@@ -221,7 +232,7 @@ class TripService {
         const updated = await tripRef.get();
         return new Trip(tripId, updated.data());
     }
-    
+
     // 5. Get Trip Details by ID
     async getTrip(tripId) {
         console.log("Fetching trip with ID:", tripId);

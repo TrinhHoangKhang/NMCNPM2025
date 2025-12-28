@@ -1,36 +1,39 @@
-const jwt = require('jsonwebtoken');
+const { admin, db } = require('../config/firebaseConfig');
 
-module.exports = (req, res, next) => {
+module.exports = async (req, res, next) => {
     try {
         // 1. Get the Authorization Header
-        // Format: "Bearer eyJhbGciOi..."
         const authHeader = req.headers.authorization;
 
-        // 2. Check if header exists
         if (!authHeader) {
             return res.status(401).json({ message: "No token provided" });
         }
 
-        // 3. Extract the token (Remove 'Bearer ' string)
-        const token = authHeader.split(" ")[1]; 
+        // 2. Verify Token
+        const token = authHeader.split(" ")[1];
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        const uid = decodedToken.uid;
 
-        // 4. Verify the Token
-        // This checks the signature and expiration date
-        const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+        // 3. Get User Role from Firestore
+        // (Because we store role in DB, not usually in custom assertions unless set explicitly)
+        const userDoc = await db.collection('users').doc(uid).get();
+        let role = 'USER';
 
-        // 5. Success! Attach user data to the request
-        // Now valid, so we let the controller know WHO this is.
-        // JWT payload uses 'id' (from authController login), map it to 'uid'
-        req.user = { 
-            uid: decodedToken.id, 
-            role: decodedToken.role 
+        if (userDoc.exists) {
+            role = userDoc.data().role || 'USER';
+        }
+
+        // 4. Attach to Request
+        req.user = {
+            uid: uid,
+            email: decodedToken.email,
+            role: role
         };
 
-        // 6. Allow request to proceed to the Controller
         next();
 
     } catch (error) {
-        // Token is fake, expired, or malformed
-        return res.status(401).json({ message: "Auth failed / Token expired" });
+        console.error("Auth Middleware Error:", error);
+        return res.status(401).json({ message: "Auth failed / Invalid Token" });
     }
 };
