@@ -1,6 +1,6 @@
-const authService = require('../services/authService');
+import authService from '../services/authService.js';
 
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
     try {
         // 1. Get data from the Mobile App (Client sends ID Token now)
         const { idToken, name, phone, role } = req.body;
@@ -31,7 +31,7 @@ exports.register = async (req, res) => {
     }
 };
 
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
     try {
         // 1. Unpack the request
         const { idToken } = req.body;

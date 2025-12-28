@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import tripController from '../controllers/tripController.js';
+import checkAuth from '../middleware/checkAuth.js';
+import checkDriver from '../middleware/checkDriver.js';
+
 const router = express.Router();
-const tripController = require('../controllers/tripController');
-const checkAuth = require('../middleware/checkAuth');
-const checkDriver = require('../middleware/checkDriver');
 
 // Apply authentication middleware to all trip routes
 router.use(checkAuth);
@@ -65,4 +66,4 @@ router.patch('/:id/complete', checkDriver, tripController.markTripComplete);
 // Input: none (Chỉ cần jwt token)
 router.get('/driver/history', checkDriver, tripController.getDriverTripHistory);
 
-module.exports = router;
+export default router;

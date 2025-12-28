@@ -1,4 +1,4 @@
-const { db } = require('../config/firebaseConfig');
+import { db  } from '../config/firebaseConfig.js';
 
 class UserService {
 
@@ -23,4 +23,4 @@ class UserService {
     }
 }
 
-module.exports = new UserService();
+export default new UserService();

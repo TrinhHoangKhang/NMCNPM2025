@@ -1,4 +1,4 @@
-const aiService = require('../services/aiService');
+import aiService from '../services/aiService.js';
 
 class AIController {
     async generateCommands(req, res) {
@@ -25,4 +25,4 @@ class AIController {
     }
 }
 
-module.exports = new AIController();
+export default new AIController();

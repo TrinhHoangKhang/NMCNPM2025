@@ -8,4 +8,4 @@ class Vehicle {
         this.color = data.color;
     }
 }
-module.exports = Vehicle;
+export default Vehicle;

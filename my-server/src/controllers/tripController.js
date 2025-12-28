@@ -1,32 +1,32 @@
-const tripService = require('../services/tripService');
+import tripService from '../services/tripService.js';
 
 class TripController {
     // 1. POST /api/trips/request
     async requestTrip(req, res) {
         try {
             const { pickupLocation, dropoffLocation, vehicleType, paymentMethod } = req.body;
-            
+
             // Validate required fields
             if (!pickupLocation || !dropoffLocation || !vehicleType || !paymentMethod) {
-                return res.status(400).json({ 
-                    error: "Missing required fields: pickupLocation, dropoffLocation, vehicleType, paymentMethod" 
+                return res.status(400).json({
+                    error: "Missing required fields: pickupLocation, dropoffLocation, vehicleType, paymentMethod"
                 });
             }
 
             // Validate location structure
             if (!pickupLocation.lat || !pickupLocation.lng || !dropoffLocation.lat || !dropoffLocation.lng) {
-                return res.status(400).json({ 
-                    error: "Location objects must contain lat and lng properties" 
+                return res.status(400).json({
+                    error: "Location objects must contain lat and lng properties"
                 });
             }
 
             const riderId = req.user.uid; // Identified via JWT token
 
             const newTrip = await tripService.createTripRequest(
-                riderId, 
-                pickupLocation, 
-                dropoffLocation, 
-                vehicleType, 
+                riderId,
+                pickupLocation,
+                dropoffLocation,
+                vehicleType,
                 paymentMethod
             );
 
@@ -170,4 +170,4 @@ class TripController {
     }
 }
 
-module.exports = new TripController();
+export default new TripController();

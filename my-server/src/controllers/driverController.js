@@ -1,6 +1,6 @@
-const driverService = require('../services/driverService');
+import driverService from '../services/driverService.js';
 
-exports.getDriver = async (req, res) => {
+export const getDriver = async (req, res) => {
     try {
         const driver = await driverService.getDriver(req.params.id);
         res.status(200).json({ success: true, data: driver });
@@ -9,7 +9,7 @@ exports.getDriver = async (req, res) => {
     }
 };
 
-exports.updateDriver = async (req, res) => {
+export const updateDriver = async (req, res) => {
     try {
         const updatedDriver = await driverService.updateDriver(req.params.id, req.body);
         res.status(200).json({ success: true, data: updatedDriver });
@@ -18,7 +18,7 @@ exports.updateDriver = async (req, res) => {
     }
 };
 
-exports.updateStatus = async (req, res) => {
+export const updateStatus = async (req, res) => {
     try {
         const { status } = req.body;
         const result = await driverService.updateStatus(req.params.id, status);
@@ -28,7 +28,7 @@ exports.updateStatus = async (req, res) => {
     }
 };
 
-exports.updateLocation = async (req, res) => {
+export const updateLocation = async (req, res) => {
     try {
         const { lat, lng } = req.body;
         if (lat === undefined || lng === undefined) {

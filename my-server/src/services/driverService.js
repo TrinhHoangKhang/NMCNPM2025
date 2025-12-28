@@ -1,6 +1,6 @@
 // src/services/driverService.js
-const { db } = require('../config/firebaseConfig');
-const Driver = require('../models/Driver');
+import { db  } from '../config/firebaseConfig.js';
+import Driver from '../models/Driver.js';
 
 class DriverService {
 
@@ -51,4 +51,4 @@ class DriverService {
     }
 }
 
-module.exports = new DriverService(); // Export as Singleton
+export default new DriverService(); // Export as Singleton

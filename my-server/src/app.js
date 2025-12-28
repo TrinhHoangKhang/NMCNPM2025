@@ -1,11 +1,26 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const session = require('express-session');
-const passport = require('passport');
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import session from 'express-session';
+import passport from 'passport';
+
+// Initialize Firebase (and db/admin exports)
+import './config/firebaseConfig.js';
+
+// Initialize Passport Config
+import passportConfig from './config/passportConfig.js';
+
+// Route Imports
+import authRoutes from './routes/authRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import mapRoutes from './routes/mapRoutes.js';
+import driverRoutes from './routes/driverRoutes.js';
+import tripRoutes from './routes/tripRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 // ==========================================
 // 1. CONFIGURATION & SETUP
@@ -14,11 +29,8 @@ const passport = require('passport');
 // Load environment variables from .env file
 dotenv.config();
 
-// Initialize Firebase (Database)
-require('./config/firebaseConfig'); // Refactored path
-
-// Initialize Passport (Authentication Strategies)
-require('./config/passportConfig')(passport); // Refactored path
+// Pass passport instance to config function
+passportConfig(passport);
 
 const app = express();
 
@@ -57,19 +69,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // ==========================================
-// 3. ROUTE IMPORTING
-// ==========================================
-
-const authRoutes = require('./routes/authRoutes');
-const chatRoutes = require('./routes/chatRoutes');
-const mapRoutes = require('./routes/mapRoutes');
-const driverRoutes = require('./routes/driverRoutes');
-const tripRoutes = require('./routes/tripRoutes');
-const userRoutes = require('./routes/userRoutes');
-const aiRoutes = require('./routes/aiRoutes');
-
-// ==========================================
-// 4. ROUTE DEFINITIONS
+// 3. ROUTE DEFINITIONS
 // ==========================================
 
 app.use('/auth', authRoutes);
@@ -86,7 +86,7 @@ app.get('/', (req, res) => {
 });
 
 // ==========================================
-// 5. ERROR HANDLING
+// 4. ERROR HANDLING
 // ==========================================
 
 app.use((err, req, res, next) => {
@@ -98,4 +98,4 @@ app.use((err, req, res, next) => {
     });
 });
 
-module.exports = app;
+export default app;

@@ -5,7 +5,7 @@ class Trip {
         this.driverId = data.driverId || null;
         this.pickupLocation = data.pickupLocation; // { lat, lng, address }
         this.dropoffLocation = data.dropoffLocation; // { lat, lng, address }
-        this.vehicleType = data.vehicleType,
+        this.vehicleType = data.vehicleType;
         this.fare = data.fare || 0;
         this.distance = data.distance || 0; // in meters
         this.duration = data.duration || 0; // in seconds
@@ -39,4 +39,4 @@ class Trip {
     }
 }
 
-module.exports = Trip;
+export default Trip;

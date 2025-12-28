@@ -1,20 +1,20 @@
 // src/models/Driver.js
-const User = require('./User');
+import User from './User.js';
 
 class Driver extends User {
     constructor(id, data) {
         super(id, data); // Call the parent constructor
-        
+
         this.licenseNumber = data.licenseNumber;
         this.status = data.status || 'OFFLINE'; // OFFLINE, ONLINE, BUSY
         this.rating = data.rating || 5.0;
         this.walletBalance = data.walletBalance || 0;
-        
+
         // Composition: A Driver HAS A Vehicle
         this.vehicle = data.vehicle ? new Vehicle(data.vehicle) : null;
-        
+
         // GeoPoint: { lat: 10.123, lng: 106.456 }
-        this.currentLocation = data.currentLocation || null; 
+        this.currentLocation = data.currentLocation || null;
     }
 
     // Method to check if driver can accept a ride
@@ -36,4 +36,4 @@ class Driver extends User {
         };
     }
 }
-module.exports = Driver;
+export default Driver;

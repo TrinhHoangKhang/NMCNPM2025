@@ -1,6 +1,6 @@
-const { admin, db } = require('../config/firebaseConfig');
+import { admin, db } from '../config/firebaseConfig.js';
 
-module.exports = async (req, res, next) => {
+export default async (req, res, next) => {
     try {
         // 1. Get the Authorization Header
         const authHeader = req.headers.authorization;

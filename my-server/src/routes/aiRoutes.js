@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const checkAuth = require('../middleware/checkAuth');
-const aiController = require('../controllers/aiController');
+import checkAuth from '../middleware/checkAuth.js';
+import aiController from '../controllers/aiController.js';
 
 // Protect AI routes
 router.use(checkAuth);
@@ -9,5 +9,5 @@ router.use(checkAuth);
 // POST /api/ai/commands - takes { text } and returns { commands: [...] }
 router.post('/commands', aiController.generateCommands);
 
-module.exports = router;
+export default router;
 

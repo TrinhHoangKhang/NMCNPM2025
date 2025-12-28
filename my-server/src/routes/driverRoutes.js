@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const driverController = require('../controllers/driverController');
+import * as driverController from '../controllers/driverController.js';
 
-const checkAuth = require('../middleware/checkAuth');
+import checkAuth from '../middleware/checkAuth.js';
 
 // Apply authentication middleware to all driver routes
 router.use(checkAuth);
@@ -20,4 +20,4 @@ router.patch('/:id/status', driverController.updateStatus);
 // PATCH /api/drivers/:id/location - Update Driver Location (Lat/Lng)
 router.patch('/:id/location', driverController.updateLocation);
 
-module.exports = router;
+export default router;

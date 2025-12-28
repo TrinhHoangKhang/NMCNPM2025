@@ -1,6 +1,6 @@
-const { db } = require('../config/firebaseConfig');
-const Trip = require('../models/Trip');
-const mapsService = require('./mapsService');
+import { db  } from '../config/firebaseConfig.js';
+import Trip from '../models/Trip.js';
+import mapsService from './mapsService.js';
 //const { v4: uuidv4 } = require('uuid'); // Need to install uuid, or just use Firestore auto-ID
 
 // Pricing Config (could be a separate file)
@@ -242,4 +242,4 @@ class TripService {
     }
 }
 
-module.exports = new TripService();
+export default new TripService();

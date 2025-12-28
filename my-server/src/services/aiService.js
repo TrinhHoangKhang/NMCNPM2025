@@ -1,5 +1,5 @@
 // src/services/aiService.js
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 function extractJsonArray(text) {
     // Strip code fences if present
@@ -24,10 +24,12 @@ function extractJsonArray(text) {
 class AIService {
     constructor() {
         if (!process.env.GEMINI_API_KEY) {
-            throw new Error('GEMINI_API_KEY is not set');
+            console.warn('GEMINI_API_KEY is not set. AI features will be disabled.');
+            this.model = null;
+        } else {
+            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+            this.model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         }
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        this.model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     }
 
     async generateCommands(userText, context = {}) {
@@ -53,14 +55,14 @@ class AIService {
 
         const prompt = [system, ctx, user].filter(Boolean).join('\n\n');
 
-        const result = await this.model.generateContent({ contents: [{ role: 'user', parts: [{ text: prompt }]}] });
+        const result = await this.model.generateContent({ contents: [{ role: 'user', parts: [{ text: prompt }] }] });
 
         try {
             const raw = result.response.text();
             // Utility to clean AI output if it includes markdown blocks
             const jsonString = raw.replace(/```json|```/g, "").trim();
             const parsed = JSON.parse(jsonString);
-            
+
             if (!Array.isArray(parsed)) throw new Error('AI did not return an array');
             return parsed;
         } catch (e) {
@@ -68,4 +70,4 @@ class AIService {
         }
     }
 }
-module.exports = new AIService();
+export default new AIService();

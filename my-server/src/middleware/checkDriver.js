@@ -1,8 +1,8 @@
 // Middleware to check if user is a DRIVER
-module.exports = (req, res, next) => {
+export default (req, res, next) => {
     try {
         const user = req.user || {};
-        
+
         if (user.role !== 'DRIVER') {
             return res.status(403).json({ message: "Access denied. Driver role required." });
         }

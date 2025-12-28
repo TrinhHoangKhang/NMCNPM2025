@@ -1,6 +1,6 @@
-const { admin, db } = require('../config/firebaseConfig');
+import { admin, db } from '../config/firebaseConfig.js';
 
-exports.registerUser = async (userData) => {
+const registerUser = async (userData) => {
     const { idToken, name, phone, role } = userData;
 
     // STEP 1: Verify the Firebase ID Token
@@ -28,7 +28,7 @@ exports.registerUser = async (userData) => {
     return userDoc;
 };
 
-exports.loginUser = async (idToken) => {
+const loginUser = async (idToken) => {
     // STEP 1: Verify the Firebase ID Token
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     const uid = decodedToken.uid;
@@ -48,3 +48,5 @@ exports.loginUser = async (idToken) => {
 
     return userDoc.data();
 };
+
+export default { registerUser, loginUser };

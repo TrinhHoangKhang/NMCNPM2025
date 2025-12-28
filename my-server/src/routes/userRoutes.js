@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const userController = require('../controllers/userController');
+import * as userController from '../controllers/userController.js';
 
-const checkAuth = require('../middleware/checkAuth');
+import checkAuth from '../middleware/checkAuth.js';
 
 // Apply authentication middleware to all user routes
 router.use(checkAuth);
@@ -14,4 +14,4 @@ router.get('/:id', userController.getUser);
 // PATCH /api/users/:id - Update User Profile
 router.patch('/:id', userController.updateUser);
 
-module.exports = router;
+export default router;

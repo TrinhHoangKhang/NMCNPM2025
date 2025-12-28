@@ -1,6 +1,6 @@
-const mapsService = require('../services/mapsService');
+import mapsService from '../services/mapsService.js';
 
-exports.calculateRoute = async (req, res) => {
+export const calculateRoute = async (req, res) => {
     try {
         const { origin, destination } = req.body;
 

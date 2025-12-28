@@ -1,8 +1,8 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const mapController = require('../controllers/mapController');
+import * as mapController from '../controllers/mapController.js';
 
 // POST /api/maps/calculate-route
 router.post('/calculate-route', mapController.calculateRoute);
 
-module.exports = router;
+export default router;

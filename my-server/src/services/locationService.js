@@ -1,5 +1,5 @@
 // src/services/locationService.js
-const { db } = require('../config/firebaseConfig');
+import { db  } from '../config/firebaseConfig.js';
 
 class LocationService {
 
@@ -37,4 +37,4 @@ class LocationService {
     }
 }
 
-module.exports = new LocationService();
+export default new LocationService();

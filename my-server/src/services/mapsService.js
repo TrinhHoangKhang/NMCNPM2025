@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 class MapsService {
     constructor() {
@@ -71,4 +71,4 @@ class MapsService {
     }
 }
 
-module.exports = new MapsService();
+export default new MapsService();

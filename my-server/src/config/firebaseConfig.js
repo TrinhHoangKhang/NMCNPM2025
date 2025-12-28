@@ -1,23 +1,52 @@
-const admin = require('firebase-admin');
-const dotenv = require('dotenv');
+import admin from 'firebase-admin';
+import dotenv from 'dotenv';
 dotenv.config();
 
-const db = { collection: () => ({ doc: () => ({ get: jest.fn(), set: jest.fn(), update: jest.fn() }) }) }; // Mock DB for non-firebase envs
+let dbInstance;
 
 if (process.env.NODE_ENV !== 'test') {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      // THE FIX: Replaces \\n with real line breaks
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    })
-  });
-  module.exports = { admin, db: admin.firestore() };
+  // Check if app is already initialized to prevent hot-reload errors
+  if (!admin.apps.length) {
+    try {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          // THE FIX: Replaces \\n with real line breaks
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        })
+      });
+    } catch (err) {
+      console.error("Firebase Initialization Failed:", err.message);
+    }
+  }
+
+  if (admin.apps.length) {
+    dbInstance = admin.firestore();
+  } else {
+    console.warn("Firebase App not initialized. Creating mock DB that always throws.");
+    dbInstance = {
+      collection: () => ({
+        doc: () => ({
+          get: async () => { throw new Error("Database not initialized"); },
+          set: async () => { throw new Error("Database not initialized"); },
+          update: async () => { throw new Error("Database not initialized"); },
+          delete: async () => { throw new Error("Database not initialized"); },
+        }),
+        where: () => ({
+          get: async () => { throw new Error("Database not initialized"); },
+          orderBy: () => ({
+            get: async () => { throw new Error("Database not initialized"); },
+            limit: () => ({ get: async () => { throw new Error("Database not initialized"); } })
+          })
+        }),
+      })
+    };
+  }
 } else {
   // Mock for testing to prevent crash
-  module.exports = {
-    admin: { auth: () => ({ verifyIdToken: () => { } }) },
-    db: { collection: () => ({ doc: () => ({ get: () => { }, update: () => { }, set: () => { } }) }) }
-  };
+  dbInstance = { collection: () => ({ doc: () => ({ get: () => { }, update: () => { }, set: () => { } }) }) };
 }
+
+export { admin };
+export const db = dbInstance;
