@@ -11,11 +11,29 @@ export default async (req, res, next) => {
 
         // 2. Verify Token
         const token = authHeader.split(" ")[1];
-        const decodedToken = await admin.auth().verifyIdToken(token);
-        const uid = decodedToken.uid;
+        let decodedToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(token);
+        } catch (authError) {
+            console.warn("Verify ID Token verification failed:", authError.message);
+            // In DEVELOPMENT, allow expired/future tokens if we can decode them
+            if (process.env.NODE_ENV === 'development') {
+                console.warn("DEV MODE: Attempting to decode token without verification...");
+                const jwt = await import('jsonwebtoken');
+                // jwt.decode does NOT verify signature/expiration
+                decodedToken = jwt.default.decode(token);
 
+                if (!decodedToken || !decodedToken.uid) {
+                    throw new Error("Could not decode token even without verification");
+                }
+                console.warn("DEV MODE: Used unverified token for UID:", decodedToken.uid);
+            } else {
+                throw authError;
+            }
+        }
+
+        const uid = decodedToken.uid;
         // 3. Get User Role from Firestore
-        // (Because we store role in DB, not usually in custom assertions unless set explicitly)
         const userDoc = await db.collection('users').doc(uid).get();
         let role = 'USER';
 

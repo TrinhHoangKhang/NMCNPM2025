@@ -21,7 +21,14 @@ export const updateDriver = async (req, res) => {
 export const updateStatus = async (req, res) => {
     try {
         const { status } = req.body;
-        const result = await driverService.updateStatus(req.params.id, status);
+        // Use ID from params OR from authenticated user
+        const driverId = req.params.id || (req.user ? req.user.uid : null);
+
+        if (!driverId) {
+            return res.status(400).json({ success: false, error: "Driver ID is required" });
+        }
+
+        const result = await driverService.updateStatus(driverId, status);
         res.status(200).json({ success: true, data: result });
     } catch (error) {
         res.status(400).json({ success: false, error: error.message });

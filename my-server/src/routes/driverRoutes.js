@@ -14,7 +14,10 @@ router.get('/:id', driverController.getDriver);
 // PATCH /api/drivers/:id - Update Driver Profile (Vehicle, License, etc.)
 router.patch('/:id', driverController.updateDriver);
 
-// PATCH /api/drivers/:id/status - Update Driver Status (ONLINE/OFFLINE)
+// PATCH /api/drivers/status - Update Driver Status (Using Auth Token ID)
+router.patch('/status', driverController.updateStatus);
+
+// PATCH /api/drivers/:id/status - Update Driver Status (Admin/Specific)
 router.patch('/:id/status', driverController.updateStatus);
 
 // PATCH /api/drivers/:id/location - Update Driver Location (Lat/Lng)

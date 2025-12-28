@@ -42,15 +42,15 @@ const app = express();
 app.use(helmet());
 app.use(morgan('dev'));
 
-// Rate Limiting (Basic Protection)
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-});
-app.use(limiter);
+// Rate Limiting (Relaxed for Dev)
+// const limiter = rateLimit({
+//     windowMs: 15 * 60 * 1000, 
+//     max: 100, 
+// });
+// app.use(limiter);
 
-// CORS: Allows your Mobile App to talk to this server
-app.use(cors());
+// CORS: Open for development
+app.use(cors({ origin: '*' }));
 
 // Body Parsers
 app.use(express.json());

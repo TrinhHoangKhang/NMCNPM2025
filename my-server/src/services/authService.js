@@ -5,7 +5,19 @@ const registerUser = async (userData) => {
 
     // STEP 1: Verify the Firebase ID Token
     // This proves the user is who they claim to be (and they are logged in on the client)
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    let decodedToken;
+    try {
+        decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (authError) {
+        if (process.env.NODE_ENV === 'development') {
+            console.warn("DEV MODE: (Register) Decoding token without verification...");
+            const jwt = await import('jsonwebtoken');
+            decodedToken = jwt.default.decode(idToken);
+            if (!decodedToken) throw authError;
+        } else {
+            throw authError;
+        }
+    }
     const { uid, email } = decodedToken;
 
     // STEP 2: Prepare data for Firestore Database
@@ -30,7 +42,19 @@ const registerUser = async (userData) => {
 
 const loginUser = async (idToken) => {
     // STEP 1: Verify the Firebase ID Token
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    let decodedToken;
+    try {
+        decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (authError) {
+        if (process.env.NODE_ENV === 'development') {
+            console.warn("DEV MODE: (Login) Decoding token without verification...");
+            const jwt = await import('jsonwebtoken');
+            decodedToken = jwt.default.decode(idToken);
+            if (!decodedToken) throw authError;
+        } else {
+            throw authError;
+        }
+    }
     const uid = decodedToken.uid;
 
     // STEP 2: Fetch extra details from YOUR Firestore Database
