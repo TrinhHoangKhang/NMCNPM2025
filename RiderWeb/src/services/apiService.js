@@ -3,13 +3,30 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 export const apiClient = async (endpoint, options = {}) => {
   const fullUrl = `${BASE_URL}${endpoint}`;
 
-  const { method = 'GET', headers = {}, body } = options;
+  const { method = 'GET', headers: customHeaders = {}, body } = options;
 
   // Get current user token if logged in
   let token = null;
-  // Note: We'd typically get the token from auth.currentUser inside the config or a hook,
-  // but for simple service calls, we can try to get it if initialized.
-  // importing auth might cause circular dep if not careful.
+  try {
+    const sessionStr = localStorage.getItem("active_session");
+    if (sessionStr) {
+      const session = JSON.parse(sessionStr);
+      // Token might be on the top level of the stored value, or inside user object
+      // We'll check both based on how AuthProvider saves it
+      token = session.value?.token || session.value?.user?.token;
+    }
+  } catch (e) {
+    console.error("Error reading token", e);
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...customHeaders
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
   const config = {
     method: method,

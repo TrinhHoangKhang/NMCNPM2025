@@ -1,0 +1,9 @@
+[dotenv@17.2.3] injecting env (6) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+GEMINI_API_KEY is not set. AI features will be disabled.
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+Google Client ID/Secret not found. Google Auth disabled.
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+Server running on port 3001
+Environment: development
+[0mGET / [36m304[0m 8.674 ms - -[0m
+[0mGET /favicon.ico [33m404[0m 2.494 ms - 150[0m

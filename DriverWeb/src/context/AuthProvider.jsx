@@ -5,7 +5,7 @@ export const AuthContext = createContext(null);
 
 const TTL = 1000 * 60 * 60
 const KEY_REGISTERED = "mock_registered_users"
-const KEY_SESSION = "active_session"      
+const KEY_SESSION = "active_session"
 
 
 export const AuthProvider = ({ children }) => {
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
       return null
     }
   }
-  
+
   useEffect(() => {
     const storedUser = getSessionWithTTL();
     if (storedUser) setUser(storedUser);
@@ -66,22 +66,18 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
-      const response = await authService.login(username, password);
+      const result = await authService.login(username, password);
 
-      const list = await authService.getall();
-
-      if (response && response.length > 0) {
-        const foundUser = response[0];
-        // console.log(foundUser)
-        if (foundUser.password === password) {
-          setUser(foundUser);
-          setSessionWithTTL(foundUser);
-          return { success: true, user: foundUser };
-        }
-        return { success: false, error: "Invalid username or password" };
+      if (result && result.success) {
+        // Ensure token is stored if returned separately
+        const userToStore = { ...result.user, token: result.token || result.user?.token };
+        setUser(userToStore);
+        setSessionWithTTL(userToStore);
+        return { success: true, user: userToStore };
       }
-      return { success: false, error: "No user in database" };
-    } catch(error) {
+
+      return { success: false, error: result?.error || "Invalid username or password" };
+    } catch (error) {
       return { success: false, error: "Invalid email or password" };
     }
   };
@@ -91,10 +87,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.clear();
   };
-  
+
   return (
     <AuthContext.Provider value={{ user, login, register, logout, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  return useContext(AuthContext);
 };

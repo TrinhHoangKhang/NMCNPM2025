@@ -43,12 +43,5 @@ export const authService = {
 
   logout: async () => {
     await signOut(auth);
-  },
-
-  getall: async () => {
-    // Drivers likely shouldn't see all users, but keeping for compatibility/admin
-    return apiClient(`/drivers`, {
-      method: 'GET'
-    });
   }
 };

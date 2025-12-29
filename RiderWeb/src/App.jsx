@@ -1,12 +1,26 @@
 import { RouterProvider } from 'react-router-dom';
-import { AuthProvider } from './context/AuthProvider';
+import {
+  AuthProvider,
+  ThemeProvider,
+  ToastProvider,
+  LocaleProvider,
+  SocketProvider
+} from './context';
 import router from './routes';
 
 function App() {
   return (
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <LocaleProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <SocketProvider>
+              <RouterProvider router={router} />
+            </SocketProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </LocaleProvider>
   );
 }
 

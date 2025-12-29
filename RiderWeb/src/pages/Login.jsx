@@ -42,10 +42,10 @@ export default function LoginPage() {
   async function onSubmit(values) {
     setIsSubmitting(true)
     try {
-      const result = await login(values.username, values.password)
-  
+      const result = await login(values.email, values.password)
+
       console.log(result)
-      
+
       if (result.success) {
         navigate(from, { replace: true });
       } else {
@@ -72,13 +72,13 @@ export default function LoginPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="username"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="abcde134"
+                        placeholder="m@example.com"
                         {...field}
                         disabled={isSubmitting}
                       />

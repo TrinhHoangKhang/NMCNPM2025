@@ -1,0 +1,21 @@
+node:internal/modules/cjs/loader:524
+      const err = new Error(
+                  ^
+
+Error: Cannot find module '/home/test-linux-ubuntu/.npm/_npx/aab42732f01924e5/node_modules/isexe/index.js'. Please verify that the package.json has a valid "main" entry
+    at tryPackage (node:internal/modules/cjs/loader:524:19)
+    at Module._findPath (node:internal/modules/cjs/loader:792:18)
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1405:27)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1058:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1063:22)
+    at Module._load (node:internal/modules/cjs/loader:1226:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+    at Module.require (node:internal/modules/cjs/loader:1503:12)
+    at require (node:internal/modules/helpers:152:16) {
+  code: 'MODULE_NOT_FOUND',
+  path: '/home/test-linux-ubuntu/.npm/_npx/aab42732f01924e5/node_modules/isexe/package.json',
+  requestPath: 'isexe'
+}
+
+Node.js v24.11.0

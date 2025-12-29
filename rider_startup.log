@@ -1,0 +1,28 @@
+
+> rider-web@0.0.0 dev
+> vite --port 5175
+
+4:38:01 PM [vite] (client) Re-optimizing dependencies because lockfile has changed
+node:internal/fs/watchers:254
+    const error = new UVException({
+                  ^
+
+Error: ENOSPC: System limit for number of file watchers reached, watch '/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/RiderWeb/eslint.config.js'
+    at FSWatcher.<computed> (node:internal/fs/watchers:254:19)
+    at Object.watch (node:fs:2539:36)
+    at createFsWatchInstance (file:///home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/RiderWeb/node_modules/vite/dist/node/chunks/config.js:13599:16)
+    at setFsWatchListener (file:///home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/RiderWeb/node_modules/vite/dist/node/chunks/config.js:13641:14)
+    at NodeFsHandler$1._watchWithNodeFs (file:///home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/RiderWeb/node_modules/vite/dist/node/chunks/config.js:13755:20)
+    at NodeFsHandler$1._handleFile (file:///home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/RiderWeb/node_modules/vite/dist/node/chunks/config.js:13799:24)
+    at NodeFsHandler$1._addToNodeFs (file:///home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/RiderWeb/node_modules/vite/dist/node/chunks/config.js:13973:26)
+Emitted 'error' event on FSWatcher instance at:
+    at FSWatcher._handleError (file:///home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/RiderWeb/node_modules/vite/dist/node/chunks/config.js:14774:148)
+    at NodeFsHandler$1._addToNodeFs (file:///home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/RiderWeb/node_modules/vite/dist/node/chunks/config.js:13978:18) {
+  errno: -28,
+  syscall: 'watch',
+  code: 'ENOSPC',
+  path: '/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/RiderWeb/eslint.config.js',
+  filename: '/home/test-linux-ubuntu/Documents/Code/Git/NMCNPM2025/RiderWeb/eslint.config.js'
+}
+
+Node.js v24.11.0

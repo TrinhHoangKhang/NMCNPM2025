@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 
 export default function RegisterPage() {
-  const { user, register } = useAuth() 
+  const { user, register } = useAuth()
   const navigate = useNavigate();
 
   const location = useLocation();
@@ -30,9 +30,9 @@ export default function RegisterPage() {
   const form = useForm({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
       name: "",
       email: "",
+      phone: "",
       password: "",
       confirmPassword: "",
       terms: false,
@@ -46,9 +46,9 @@ export default function RegisterPage() {
       const result = await register(values)
       console.log("end", result)
 
-      if(result == null)(
+      if (result == null) (
         // navigate to login instead
-        navigate("/login")        
+        navigate("/login")
       )
 
       if (result.success) {
@@ -73,28 +73,14 @@ export default function RegisterPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                        <Input placeholder="un01" {...field} disabled={isSubmitting} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <FormField
                 control={form.control}
-                name="name"                render={({ field }) => (
+                name="name" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                        <Input placeholder="Nguyễn Văn A" {...field} disabled={isSubmitting} />
+                      <Input placeholder="Nguyễn Văn A" {...field} disabled={isSubmitting} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -108,13 +94,27 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                        <Input placeholder="nguyenvana@example.com" {...field} disabled={isSubmitting} />
+                      <Input placeholder="nguyenvana@example.com" {...field} disabled={isSubmitting} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="0901234567" {...field} disabled={isSubmitting} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}

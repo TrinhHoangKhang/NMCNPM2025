@@ -1,42 +1,47 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
-function Profile() {
-  const {user} = useAuth()
+export default function Profile() {
+  const { user, logout } = useAuth();
+
+  if (!user) return <div>Please log in</div>;
+
   return (
-    <div className="flex justify-center items-center w-full min-h-[calc(100vh-6rem)] bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-lg p-8 shadow-xl rounded-lg bg-white">
+    <div className="flex justify-center w-full p-4">
+      <Card className="w-full max-w-lg shadow-lg">
         <CardHeader className="text-center">
-          <Avatar className="mx-auto h-24 w-24 mb-4 border-4 border-blue-400 shadow-md">
-            <AvatarImage src="" alt="User Avatar" />
-            <AvatarFallback className="bg-blue-500 text-white text-4xl font-semibold">
-              {user?.username?.slice(0, 2).toUpperCase() || "U"}
+          <Avatar className="mx-auto h-24 w-24 mb-4">
+            <AvatarImage src={user.avatar} alt="User Avatar" />
+            <AvatarFallback className="text-2xl">
+              {user.name ? user.name.charAt(0).toUpperCase() : "U"}
             </AvatarFallback>
           </Avatar>
-          <CardTitle className="text-4xl font-extrabold text-gray-800">Your Profile</CardTitle>
-          <CardDescription className="text-gray-600 text-lg mt-2">Manage your account details and preferences.</CardDescription>
+          <CardTitle className="text-2xl">{user.name}</CardTitle>
+          <CardDescription>{user.role} Account</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {user ? (<>
-            <p className="text-xl text-gray-700"><span className="font-bold text-gray-800">Username:</span> {user.username}</p>
-            <p className="text-xl text-gray-700"><span className="font-bold text-gray-800">Full name:</span> {user.name}</p>
-            <p className="text-xl text-gray-700"><span className="font-bold text-gray-800">Email:</span> {user.email}</p>
-          </>
-          ) : (
-            <p className="text-red-500 text-center">Please log in to view your profile.</p>
-          )}
-        <div className="flex justify-between mt-20">
-          <Button variant="outline">Change Username</Button>
-          <Button variant="outline">Change Password</Button>
-        </div>
+          <div className="grid grid-cols-3 gap-2 text-sm border-b pb-4">
+            <span className="font-semibold text-slate-500">Email</span>
+            <span className="col-span-2">{user.email}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-sm border-b pb-4">
+            <span className="font-semibold text-slate-500">Phone</span>
+            <span className="col-span-2">{user.phone || "Not set"}</span>
+          </div>
+
+          <div className="flex flex-col gap-2 mt-6">
+            <Button variant="outline" onClick={() => alert("Edit Profile Feature Coming Soon")}>
+              Edit Profile
+            </Button>
+            <Button variant="destructive" onClick={logout}>
+              Log Out
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
   );
 }
-export default Profile;
