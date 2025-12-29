@@ -11,11 +11,7 @@ export const publicRoutes = [
   },
 
   {
-    element: <AuthLayout />,
-    children: [
-      { path: "login", element: <Login /> },
-      { path: "register", element: <Register /> },
-      { path: "unauthorized", element: <Unauthorized /> }
-    ]
+    path: "/unauthorized",
+    element: <Unauthorized />
   }
 ];
