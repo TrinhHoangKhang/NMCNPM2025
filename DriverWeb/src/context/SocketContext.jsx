@@ -12,7 +12,7 @@ export const SocketProvider = ({ children }) => {
         if (user) {
             // Connect to server
             // Ensure VITE_API_URL is parsed correctly to get host (remove /api)
-            const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
+            const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001';
 
             const newSocket = io(socketUrl, {
                 auth: {

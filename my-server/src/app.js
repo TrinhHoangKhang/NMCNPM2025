@@ -72,7 +72,7 @@ app.use(passport.session());
 // 3. ROUTE DEFINITIONS
 // ==========================================
 
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/maps', mapRoutes);
 app.use('/api/drivers', driverRoutes);

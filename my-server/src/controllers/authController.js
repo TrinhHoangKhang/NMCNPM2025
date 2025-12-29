@@ -2,20 +2,16 @@ import authService from '../services/authService.js';
 
 export const register = async (req, res) => {
     try {
-        // 1. Get data from the Mobile App (Client sends ID Token now)
-        const { idToken, name, phone, role } = req.body;
+        const { email, password, name, phone, role } = req.body;
 
-        // 2. Validate
-        if (!idToken) {
-            return res.status(400).json({ error: "Missing ID Token" });
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and password are required" });
         }
 
-        // 3. Call the Service
         const newUser = await authService.registerUser({
-            idToken, name, phone, role
+            email, password, name, phone, role
         });
 
-        // 4. Send Success Response
         res.status(201).json({
             success: true,
             message: "User registered successfully",
@@ -33,19 +29,14 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
     try {
-        // 1. Unpack the request
-        const { idToken } = req.body;
+        const { email, password } = req.body;
 
-        // 2. Validate input
-        if (!idToken) {
-            return res.status(400).json({ error: "Missing ID Token" });
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and password are required" });
         }
 
-        // 3. Call the Service to verify token and get user data
-        const user = await authService.loginUser(idToken);
+        const user = await authService.loginUser(email, password);
 
-        // 4. Send Response
-        // Note: We DO NOT mint a new token. The client uses the Firebase ID Token.
         res.status(200).json({
             success: true,
             message: "Login successful",
