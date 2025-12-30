@@ -29,7 +29,45 @@ const registerUser = async (userData) => {
     // STEP 3: Save to Firestore
     await db.collection('users').doc(uid).set(userDoc, { merge: true });
 
-    return userDoc;
+    // STEP 3b: If Driver, create entry in 'drivers' collection
+    if (role === 'DRIVER') {
+        const driverDoc = {
+            uid: uid,
+            email: email,
+            name: name || 'Unknown',
+            phone: phone || "",
+            role: 'DRIVER',
+            vehicle: userData.vehicleType ? { type: userData.vehicleType, plate: userData.licensePlate || 'Unknown' } : null,
+            status: 'OFFLINE',
+            currentLocation: null,
+            rating: 5.0,
+            totalTrips: 0,
+            walletBalance: 0,
+            createdAt: new Date().toISOString()
+        };
+        await db.collection('drivers').doc(uid).set(driverDoc, { merge: true });
+    }
+
+    // STEP 4: Generate Custom Token (since we are admin) or Login
+    // Note: Clients usually exchange custom tokens for ID tokens, but for simplicity in this REST API flow, 
+    // we can use the same sign-in logic as loginUser to get a real ID token, OR just return a custom token.
+    // However, our middleware verifies ID tokens. A custom token is different.
+    // The best path for a REST API that acts as a proxy is to effectively "login" the user immediately.
+
+    // We can reuse the logic from loginUser effectively
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`;
+    try {
+        const response = await axios.post(url, {
+            email,
+            password,
+            returnSecureToken: true
+        });
+        const { idToken } = response.data;
+        return { ...userDoc, token: idToken };
+    } catch (e) {
+        console.warn("Auto-login after register failed, user must login manually:", e.message);
+        return userDoc;
+    }
 };
 
 const loginUser = async (email, password) => {

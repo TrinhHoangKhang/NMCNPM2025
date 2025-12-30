@@ -11,9 +11,10 @@ export default function Sidebar() {
   const location = useLocation();
 
   const navItems = [
-    { label: 'Dashboard', href: '/users', icon: LayoutDashboard }, // Dashboard redirect to users for now or create distinct one
-    { label: 'Users', href: '/users', icon: Users },
-    { label: 'Trips', href: '/trips', icon: Package }, // Package icon as placeholder for Trips
+    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { label: 'Riders', href: '/riders', icon: Users },
+    { label: 'Drivers', href: '/drivers', icon: Users },
+    { label: 'Trips', href: '/trips', icon: Package },
   ];
 
   return (
@@ -27,7 +28,7 @@ export default function Sidebar() {
 
           return (
             <Link
-              key={item.href}
+              key={item.label}
               to={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors
                         ${isActive

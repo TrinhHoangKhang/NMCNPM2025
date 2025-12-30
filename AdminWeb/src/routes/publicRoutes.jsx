@@ -1,6 +1,6 @@
 import AuthLayout from '../layouts/AuthLayout';
-import Login from '../pages/Login';
-import Register from '../pages/Register';
+import LoginPage from '../pages/LoginPage';
+import RegisterPage from '../pages/RegisterPage';
 import Unauthorized from '../pages/Unauthorized';
 import Landing from '../pages/Landing';
 
@@ -8,6 +8,14 @@ export const publicRoutes = [
   {
     path: "/",
     element: <Landing />
+  },
+  {
+    path: "/login",
+    element: <LoginPage />
+  },
+  {
+    path: "/register",
+    element: <RegisterPage />
   },
 
   {

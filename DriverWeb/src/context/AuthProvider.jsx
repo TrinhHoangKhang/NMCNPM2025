@@ -55,8 +55,10 @@ export const AuthProvider = ({ children }) => {
     if (result == null) return result;
 
     if (result.success) {
-      setUser(result.user);
-      setSessionWithTTL(result.user);
+      // FIX: Ensure token is included in storage, just like login
+      const userToStore = { ...result.user, token: result.token || result.user?.token };
+      setUser(userToStore);
+      setSessionWithTTL(userToStore);
     } else if (result.error === "User already exists") {
       // If registration fails because user already exists, try to log them in
       return login(userData.username, userData.password);

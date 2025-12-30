@@ -1,4 +1,4 @@
-import { db  } from '../config/firebaseConfig.js';
+import { db } from '../config/firebaseConfig.js';
 import Trip from '../models/Trip.js';
 import mapsService from './mapsService.js';
 //const { v4: uuidv4 } = require('uuid'); // Need to install uuid, or just use Firestore auto-ID
@@ -22,6 +22,12 @@ const PRICING = {
 
 
 class TripService {
+
+    // 0. Get All Trips (Admin)
+    async getAllTrips() {
+        const snapshot = await db.collection('trips').orderBy('createdAt', 'desc').get();
+        return snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
+    }
 
     // 1. Create a Trip Request (Updated with Vehicle Type and Payment Method)
     async createTripRequest(riderId, pickup, dropoff, vehicleType, paymentMethod) {
@@ -109,7 +115,7 @@ class TripService {
         const query = db.collection('trips')
             .where('riderId', '==', userId)
             .where('status', 'in', ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS'])
-            .orderBy('createdAt', 'desc')
+            // .orderBy('createdAt', 'desc')
             .limit(1);
 
         const snapshot = await query.get();
@@ -122,7 +128,7 @@ class TripService {
     async getAvailableTrips(limit = 50) {
         const snapshot = await db.collection('trips')
             .where('status', '==', 'REQUESTED')
-            .orderBy('createdAt', 'desc')
+            // .orderBy('createdAt', 'desc') // Requires index, disabling for dev execution
             .limit(limit)
             .get();
 

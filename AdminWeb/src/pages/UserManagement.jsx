@@ -24,7 +24,7 @@ const UserManagement = () => {
     try {
       // Assuming GET /api/users returns a list of users
       // We might need to handle pagination in the future
-      const response = await axios.get('http://localhost:3002/api/users');
+      const response = await axios.get('http://localhost:4000/api/users');
       setUsers(response.data.data || []);
       setLoading(false);
     } catch (err) {

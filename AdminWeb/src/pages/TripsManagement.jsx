@@ -13,7 +13,7 @@ const TripsManagement = () => {
 
     const fetchTrips = async () => {
         try {
-            const response = await axios.get('http://localhost:3002/api/trips');
+            const response = await axios.get('http://localhost:4000/api/trips');
             setTrips(response.data.data || []);
             setLoading(false);
         } catch (err) {

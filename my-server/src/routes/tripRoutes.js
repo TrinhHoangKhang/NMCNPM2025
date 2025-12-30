@@ -1,12 +1,15 @@
 import express from 'express';
 import tripController from '../controllers/tripController.js';
+import checkRole from '../middleware/checkRole.js';
 import checkAuth from '../middleware/checkAuth.js';
-import checkDriver from '../middleware/checkDriver.js';
 
 const router = express.Router();
 
 // Apply authentication middleware to all trip routes
 router.use(checkAuth);
+
+// GET /api/trips - List all trips (ADMIN ONLY)
+router.get('/', checkRole(['ADMIN']), tripController.getAllTrips);
 
 
 //====== RIDER SIDE ======//
@@ -44,7 +47,7 @@ router.patch('/cancel', tripController.cancelTrip);
 //====== DRIVER SIDE ======//
 // GET /api/trips/available - Driver Lấy danh sách các chuyến đi đang chờ (status REQUESTED)
 // Input: none (Chỉ cần jwt token)
-router.get('/available', checkDriver, tripController.getAvailableTrips);
+router.get('/available', checkRole(['DRIVER']), tripController.getAvailableTrips);
 
 // GET /api/trips/:id - Lấy chi tiết một chuyến đi cụ thể bằng ID (Dùng cho cả Rider và Driver)
 // Input: Id của chuyến đi 
@@ -52,18 +55,18 @@ router.get('/:id', tripController.getTripDetails);
 
 // PATCH /api/trips/:id/accept - Driver nhận chuyến đi, trạng thái 'REQUESTED' -> 'ACCEPTED'
 // Input: Id của chuyến đi
-router.patch('/:id/accept', checkDriver, tripController.acceptTrip);
+router.patch('/:id/accept', checkRole(['DRIVER']), tripController.acceptTrip);
 
 // PATCH  - Driver đến điểm đón, trạng thái 'ACCEPTED' -> 'IN_PROGRESS'
 // Input: Id của chuyến đi
-router.patch('/:id/pickup', checkDriver, tripController.markTripPickup);
+router.patch('/:id/pickup', checkRole(['DRIVER']), tripController.markTripPickup);
 
 // PATCH /api/trips/:id/complete - Driver hoàn thành chuyến đi, trạng thái 'IN_PROGRESS' -> 'COMPLETED'
 // Input: Id của chuyến đi
-router.patch('/:id/complete', checkDriver, tripController.markTripComplete);
+router.patch('/:id/complete', checkRole(['DRIVER']), tripController.markTripComplete);
 
 // GET /api/trips/driver/history - Lấy lịch sử các chuyến đi của driver
 // Input: none (Chỉ cần jwt token)
-router.get('/driver/history', checkDriver, tripController.getDriverTripHistory);
+router.get('/driver/history', checkRole(['DRIVER']), tripController.getDriverTripHistory);
 
 export default router;

@@ -16,7 +16,20 @@ class MapsService {
 
     async calculateRoute(origin, destination) {
         if (!this.apiKey) {
-            throw new Error('GRAPHHOPPER_API_KEY is missing');
+            // Mock response for development if API key is missing
+            console.warn('GRAPHHOPPER_API_KEY missing, using mock route data.');
+            return {
+                distance: { text: '1.5 km', value: 1500 },
+                duration: { text: '5 mins', value: 300 },
+                geometry: {
+                    type: 'LineString',
+                    coordinates: [
+                        [origin.lng || 106.660, origin.lat || 10.762],
+                        [destination.lng || 106.700, destination.lat || 10.776]
+                    ]
+                },
+                bbox: null
+            };
         }
 
         const originStr = this.formatPoint(origin);

@@ -43,7 +43,7 @@ export default function RegisterPage() {
     setIsSubmitting(true)
     try {
       console.log("start", values)
-      const result = await register(values)
+      const result = await register({ ...values, role: 'rider' })
       console.log("end", result)
 
       if (result == null) (

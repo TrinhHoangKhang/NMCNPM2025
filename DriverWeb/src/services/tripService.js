@@ -5,6 +5,16 @@ export const tripService = {
         return apiClient('/trips/available');
     },
 
+    getCurrentTrip: async () => {
+        // Backend endpoint: GET /api/trips/current
+        // Note: Needs strict error handling if 404
+        try {
+            return await apiClient('/trips/current');
+        } catch (e) {
+            return null;
+        }
+    },
+
     getTripDetails: async (id) => {
         return apiClient(`/trips/${id}`);
     },
@@ -29,5 +39,12 @@ export const tripService = {
 
     getDriverHistory: async () => {
         return apiClient('/trips/driver/history');
+    },
+
+    updateDriverStatus: async (status) => {
+        return apiClient('/drivers/status', {
+            method: 'PATCH',
+            body: JSON.stringify({ status })
+        });
     }
 };

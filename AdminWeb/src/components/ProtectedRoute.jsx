@@ -12,11 +12,13 @@ const ProtectedRoute = ({ allowedRoles }) => {
 
   // 2. Check Role: Are they authorized?
   // We check if the user's role is in the 'allowedRoles' array.
-  // if (allowedRoles && !allowedRoles.includes(user.role)) {
-  //   return <Navigate to="/unauthorized" replace />;
-  // }
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // Optional: Redirect to unauthorized page or just home
+    console.warn(`User role ${user.role} not authorized. Allowed: ${allowedRoles}`);
+    return <Navigate to="/login" replace />;
+  }
 
-    
+
 
   // 3. Success
   return <Outlet />;

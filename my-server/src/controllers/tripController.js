@@ -1,6 +1,19 @@
 import tripService from '../services/tripService.js';
+import userService from '../services/userService.js';
+
 
 class TripController {
+    // 0. ADMIN - Get all trips
+    async getAllTrips(req, res) {
+        try {
+            const trips = await tripService.getAllTrips();
+            const withIds = trips.map(trip => ({ id: trip.id, ...trip.toJSON() }));
+            res.status(200).json({ success: true, data: withIds });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
     // 1. POST /api/trips/request
     async requestTrip(req, res) {
         try {
@@ -32,6 +45,21 @@ class TripController {
 
             // Return the trip ID so the client can reference/cancel later
             res.status(201).json({ id: newTrip.id, ...newTrip.toJSON() });
+
+            // STEP 1 [NEW]: Broadcast to all online drivers
+            const io = req.app.get('socketio');
+            if (io) {
+                io.to('drivers').emit('new_ride_request', {
+                    id: newTrip.id,
+                    pickupLocation: newTrip.pickupLocation,
+                    dropoffLocation: newTrip.dropoffLocation,
+                    fare: newTrip.fare,
+                    distance: newTrip.distance,
+                    vehicleType: newTrip.vehicleType,
+                    riderName: req.user.name || "Rider" // Ensure name is available in token or fetched
+                });
+                console.log(`Broadcasted trip ${newTrip.id} to drivers`);
+            }
         } catch (error) {
             console.error("Trip request error:", error);
             res.status(400).json({ error: error.message });
@@ -134,13 +162,51 @@ class TripController {
     }
 
     // PATCH /api/trips/:id/accept - driver accepts a ride
+    // PATCH /api/trips/:id/accept - driver accepts a ride
     async acceptTrip(req, res) {
         try {
             const driverId = req.user.uid;
             const { id } = req.params;
             const trip = await tripService.acceptTrip(id, driverId);
+
+            // STEP 2: Socket Logic - Join Room & Notify Rider
+            const io = req.app.get('socketio');
+            const onlineUsers = req.app.get('onlineUsers');
+
+            if (io && onlineUsers) {
+                const roomName = `trip_${trip.id}`;
+
+                // 1. Get Sockets
+                const riderSocketId = onlineUsers.get(trip.riderId);
+                const driverSocketId = onlineUsers.get(driverId);
+
+                // 2. Make Driver Join Room
+                if (driverSocketId) {
+                    const driverSocket = io.sockets.sockets.get(driverSocketId);
+                    if (driverSocket) driverSocket.join(roomName);
+                }
+
+                // 3. Make Rider Join Room and Notify
+                if (riderSocketId) {
+                    const riderSocket = io.sockets.sockets.get(riderSocketId);
+                    if (riderSocket) {
+                        riderSocket.join(roomName);
+                        // Notify Rider specifically that trip is accepted
+                        io.to(riderSocketId).emit('trip_accepted', {
+                            tripId: trip.id,
+                            driverId: driverId,
+                            driverName: req.user.name || "Driver", // Should fetch full profile usually
+                            status: 'ACCEPTED'
+                        });
+                    }
+                }
+
+                console.log(`Sockets joined room ${roomName}`);
+            }
+
             res.status(200).json({ id: trip.id, ...trip.toJSON() });
         } catch (error) {
+            console.error("Accept trip error:", error);
             res.status(400).json({ error: error.message });
         }
     }
@@ -158,13 +224,54 @@ class TripController {
     }
 
     // PATCH /api/trips/:id/complete - driver completes the ride
+    // PATCH /api/trips/:id/complete - driver completes the ride
     async markTripComplete(req, res) {
         try {
             const driverId = req.user.uid;
             const { id } = req.params;
+
+            // 1. Mark Complete in DB
             const trip = await tripService.markTripComplete(id, driverId);
+
+            // 2. Handle Payment (Scenario)
+            // USER REQUEST: Leave transaction blank first. 
+            // The driver confirms payment manually in Frontend.
+            // When we reach here, we assume payment is done (Cash or Direct Transfer).
+
+            // Placeholder function for future banking integration:
+            const processPayment = (trip) => {
+                // TODO: Integrate Banking Provider here
+                console.log(`[BLANK] Processing payment for trip ${trip.id}. Payment Method: ${trip.paymentMethod}`);
+                return true;
+            };
+
+            processPayment(trip);
+
+            // Note: We are NOT deducting from internal wallet anymore per request.
+            // await userService.updateWalletBalance(...) <--- REMOVED
+
+            // 3. Socket: Notify Completion & Cleanup
+            const io = req.app.get('socketio');
+            if (io) {
+                const roomName = `trip_${trip.id}`;
+
+                // Notify Everyone
+                io.to(roomName).emit('trip_completed', {
+                    tripId: trip.id,
+                    fare: trip.fare,
+                    status: 'COMPLETED'
+                });
+
+                // Force leave room (cleanup)
+                io.in(roomName).socketsJoin('completed_trips_archive'); // Move them out implies leaving logic or just clear
+                io.in(roomName).socketsLeave(roomName);
+
+                console.log(`Trip ${trip.id} completed. Room closed.`);
+            }
+
             res.status(200).json({ id: trip.id, ...trip.toJSON() });
         } catch (error) {
+            console.error("Complete trip error:", error);
             res.status(400).json({ error: error.message });
         }
     }
