@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { tripService } from "@/services/tripService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,8 @@ import { Loader2 } from "lucide-react";
 export default function HistoryPage() {
     const [trips, setTrips] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         async function loadHistory() {
@@ -35,7 +38,7 @@ export default function HistoryPage() {
                         <Card
                             key={trip.id}
                             className="cursor-pointer hover:bg-slate-50 transition-colors"
-                            onClick={() => window.location.href = `/trip/${trip.id}`}
+                            onClick={() => navigate(`/trip/${trip.id}`)}
                         >
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">

@@ -5,6 +5,8 @@ import RidersManagement from '../pages/RidersManagement';
 import DriversManagement from '../pages/DriversManagement';
 import AdminsManagement from '../pages/AdminsManagement';
 import Dashboard from '../pages/Dashboard';
+import Settings from '../pages/Settings';
+import Achievement from '../pages/Achievement';
 import { Navigate } from 'react-router-dom';
 
 export const adminRoutes = [
@@ -20,7 +22,9 @@ export const adminRoutes = [
           { path: "riders", element: <RidersManagement /> },
           { path: "drivers", element: <DriversManagement /> },
           { path: "admins", element: <AdminsManagement /> },
-          { path: "trips", element: <TripsManagement /> }
+          { path: "trips", element: <TripsManagement /> },
+          { path: "settings", element: <Settings /> },
+          { path: "achievements", element: <Achievement /> }
         ]
       }
     ]

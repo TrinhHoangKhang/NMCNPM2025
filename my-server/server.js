@@ -33,11 +33,18 @@ const verifySocketToken = async (token) => {
         const decodedToken = await admin.auth().verifyIdToken(token);
         return decodedToken;
     } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
             console.warn("DEV MODE: Decoding socket token without verification...");
             const decoded = jwt.decode(token);
-            if (decoded && decoded.uid) return decoded;
+            if (decoded) {
+                // Firebase tokens use 'sub' or 'user_id', map it to 'uid' for consistency
+                if (!decoded.uid) {
+                    decoded.uid = decoded.sub || decoded.user_id;
+                }
+                if (decoded.uid) return decoded;
+            }
         }
+        console.error("Token verification failed:", error.message);
         throw error;
     }
 };

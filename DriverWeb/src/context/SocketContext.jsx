@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthProvider";
 
@@ -7,48 +7,53 @@ const SocketContext = createContext();
 export const SocketProvider = ({ children }) => {
     const { user } = useAuth();
     const [socket, setSocket] = useState(null);
+    const socketRef = useRef(null);
 
     const connectSocket = () => {
-        if (!user || socket) return;
+        if (!user || socketRef.current) return;
 
-        // Ensure VITE_API_URL is parsed correctly to get host (remove /api)
+        // Ensure VITE_API_URL is parsed correctly
         const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001';
 
         const newSocket = io(socketUrl, {
             auth: {
                 token: user.token
-            }
+            },
+            transports: ['websocket'], // Force WebSocket to avoid polling issues
+            reconnection: true,
+            reconnectionAttempts: 5,
         });
 
         newSocket.on("connect", () => {
             console.log("Socket connected:", newSocket.id);
         });
 
+        newSocket.on("connect_error", (err) => {
+            console.error("Socket connection error:", err);
+        });
+
+        socketRef.current = newSocket;
         setSocket(newSocket);
     };
 
     const disconnectSocket = () => {
-        if (socket) {
-            socket.disconnect();
+        if (socketRef.current) {
+            socketRef.current.disconnect();
+            socketRef.current = null;
             setSocket(null);
         }
     };
 
-    // Auto connect if user is logged in (Optional, or explicit call like in Rider)
-    useEffect(() => {
-        if (user && !socket) {
-            connectSocket();
-        }
-    }, [user]);
-
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            if (socket) {
-                socket.disconnect();
+            if (socketRef.current) {
+                console.log("Cleaning up socket");
+                socketRef.current.disconnect();
+                socketRef.current = null;
             }
         };
-    }, [socket]);
+    }, []);
 
     return (
         <SocketContext.Provider value={{ socket, connectSocket, disconnectSocket }}>

@@ -35,7 +35,14 @@ class Trip {
             createdAt: this.createdAt,
             completedAt: this.completedAt,
             paymentMethod: this.paymentMethod,
-            paymentStatus: this.paymentStatus
+            paymentStatus: this.paymentStatus,
+            // Populated fields
+            driverName: this.driverName,
+            driverRating: this.driverRating,
+            vehiclePlate: this.vehiclePlate,
+            vehicleModel: this.vehicleModel,
+            vehicleColor: this.vehicleColor,
+            driverPhone: this.driverPhone
         };
     }
 }

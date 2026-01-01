@@ -42,6 +42,10 @@ export const tripService = {
         return apiClient('/trips/driver/history');
     },
 
+    getDriverStats: async () => {
+        return apiClient('/drivers/stats');
+    },
+
     cancelTrip: async (id) => {
         return apiClient('/trips/cancel', {
             method: 'PATCH',

@@ -78,8 +78,43 @@ const Landing = () => {
         </div>
       </div>
 
-      <footer className="bg-slate-50 border-t border-slate-200 py-12 text-center text-slate-500 text-sm">
-        <p>&copy; {new Date().getFullYear()} Wait4Me Driver. Built for partners.</p>
+      <footer className="bg-slate-50 border-t border-slate-200 pt-16 pb-8 text-sm">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+          <div>
+            <h4 className="font-bold text-slate-900 mb-4">Opportunity</h4>
+            <ul className="space-y-2 text-slate-500">
+              <li><Link to="#" className="hover:text-blue-600">Why Drive?</Link></li>
+              <li><Link to="#" className="hover:text-blue-600">Earnings</Link></li>
+              <li><Link to="#" className="hover:text-blue-600">Cities</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-slate-900 mb-4">Resources</h4>
+            <ul className="space-y-2 text-slate-500">
+              <li><Link to="#" className="hover:text-blue-600">Driver Requirements</Link></li>
+              <li><Link to="#" className="hover:text-blue-600">Insurance</Link></li>
+              <li><Link to="#" className="hover:text-blue-600">Safety</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-slate-900 mb-4">Support</h4>
+            <ul className="space-y-2 text-slate-500">
+              <li><Link to="#" className="hover:text-blue-600">Help Center</Link></li>
+              <li><Link to="#" className="hover:text-blue-600">Contact Us</Link></li>
+              <li><Link to="#" className="hover:text-blue-600">Emergency Guides</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-slate-900 mb-4">Apps</h4>
+            <ul className="space-y-2 text-slate-500">
+              <li><Link to="#" className="hover:text-blue-600">Driver App for Android</Link></li>
+              <li><Link to="#" className="hover:text-blue-600">Driver App for iOS</Link></li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-6 text-center text-slate-400 pt-8 border-t border-slate-200">
+          <p>&copy; {new Date().getFullYear()} Wait4Me Driver. Built for partners.</p>
+        </div>
       </footer>
     </div>
   );

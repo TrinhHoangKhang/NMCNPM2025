@@ -90,8 +90,35 @@ export const AuthProvider = ({ children }) => {
     localStorage.clear();
   };
 
+  const updateUser = async (data) => {
+    if (!user?.uid) return { success: false, error: "No user logged in" };
+    try {
+      const result = await authService.updateProfile(user.uid, data);
+      if (result) { // Assuming result is the updated user or success
+        // Merge updates into local user state
+        const updatedUser = { ...user, ...data };
+        // Note: ideally backend returns the full updated object.
+        // If result is the object: const updatedUser = { ...user, ...result };
+        // Let's assume result might be { success: true } or the object.
+        // Usually apiClient returns the response JSON.
+        // If backend returns updated user, use it.
+
+        // Check if result has user data
+        const finalUser = result.uid ? result : updatedUser;
+
+        setUser(finalUser);
+        setSessionWithTTL(finalUser);
+        return { success: true };
+      }
+      return { success: false, error: "Update failed" };
+    } catch (error) {
+      console.error("Update profile error:", error);
+      return { success: false, error: error.message };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading, updateUser }}>
       {!loading && children}
     </AuthContext.Provider>
   );

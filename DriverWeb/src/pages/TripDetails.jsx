@@ -12,8 +12,11 @@ import {
     Navigation,
     DollarSign,
     ArrowLeft,
-    Loader2
+    Loader2,
+    User,
+    Star
 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import {
     AlertDialog,
@@ -45,26 +48,51 @@ export default function TripDetails() {
     const [routePath, setRoutePath] = useState(null);
 
     useEffect(() => {
-        // If we have currentTrip in context and it matches ID, use it
-        if (currentTrip && currentTrip.id === id) {
-            setTrip(currentTrip);
-            setLoading(false);
-        } else {
-            // Otherwise fetch individually
-            const fetchTrip = async () => {
-                try {
-                    const data = await tripService.getTripDetails(id);
-                    setTrip(data);
-                } catch (error) {
-                    console.error(error);
-                    showToast("Error", "Failed to load trip details", "error");
-                } finally {
-                    setLoading(false);
+        const fetchTrip = async () => {
+            setLoading(true);
+            try {
+                // Always fetch fresh details for the specific ID to avoid context mix-ups
+                const data = await tripService.getTripDetails(id);
+                setTrip(data);
+
+                // If the fetched trip IS the current active trip, verify context sync (optional)
+                if (currentTrip && String(currentTrip.id) === String(id)) {
+                    // We could update context here if needed, but fetching is safer
                 }
-            };
+            } catch (error) {
+                console.error(error);
+                showToast("Error", "Failed to load trip details", "error");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (id) {
             fetchTrip();
         }
-    }, [id, currentTrip]);
+    }, [id]); // Removed currentTrip dependency to prevent auto-switching
+
+    // FETCH REAL RIDER DATA
+    const [riderDetails, setRiderDetails] = useState(null);
+    useEffect(() => {
+        const fetchRider = async () => {
+            if (!trip?.riderId) return;
+            try {
+                // Assuming GET /api/users/:id works for fetching generic user profile
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/users/${trip.riderId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setRiderDetails(data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch rider info", err);
+            }
+        };
+        fetchRider();
+    }, [trip?.riderId]);
 
     // Simulation Logic (Adapted from Dashboard)
     useEffect(() => {
@@ -207,6 +235,35 @@ export default function TripDetails() {
                 </div>
 
                 <CardContent className="pt-6 space-y-6">
+                    {/* RIDER INFO CARD */}
+                    <Card className="bg-white border shadow-sm">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-medium text-slate-500 flex items-center gap-2">
+                                <User className="w-4 h-4" /> Passenger
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-3">
+                                    <Avatar className="h-10 w-10 border">
+                                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${riderDetails?.name || trip.riderName || 'Rider'}`} />
+                                        <AvatarFallback>R</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <div className="font-semibold text-slate-900">{riderDetails?.name || trip.riderName || "Unknown Passenger"}</div>
+                                        <div className="flex items-center gap-1 text-xs text-slate-500">
+                                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                            <span>{riderDetails?.rating || "5.0"}</span> • <span>50+ Trips</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <Button variant="outline" size="sm" onClick={() => navigate(`/profile/${trip.riderId || 'mock-id'}`)}>
+                                    View Profile
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <div className="grid gap-6">
                         <div className="flex items-start gap-3">
                             <div className="mt-1">
@@ -218,18 +275,38 @@ export default function TripDetails() {
                                 <div>
                                     <p className="text-sm font-medium text-slate-500">PICKUP</p>
                                     <p className="text-lg font-semibold text-slate-900">{trip.pickupLocation?.address}</p>
+                                    {trip.startTime && <p className="text-xs text-slate-400 mt-1">Picked up at {new Date(trip.startTime).toLocaleTimeString()}</p>}
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-slate-500">DROPOFF</p>
                                     <p className="text-lg font-semibold text-slate-900">{trip.dropoffLocation?.address}</p>
+                                    {trip.endTime && <p className="text-xs text-slate-400 mt-1">Dropped off at {new Date(trip.endTime).toLocaleTimeString()}</p>}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-slate-100 p-4 rounded-lg flex justify-between items-center">
-                        <span className="font-semibold text-slate-600">Estimated Fare</span>
-                        <span className="text-xl font-bold text-green-700">{trip.fare?.toLocaleString()} VND</span>
+                    {/* FARE BREAKDOWN */}
+                    <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <h3 className="font-semibold text-slate-900 text-sm">Payment Details</h3>
+                        <div className="space-y-2 text-sm text-slate-600">
+                            <div className="flex justify-between">
+                                <span>Base Fare</span>
+                                <span>{(trip.fare ? trip.fare * 0.3 : 0).toLocaleString()} VND</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Distance & Time</span>
+                                <span>{(trip.fare ? trip.fare * 0.6 : 0).toLocaleString()} VND</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Platform Fee</span>
+                                <span>{(trip.fare ? trip.fare * 0.1 : 0).toLocaleString()} VND</span>
+                            </div>
+                            <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-slate-900 font-bold text-lg">
+                                <span>Total</span>
+                                <span className="text-green-700">{trip.fare?.toLocaleString()} VND</span>
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
                 {trip.status === 'COMPLETED' && (

@@ -10,11 +10,11 @@ export default function Header() {
 	const getInitials = (name) => {
 		if (!name) return "U"
 		return name
-		.split(" ")
-		.map((n) => n[0])
-		.join("")
-		.toUpperCase()
-		.slice(0, 2)
+			.split(" ")
+			.map((n) => n[0])
+			.join("")
+			.toUpperCase()
+			.slice(0, 2)
 	}
 
 	return (
@@ -22,7 +22,7 @@ export default function Header() {
             justify-between items-center row-start-1 border">
 			<div className='flex md:flex-row flex-col'>
 				<div className='text-4xl font-bold ml-2 flex flex-row gap-1'>
-					<img src="/home.svg" alt="Logo" 
+					<img src="/home.svg" alt="Logo"
 						className="h-10 w-10 text-blue-300 blue-300" />
 					<p>MyShop</p>
 				</div>
@@ -33,14 +33,14 @@ export default function Header() {
 				</div>
 			</div>
 			<div className="relative border rounded-3xl p-3">
-				<button className="flex items-center space-x-2 focus:outline-none" 
+				<button className="flex items-center space-x-2 focus:outline-none"
 					onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
 					<Avatar className="h-9 w-9">
 						<AvatarImage src="" />
 						<AvatarFallback className="bg-sky-100 text-black font-bold text-xl">
 							{getInitials(user?.name) || "UN"}
 						</AvatarFallback>
-					</Avatar> 
+					</Avatar>
 					<span className="text-xl text-black hidden md:block font-bold">
 						{user?.name || "Guest"}
 					</span>
@@ -48,6 +48,9 @@ export default function Header() {
 				{isDropdownOpen ? (
 					user ? (
 						<div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1">
+							<Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</Link>
+							<Link to="/achievements" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Achievements</Link>
+							<Link to="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</Link>
 							<button onClick={logout} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</button>
 						</div>
 					) : (

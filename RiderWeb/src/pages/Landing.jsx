@@ -61,8 +61,44 @@ const Landing = () => {
         </div>
       </div>
 
-      <footer className="border-t border-slate-800 py-8 text-center text-slate-500 text-sm">
-        &copy; {new Date().getFullYear()} Wait4Me. All rights reserved.
+      <footer className="border-t border-slate-800 bg-slate-900 py-12 text-sm">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+          <div>
+            <h4 className="font-bold text-white mb-4">Company</h4>
+            <ul className="space-y-2 text-slate-400">
+              <li><Link to="#" className="hover:text-indigo-400">About Us</Link></li>
+              <li><Link to="#" className="hover:text-indigo-400">Careers</Link></li>
+              <li><Link to="#" className="hover:text-indigo-400">Newsroom</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-white mb-4">Product</h4>
+            <ul className="space-y-2 text-slate-400">
+              <li><Link to="#" className="hover:text-indigo-400">Ride</Link></li>
+              <li><Link to="#" className="hover:text-indigo-400">Drive</Link></li>
+              <li><Link to="#" className="hover:text-indigo-400">Safety</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-white mb-4">Support</h4>
+            <ul className="space-y-2 text-slate-400">
+              <li><Link to="#" className="hover:text-indigo-400">Help Center</Link></li>
+              <li><Link to="#" className="hover:text-indigo-400">Terms of Service</Link></li>
+              <li><Link to="#" className="hover:text-indigo-400">Privacy Policy</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-white mb-4">Social</h4>
+            <div className="flex gap-4 text-slate-400">
+              <Link to="#" className="hover:text-indigo-400">Facebook</Link>
+              <Link to="#" className="hover:text-indigo-400">Twitter</Link>
+              <Link to="#" className="hover:text-indigo-400">Instagram</Link>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-6 text-center text-slate-500 pt-8 border-t border-slate-800">
+          &copy; {new Date().getFullYear()} Wait4Me. All rights reserved.
+        </div>
       </footer>
     </div>
   );

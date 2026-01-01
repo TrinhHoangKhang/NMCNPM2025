@@ -23,5 +23,12 @@ export const authService = {
 
   logout: async () => {
     // No Firebase signOut needed, just clear local session (handled in AuthProvider)
+  },
+
+  updateProfile: async (userId, data) => {
+    return apiClient(`/users/${userId}`, {
+      method: "PATCH",
+      body: data
+    });
   }
 };

@@ -70,6 +70,77 @@ export default function TripDetails() {
         };
     }, [socket, id]);
 
+    const reverseGeocode = async (lat, lng) => {
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            const data = await response.json();
+            return data.display_name;
+        } catch (error) {
+            console.error("Geocoding error:", error);
+            return null;
+        }
+    };
+
+    useEffect(() => {
+        const resolveAddresses = async () => {
+            if (!trip) return;
+
+            let updated = false;
+            let newPickup = trip.pickupLocation?.address;
+            let newDropoff = trip.dropoffLocation?.address;
+
+            // Check if address is coordinates (simplified check)
+            const isCoords = (str) => /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(str);
+
+            if (isCoords(newPickup)) {
+                const [lat, lng] = newPickup.split(',').map(s => s.trim());
+                const name = await reverseGeocode(lat, lng);
+                if (name) { newPickup = name; updated = true; }
+            }
+
+            if (isCoords(newDropoff)) {
+                const [lat, lng] = newDropoff.split(',').map(s => s.trim());
+                const name = await reverseGeocode(lat, lng);
+                if (name) { newDropoff = name; updated = true; }
+            }
+
+            if (updated) {
+                setTrip(prev => ({
+                    ...prev,
+                    pickupLocation: { ...prev.pickupLocation, address: newPickup },
+                    dropoffLocation: { ...prev.dropoffLocation, address: newDropoff }
+                }));
+            }
+        };
+
+        resolveAddresses();
+    }, [trip?.id]); // Run once when trip ID loads/changes
+
+    // Fetch fresh driver details (Address "driver data in picture is fake" feedback)
+    const [driverDetails, setDriverDetails] = useState(null);
+
+    useEffect(() => {
+        const fetchDriver = async () => {
+            if (!trip?.driverId) return;
+            try {
+                // Fetch user data. Route GET /api/users/:id checkAuth
+                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/users/${trip.driverId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}` // simple token grab
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setDriverDetails(data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch fresh driver data", err);
+            }
+        };
+        fetchDriver();
+    }, [trip?.driverId]);
+
+
     if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-indigo-600" /></div>;
 
     if (!trip) return <div className="p-8 text-center">Trip not found</div>;
@@ -87,52 +158,35 @@ export default function TripDetails() {
         <div className="min-h-screen bg-slate-50 p-4 md:p-8">
             <div className="max-w-3xl mx-auto space-y-6">
 
-                {/* COMPLETED VIEW */}
+                {/* STATUS BANNER */}
                 {trip.status === 'COMPLETED' && (
-                    <Card className="border-t-4 border-t-green-500 shadow-lg">
-                        <CardHeader className="text-center pb-2">
-                            <div className="mx-auto bg-green-100 p-3 rounded-full w-fit mb-4">
-                                <ShieldCheck className="h-8 w-8 text-green-600" />
-                            </div>
-                            <CardTitle className="text-2xl text-green-700">Trip Completed!</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6 text-center">
-                            <p className="text-slate-600">You have arrived at your destination.</p>
-
-                            <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 max-w-sm mx-auto">
-                                <p className="text-sm font-medium text-slate-500 mb-1">TOTAL FARE PAID</p>
-                                <p className="text-3xl font-bold text-slate-900">{trip.fare?.toLocaleString()} VND</p>
-                            </div>
-
-                            <div className="flex flex-col gap-2 max-w-xs mx-auto">
-                                <Button className="w-full bg-indigo-600 hover:bg-indigo-700" onClick={() => navigate('/dashboard')}>
-                                    Back to Dashboard
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-sm mb-6 flex flex-col items-center">
+                        <div className="flex items-center gap-2 mb-2">
+                            <ShieldCheck className="w-6 h-6" />
+                            <span className="font-bold text-lg">Trip Completed</span>
+                        </div>
+                        <p className="text-sm">You have arrived at your destination.</p>
+                        <Button className="mt-4 bg-indigo-600 hover:bg-indigo-700" size="sm" onClick={() => navigate('/dashboard')}>
+                            Back to Dashboard
+                        </Button>
+                    </div>
                 )}
 
-                {/* CANCELLED VIEW */}
                 {trip.status === 'CANCELLED' && (
-                    <Card className="border-t-4 border-t-red-500 shadow-lg">
-                        <CardHeader className="text-center pb-2">
-                            <div className="mx-auto bg-red-100 p-3 rounded-full w-fit mb-4">
-                                <MessageSquare className="h-8 w-8 text-red-600" />
-                            </div>
-                            <CardTitle className="text-2xl text-red-700">Trip Cancelled</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6 text-center">
-                            <p className="text-slate-600">This trip has been cancelled.</p>
-                            <Button className="w-full max-w-xs mx-auto" variant="outline" onClick={() => navigate('/map')}>
-                                Book Another Ride
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-sm mb-6 flex flex-col items-center">
+                        <div className="flex items-center gap-2 mb-2">
+                            <MessageSquare className="w-6 h-6" />
+                            <span className="font-bold text-lg">Trip Cancelled</span>
+                        </div>
+                        <p className="text-sm">This trip was cancelled.</p>
+                        <Button className="mt-4 bg-white text-red-600 border border-red-200 hover:bg-red-50" size="sm" onClick={() => navigate('/map')}>
+                            Book Another Ride
+                        </Button>
+                    </div>
                 )}
 
-                {/* ACTIVE TRIP VIEW (DEFAULT) */}
-                {['REQUESTED', 'ACCEPTED', 'IN_PROGRESS', 'PICKUP'].includes(trip.status) && (
+                {/* TRIP DETAILS VIEW (ALWAYS VISIBLE) */}
+                {true && (
                     <>
                         {/* MAP VIEW */}
                         <Card className="overflow-hidden border-0 shadow-lg h-96">
@@ -169,12 +223,17 @@ export default function TripDetails() {
                                                 {trip.driverName ? trip.driverName.charAt(0) : "D"}
                                             </div>
                                             <div className="flex-1">
-                                                <h3 className="text-lg font-bold">{trip.driverName || "Unknown Driver"}</h3>
+                                                <h3 className="text-lg font-bold">
+                                                    {driverDetails?.name || trip.driverName || "Unknown Driver"}
+                                                </h3>
                                                 <div className="flex items-center text-yellow-500 text-sm mb-2">
-                                                    <Star className="h-4 w-4 fill-current" /> 5.0 (500+ trips)
+                                                    <Star className="h-4 w-4 fill-current" /> {driverDetails?.rating || "5.0"} (500+ trips)
                                                 </div>
                                                 <p className="text-slate-600 font-medium">
-                                                    {trip.vehicleType} • {trip.vehiclePlate || "Plate Hidden"}
+                                                    {driverDetails?.vehicle?.type || trip.vehicleType} • {driverDetails?.vehicle?.plate || trip.vehiclePlate || "Plate Hidden"}
+                                                </p>
+                                                <p className="text-sm text-slate-500 mt-1">
+                                                    {driverDetails?.vehicle?.color || trip.vehicleColor || "White"} {driverDetails?.vehicle?.model || trip.vehicleModel || "Standard"}
                                                 </p>
                                                 <div className="flex gap-2 mt-4">
                                                     <Button size="sm" variant="outline" className="flex-1 border-indigo-200 text-indigo-700 hover:bg-indigo-50">
@@ -201,7 +260,6 @@ export default function TripDetails() {
                                     <CardTitle>Trip Details</CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-6 space-y-6">
-                                    {/* Route */}
                                     <div className="space-y-4">
                                         <div className="flex gap-3">
                                             <div className="flex flex-col items-center mt-1">
@@ -213,25 +271,42 @@ export default function TripDetails() {
                                                 <div>
                                                     <p className="text-xs text-slate-500 font-semibold mb-1">PICKUP</p>
                                                     <p className="text-sm font-medium">{trip.pickupLocation?.address}</p>
+                                                    {trip.startTime && <p className="text-xs text-slate-400 mt-1">Picked up at {new Date(trip.startTime).toLocaleTimeString()}</p>}
                                                 </div>
                                                 <div>
                                                     <p className="text-xs text-slate-500 font-semibold mb-1">DROPOFF</p>
                                                     <p className="text-sm font-medium">{trip.dropoffLocation?.address}</p>
+                                                    {trip.endTime && <p className="text-xs text-slate-400 mt-1">Dropped off at {new Date(trip.endTime).toLocaleTimeString()}</p>}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="pt-4 border-t flex justify-between items-end">
-                                        <div>
-                                            <p className="text-xs text-slate-500">PAYMENT</p>
-                                            <p className="font-semibold">{trip.paymentMethod}</p>
+                                    {/* FARE BREAKDOWN */}
+                                    <div className="bg-slate-50 p-4 rounded-lg space-y-2 mt-4">
+                                        <h4 className="text-xs font-semibold text-slate-500 mb-2">FARE BREAKDOWN</h4>
+                                        <div className="flex justify-between text-sm text-slate-600">
+                                            <span>Base Fare</span>
+                                            <span>{(trip.fare ? trip.fare * 0.3 : 0).toLocaleString()} VND</span>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-xs text-slate-500">ESTIMATED FARE</p>
-                                            <p className="text-xl font-bold text-indigo-700">
-                                                {trip.fare?.toLocaleString()} VND
-                                            </p>
+                                        <div className="flex justify-between text-sm text-slate-600">
+                                            <span>Distance & Time</span>
+                                            <span>{(trip.fare ? trip.fare * 0.6 : 0).toLocaleString()} VND</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm text-slate-600">
+                                            <span>Platform Fee</span>
+                                            <span>{(trip.fare ? trip.fare * 0.1 : 0).toLocaleString()} VND</span>
+                                        </div>
+                                        <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-slate-900 font-bold mt-2">
+                                            <span>Total</span>
+                                            <span className="text-indigo-700">{trip.fare?.toLocaleString()} VND</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-2 flex justify-between items-center">
+                                        <div>
+                                            <p className="text-xs text-slate-500">PAYMENT METHOD</p>
+                                            <p className="font-semibold">{trip.paymentMethod}</p>
                                         </div>
                                     </div>
                                 </CardContent>

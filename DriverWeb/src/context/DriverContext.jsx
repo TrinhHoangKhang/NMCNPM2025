@@ -2,11 +2,13 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { tripService } from "@/services/tripService";
 import { driverService } from "@/services/driverService";
 import { useToast } from "@/hooks/useToast";
+import { useSocket } from "./SocketContext";
 
 const DriverContext = createContext();
 
 export const DriverProvider = ({ children }) => {
     const { showToast } = useToast();
+    const { connectSocket, disconnectSocket } = useSocket();
     const [trips, setTrips] = useState([]);
     const [currentTrip, setCurrentTrip] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -67,6 +69,7 @@ export const DriverProvider = ({ children }) => {
             }, 1000);
         } else if (timeLeft === 0 && isOnline) {
             setIsOnline(false);
+            disconnectSocket(); // Ensure socket disconnects on timeout
             showToast("Info", "Online session expired. Please go online again.", "info");
         }
         return () => clearInterval(interval);
@@ -79,10 +82,12 @@ export const DriverProvider = ({ children }) => {
 
             if (newStatus === 'ONLINE') {
                 setIsOnline(true);
+                connectSocket(); // Connect when going online
                 setTimeLeft(1 * 60); // 1 minute
                 showToast("Success", "You are now ONLINE (1 min)", "success");
             } else {
                 setIsOnline(false);
+                disconnectSocket(); // Disconnect when going offline
                 setTimeLeft(0);
                 showToast("Success", "You are now OFFLINE", "success");
             }
