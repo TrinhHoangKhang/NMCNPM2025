@@ -114,16 +114,29 @@ class TripService {
 
     // 2b. Get current (active) trip for a user
     async getCurrentTripForUser(userId) {
-        const query = db.collection('trips')
-            .where('riderId', '==', userId)
+        // 1. Check if user is a DRIVER on an active trip
+        const driverQuery = db.collection('trips')
+            .where('driverId', '==', userId)
             .where('status', 'in', ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS'])
-            // .orderBy('createdAt', 'desc')
             .limit(1);
 
-        const snapshot = await query.get();
-        if (snapshot.empty) return null;
-        const doc = snapshot.docs[0];
-        return new Trip(doc.id, doc.data());
+        const driverSnap = await driverQuery.get();
+        if (!driverSnap.empty) {
+            return new Trip(driverSnap.docs[0].id, driverSnap.docs[0].data());
+        }
+
+        // 2. Check if user is a RIDER on an active trip
+        const riderQuery = db.collection('trips')
+            .where('riderId', '==', userId)
+            .where('status', 'in', ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS'])
+            .limit(1);
+
+        const riderSnap = await riderQuery.get();
+        if (!riderSnap.empty) {
+            return new Trip(riderSnap.docs[0].id, riderSnap.docs[0].data());
+        }
+
+        return null;
     }
 
     // 2d. Get available trips for drivers (status REQUESTED)
@@ -143,20 +156,35 @@ class TripService {
         const doc = await tripRef.get();
 
         if (!doc.exists) throw new Error("Trip not found");
-        if (doc.data().riderId !== userId) throw new Error("Unauthorized");
+
+        const data = doc.data();
+        // Allow cancellation if user is Rider OR Driver
+        if (data.riderId !== userId && data.driverId !== userId) {
+            throw new Error("Unauthorized");
+        }
 
         // LOG
         console.log(`Cancelling trip ${tripId} for user ${userId}`);
 
-        // Can only cancel if status is REQUESTED or ACCEPTED
-        const currentStatus = doc.data().status;
-        if (!['REQUESTED', 'ACCEPTED'].includes(currentStatus)) {
-            throw new Error(`Cannot cancel a trip with status ${currentStatus}. Only REQUESTED or ACCEPTED trips can be cancelled.`);
+        // Can only cancel if status is REQUESTED, ACCEPTED, or IN_PROGRESS (Driver emergency)
+        const currentStatus = data.status;
+        if (!['REQUESTED', 'ACCEPTED', 'IN_PROGRESS'].includes(currentStatus)) {
+            throw new Error(`Cannot cancel a trip with status ${currentStatus}.`);
         }
 
-        // Hard delete the trip document
-        await tripRef.delete();
-        return { success: true, deleted: true };
+        if (currentStatus === 'REQUESTED') {
+            // Hard delete for simple requests
+            await tripRef.delete();
+            return { success: true, deleted: true };
+        } else {
+            // Soft delete/Status update for active trips so we keep history
+            await tripRef.update({
+                status: 'CANCELLED',
+                cancelledBy: userId,
+                cancelledAt: new Date().toISOString()
+            });
+            return { success: true, status: 'CANCELLED' };
+        }
     }
 
     // 4. Update Status (Driver Action - with Payment Logic)
@@ -220,7 +248,7 @@ class TripService {
     }
 
     // 4c. Driver marks trip complete
-    async markTripComplete(tripId, driverId) {
+    async markTripComplete(tripId, driverId, paymentStatusOverride = null) {
         const tripRef = db.collection('trips').doc(tripId);
         const doc = await tripRef.get();
         if (!doc.exists) throw new Error('Trip not found');
@@ -234,7 +262,7 @@ class TripService {
         await tripRef.update({
             status: 'COMPLETED',
             completedAt: new Date().toISOString(),
-            paymentStatus: data.paymentStatus || 'PENDING'
+            paymentStatus: paymentStatusOverride || data.paymentStatus || 'PENDING'
         });
 
         const updated = await tripRef.get();

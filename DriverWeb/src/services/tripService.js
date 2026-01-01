@@ -31,14 +31,22 @@ export const tripService = {
         });
     },
 
-    markComplete: async (id) => {
+    markComplete: async (id, data = {}) => {
         return apiClient(`/trips/${id}/complete`, {
-            method: 'PATCH'
+            method: 'PATCH',
+            body: data
         });
     },
 
     getDriverHistory: async () => {
         return apiClient('/trips/driver/history');
+    },
+
+    cancelTrip: async (id) => {
+        return apiClient('/trips/cancel', {
+            method: 'PATCH',
+            body: { tripId: id }
+        });
     },
 
     updateDriverStatus: async (status) => {

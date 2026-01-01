@@ -116,7 +116,8 @@ class TripController {
     async getCurrentTrip(req, res) {
         try {
             const userId = req.user.uid;
-            const currentTrip = await tripService.getCurrentTripForUser(userId);
+            const role = req.user.role;
+            const currentTrip = await tripService.getCurrentTripForUser(userId, role);
             if (!currentTrip) {
                 return res.status(200).json(null);
             }
@@ -155,13 +156,37 @@ class TripController {
     async cancelTrip(req, res) {
         try {
             const userId = req.user.uid;
-            // Always cancel the user's current active trip; no tripId lookup from client
-            const currentTrip = await tripService.getCurrentTripForUser(userId);
-            if (!currentTrip) {
+            let { tripId } = req.body;
+
+            // If no tripId provided, fallback to finding the current active trip for the user (Rider flow)
+            if (!tripId) {
+                const currentTrip = await tripService.getCurrentTripForUser(userId);
+                if (currentTrip) {
+                    tripId = currentTrip.id;
+                }
+            }
+
+            if (!tripId) {
                 return res.status(404).json({ error: 'No active trip to cancel' });
             }
 
-            const result = await tripService.cancelTrip(currentTrip.id, userId);
+            const result = await tripService.cancelTrip(tripId, userId);
+
+            // SOCKET NOTIFICATION
+            if (result.status === 'CANCELLED') {
+                const io = req.app.get('socketio');
+                if (io) {
+                    const roomName = `trip_${tripId}`;
+                    // Notify Rider
+                    io.to(roomName).emit('trip_cancelled', {
+                        tripId: tripId,
+                        cancelledBy: userId,
+                        reason: "Driver Abandoned/Cancelled"
+                    });
+                    console.log(`Socket emitted trip_cancelled for ${tripId}`);
+                }
+            }
+
             res.status(200).json(result);
         } catch (error) {
             res.status(400).json({ error: error.message });
@@ -262,7 +287,13 @@ class TripController {
             const { id } = req.params;
 
             // 1. Mark Complete in DB
-            const trip = await tripService.markTripComplete(id, driverId);
+            const { cashCollected } = req.body;
+            let paymentStatus = null;
+            if (cashCollected === true) {
+                paymentStatus = 'PAID';
+            }
+
+            const trip = await tripService.markTripComplete(id, driverId, paymentStatus);
 
             // 2. Handle Payment (Scenario)
             // USER REQUEST: Leave transaction blank first. 

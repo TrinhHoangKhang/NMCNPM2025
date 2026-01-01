@@ -7,96 +7,28 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/useToast";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
-import MapComponent from "@/components/MapComponent";
 import {
   MapPin,
-  Navigation,
   DollarSign,
-  Clock,
   TrendingUp,
   Car,
   Calendar,
-  Power
+  Power,
+  ArrowUpRight,
+  ArrowUpRight,
+  Navigation,
+  Loader2
 } from 'lucide-react';
 
 export default function Dashboard() {
-  const { currentTrip, setCurrentTrip, loading, formatTime, isOnline, timeLeft, toggleStatus, user } = useDriver();
-  const { showToast } = useToast();
+  const { currentTrip, loading, formatTime, isOnline, timeLeft, toggleStatus } = useDriver();
   const navigate = useNavigate();
   const [stats, setStats] = useState({ earnings: 0, trips: 0, rating: 4.9 });
   const [recentTrips, setRecentTrips] = useState([]);
 
-  // Simulation State
-  const [driverLocation, setDriverLocation] = useState(null);
-  const [routePath, setRoutePath] = useState(null);
-
   useEffect(() => {
     loadDashboardData();
   }, []);
-
-  // Simulation Logic
-  useEffect(() => {
-    if (!currentTrip || !currentTrip.pickupLocation || !currentTrip.dropoffLocation) {
-      setDriverLocation(null);
-      setRoutePath(null);
-      return;
-    }
-
-    let start, end;
-
-    // Helper to parser lat/lng safely
-    const getCoords = (loc) => ({ lat: parseFloat(loc.lat), lng: parseFloat(loc.lng) });
-
-    if (currentTrip.status === 'ACCEPTED') {
-      // Simulate driver starting shortly away from pickup
-      const pickup = getCoords(currentTrip.pickupLocation);
-      // Rough offset ~1km away
-      const driverStart = { lat: pickup.lat - 0.008, lng: pickup.lng - 0.008 };
-
-      start = driverStart;
-      end = pickup;
-      // Initialize driver position immediately so they don't 'jump'
-      if (!driverLocation) setDriverLocation(start);
-    } else if (currentTrip.status === 'IN_PROGRESS') {
-      start = getCoords(currentTrip.pickupLocation);
-      end = getCoords(currentTrip.dropoffLocation);
-      // Driver starts at pickup (or last known location if we were persisting it, but here we restart simulation)
-      if (!driverLocation) setDriverLocation(start);
-    } else {
-      // For completed or other statuses, stop simulation
-      setDriverLocation(null);
-      setRoutePath(null);
-      return;
-    }
-
-    if (!start || !end) return;
-
-    // Set visualization path
-    setRoutePath([[start.lat, start.lng], [end.lat, end.lng]]);
-
-    // Animation Loop
-    const duration = 15000; // 15 seconds to traverse
-    const fps = 60;
-    const totalSteps = (duration / 1000) * fps;
-    let step = 0;
-
-    const interval = setInterval(() => {
-      step++;
-      const progress = Math.min(step / totalSteps, 1);
-
-      const newLat = start.lat + (end.lat - start.lat) * progress;
-      const newLng = start.lng + (end.lng - start.lng) * progress;
-
-      setDriverLocation({ lat: newLat, lng: newLng });
-
-      if (progress >= 1) {
-        clearInterval(interval);
-      }
-    }, 1000 / fps);
-
-    return () => clearInterval(interval);
-
-  }, [currentTrip?.status, currentTrip?.id]);
 
   const loadDashboardData = async () => {
     try {
@@ -111,7 +43,7 @@ export default function Dashboard() {
         setStats({
           earnings: earnings,
           trips: todaysTrips.length,
-          rating: 4.9 // Mocked for now, assumes fetch from profile context if available
+          rating: 4.9
         });
         setRecentTrips(history.slice(0, 3));
       }
@@ -120,33 +52,10 @@ export default function Dashboard() {
     }
   };
 
-  const handlePickup = async () => {
-    if (!currentTrip) return;
-    try {
-      const updated = await tripService.markPickup(currentTrip.id);
-      setCurrentTrip(updated);
-      showToast("Info", "Trip Started", "info");
-      // Reset driver location to ensure smooth transition for next phase if needed
-      setDriverLocation(null);
-    } catch (e) { showToast("Error", "Action failed", "error"); }
-  };
-
-  const handleComplete = async () => {
-    if (!currentTrip) return;
-    const confirmed = window.confirm(`Fare: ${currentTrip.fare?.toLocaleString()} VND.\n\nHas the Rider paid the full amount?`);
-    if (!confirmed) return;
-
-    try {
-      await tripService.markComplete(currentTrip.id);
-      setCurrentTrip(null);
-      showToast("Success", "Trip Completed!", "success");
-      loadDashboardData(); // Refresh stats
-    } catch (e) { showToast("Error", "Action failed", "error"); }
-  };
-
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen text-slate-500">
-      <div className="animate-spin mr-2"><Navigation className="w-6 h-6" /></div> Loading Dashboard...
+    <div className="flex flex-col items-center justify-center min-h-screen text-slate-500">
+      <Loader2 className="w-10 h-10 animate-spin text-blue-600 mb-4" />
+      <p className="font-medium animate-pulse">Loading Dashboard...</p>
     </div>
   );
 
@@ -222,12 +131,12 @@ export default function Dashboard() {
           <h2 className="text-xl font-bold text-slate-900">Current Activity</h2>
 
           {currentTrip ? (
-            <Card className="border-l-4 border-l-blue-500 shadow-md overflow-hidden">
-              <CardHeader className="bg-slate-50/50 pb-4">
+            <Card className="border-l-4 border-l-blue-500 shadow-md">
+              <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-xl text-blue-700 flex items-center gap-2">
-                      {currentTrip.status === 'ACCEPTED' ? 'Heading to Pickup' : 'Trip in Progress'}
+                      {currentTrip.status === 'ACCEPTED' ? 'Heading to Pickup' : (currentTrip.status === 'IN_PROGRESS' ? 'Trip in Progress' : currentTrip.status)}
                     </CardTitle>
                     <CardDescription>Trip ID: #{currentTrip.id.slice(0, 8)}</CardDescription>
                   </div>
@@ -236,54 +145,35 @@ export default function Dashboard() {
                   </Badge>
                 </div>
               </CardHeader>
-
-              {/* MAP SECTION */}
-              <div className="h-64 w-full bg-slate-100 border-y border-slate-200 relative">
-                <MapComponent
-                  pickupLocation={currentTrip.pickupLocation}
-                  dropoffLocation={currentTrip.dropoffLocation}
-                  driverLocation={driverLocation}
-                  routePath={routePath}
-                />
-              </div>
-
-              <CardContent className="pt-6 space-y-6">
-                <div className="grid gap-6">
+              <CardContent className="space-y-4">
+                <div className="grid gap-4">
                   <div className="flex items-start gap-3">
                     <div className="mt-1">
                       <div className="w-3 h-3 rounded-full bg-green-500 ring-4 ring-green-100" />
                       <div className="w-0.5 h-10 bg-slate-200 mx-auto my-1" />
                       <div className="w-3 h-3 rounded-full bg-red-500 ring-4 ring-red-100" />
                     </div>
-                    <div className="space-y-6 flex-1">
+                    <div className="space-y-4 flex-1">
                       <div>
                         <p className="text-sm font-medium text-slate-500">PICKUP</p>
-                        <p className="text-lg font-semibold text-slate-900">{currentTrip.pickupLocation?.address}</p>
+                        <p className="text-base font-semibold text-slate-900">{currentTrip.pickupLocation?.address}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-slate-500">DROPOFF</p>
-                        <p className="text-lg font-semibold text-slate-900">{currentTrip.dropoffLocation?.address}</p>
+                        <p className="text-base font-semibold text-slate-900">{currentTrip.dropoffLocation?.address}</p>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                <div className="bg-slate-100 p-4 rounded-lg flex justify-between items-center">
-                  <span className="font-semibold text-slate-600">Estimated Fare</span>
-                  <span className="text-xl font-bold text-green-700">{currentTrip.fare?.toLocaleString()} VND</span>
+                <div className="bg-slate-50 p-3 rounded-lg flex justify-between items-center">
+                  <span className="font-medium text-slate-600">Estimated Fare</span>
+                  <span className="text-lg font-bold text-green-700">{currentTrip.fare?.toLocaleString()} VND</span>
                 </div>
               </CardContent>
               <CardFooter className="pt-2 pb-6">
-                {currentTrip.status === 'ACCEPTED' && (
-                  <Button className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200" onClick={handlePickup}>
-                    <Navigation className="w-5 h-5 mr-2" /> I Have Arrived
-                  </Button>
-                )}
-                {currentTrip.status === 'IN_PROGRESS' && (
-                  <Button className="w-full h-12 text-lg bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200" onClick={handleComplete}>
-                    <DollarSign className="w-5 h-5 mr-2" /> Complete Trip & Collect Cash
-                  </Button>
-                )}
+                <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => navigate(`/trip/${currentTrip.id}`)}>
+                  View Trip Details <ArrowUpRight className="ml-2 h-4 w-4" />
+                </Button>
               </CardFooter>
             </Card>
           ) : (

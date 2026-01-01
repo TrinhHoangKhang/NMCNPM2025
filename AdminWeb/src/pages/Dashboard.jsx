@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '../services/apiService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, Car, MapPin, DollarSign, Activity } from 'lucide-react';
+import { Users, Car, MapPin, DollarSign, Activity, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -78,7 +78,12 @@ const Dashboard = () => {
     }
   };
 
-  if (loading) return <div className="p-10">Loading dashboard...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
+      <p className="text-slate-500 font-medium">Loading Dashboard Data...</p>
+    </div>
+  );
 
   return (
     <div className="w-full p-6 space-y-6">

@@ -32,7 +32,11 @@ export default function HistoryPage() {
             ) : (
                 <div className="grid gap-4">
                     {trips.map(trip => (
-                        <Card key={trip.id}>
+                        <Card
+                            key={trip.id}
+                            className="cursor-pointer hover:bg-slate-50 transition-colors"
+                            onClick={() => window.location.href = `/trip/${trip.id}`}
+                        >
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">
                                     {new Date(trip.createdAt).toLocaleString()}
@@ -42,7 +46,7 @@ export default function HistoryPage() {
                             <CardContent>
                                 <p className="text-xs text-muted-foreground mb-2">ID: {trip.id}</p>
                                 <div className="text-sm grid grid-cols-2 gap-2">
-                                    <div><strong>Earnings:</strong> {trip.price} VND</div>
+                                    <div><strong>Earnings:</strong> {trip.fare ? trip.fare.toLocaleString() : 0} VND</div>
                                     <div><strong>Vehicle:</strong> {trip.vehicleType}</div>
                                 </div>
                             </CardContent>

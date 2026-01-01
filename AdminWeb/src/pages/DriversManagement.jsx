@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { Search } from 'lucide-react';
 
 const DriversManagement = () => {
@@ -73,7 +74,14 @@ const DriversManagement = () => {
                     </TableHeader>
                     <TableBody>
                         {loading ? (
-                            <TableRow><TableCell colSpan={5} className="text-center p-4">Loading...</TableCell></TableRow>
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center p-8 text-slate-500">
+                                    <div className="flex flex-col items-center justify-center">
+                                        <Loader2 className="h-8 w-8 animate-spin text-slate-400 mb-2" />
+                                        <span>Loading Drivers...</span>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
                         ) : users.length === 0 ? (
                             <TableRow><TableCell colSpan={5} className="text-center p-4">No drivers found</TableCell></TableRow>
                         ) : (

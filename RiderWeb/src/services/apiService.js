@@ -26,6 +26,8 @@ export const apiClient = async (endpoint, options = {}) => {
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    console.warn("API Call without token:", fullUrl);
   }
 
   const config = {
@@ -45,8 +47,10 @@ export const apiClient = async (endpoint, options = {}) => {
     try {
       const errorJson = JSON.parse(errorText);
       if (errorJson.error) errorMessage = errorJson.error;
+      else if (errorJson.message) errorMessage = errorJson.message; // Handle 'message' field
     } catch (e) { }
 
+    console.error(`API Call Failed: ${fullUrl}`, errorMessage);
     throw new Error(errorMessage);
   }
 

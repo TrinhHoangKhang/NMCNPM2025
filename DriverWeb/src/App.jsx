@@ -9,21 +9,25 @@ import {
 } from './context';
 import router from './routes';
 
+import ErrorBoundary from './components/ErrorBoundary';
+
 function App() {
   return (
-    <LocaleProvider>
-      <ThemeProvider>
-        <ToastProvider>
-          <AuthProvider>
-            <SocketProvider>
-              <DriverProvider>
-                <RouterProvider router={router} />
-              </DriverProvider>
-            </SocketProvider>
-          </AuthProvider>
-        </ToastProvider>
-      </ThemeProvider>
-    </LocaleProvider>
+    <ErrorBoundary>
+      <LocaleProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <AuthProvider>
+              <SocketProvider>
+                <DriverProvider>
+                  <RouterProvider router={router} />
+                </DriverProvider>
+              </SocketProvider>
+            </AuthProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </LocaleProvider>
+    </ErrorBoundary>
   );
 }
 
