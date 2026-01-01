@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { apiClient } from '../services/apiService';
 import {
     Table,
     TableBody,
@@ -29,8 +29,8 @@ const DriversManagement = () => {
             const params = { role: 'DRIVER' };
             if (searchTerm) params.search = searchTerm;
 
-            const response = await axios.get('http://localhost:4000/api/users', { params });
-            setUsers(response.data.data || []);
+            const response = await apiClient('/users', { params });
+            setUsers(response.data || []);
             setLoading(false);
         } catch (err) {
             console.error("Failed to fetch drivers", err);

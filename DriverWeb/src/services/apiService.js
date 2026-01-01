@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 export const apiClient = async (endpoint, options = {}) => {
   const fullUrl = `${BASE_URL}${endpoint}`;
@@ -29,7 +29,7 @@ export const apiClient = async (endpoint, options = {}) => {
   const config = {
     method: method,
     headers: headers,
-    body: body,
+    body: body ? JSON.stringify(body) : undefined,
   };
 
   const response = await fetch(fullUrl, config);

@@ -94,20 +94,22 @@ class TripService {
     async getUserTripHistory(userId) {
         const snapshot = await db.collection('trips')
             .where('riderId', '==', userId)
-            .orderBy('createdAt', 'desc')
-            .get();
+            .get(); // Remove orderBy to avoid missing index error
 
-        return snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
+        const trips = snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
+        // In-memory sort
+        return trips.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
 
     // 2c. Get Trip History for a specific Driver
     async getDriverTripHistory(driverId) {
         const snapshot = await db.collection('trips')
             .where('driverId', '==', driverId)
-            .orderBy('createdAt', 'desc')
-            .get();
+            .get(); // Remove orderBy to avoid missing index error
 
-        return snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
+        const trips = snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
+        // In-memory sort
+        return trips.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
 
     // 2b. Get current (active) trip for a user

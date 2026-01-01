@@ -2,7 +2,11 @@ import driverService from '../services/driverService.js';
 
 export const getDriver = async (req, res) => {
     try {
-        const driver = await driverService.getDriver(req.params.id);
+        let id = req.params.id;
+        if (id === 'me' && req.user) {
+            id = req.user.uid;
+        }
+        const driver = await driverService.getDriver(id);
         res.status(200).json({ success: true, data: driver });
     } catch (error) {
         res.status(404).json({ success: false, error: error.message });

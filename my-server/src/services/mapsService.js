@@ -24,8 +24,8 @@ class MapsService {
                 geometry: {
                     type: 'LineString',
                     coordinates: [
-                        [origin.lng || 106.660, origin.lat || 10.762],
-                        [destination.lng || 106.700, destination.lat || 10.776]
+                        { lat: origin.lat || 10.762, lng: origin.lng || 106.660 },
+                        { lat: destination.lat || 10.776, lng: destination.lng || 106.700 }
                     ]
                 },
                 bbox: null

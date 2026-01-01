@@ -107,10 +107,10 @@ io.on('connection', (socket) => {
             // NEW: Automatically mark driver as OFFLINE in DB
             if (socket.user.role === 'DRIVER') {
                 try {
-                    await driverService.updateStatus(socket.user.uid, 'OFFLINE');
-                    console.log(`Driver ${socket.user.email} marked OFFLINE in DB.`);
+                    // await driverService.updateStatus(socket.user.uid, 'OFFLINE');
+                    console.log(`Driver ${socket.user.email} disconnected. Status managed by Queue (5m).`);
                 } catch (err) {
-                    console.error(`Failed to mark driver offline: ${err.message}`);
+                    console.error(`Failed to handle driver disconnect: ${err.message}`);
                 }
             }
         }

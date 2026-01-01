@@ -8,37 +8,50 @@ export const SocketProvider = ({ children }) => {
     const { user } = useAuth();
     const [socket, setSocket] = useState(null);
 
-    useEffect(() => {
-        if (user) {
-            // Connect to server
-            // Ensure VITE_API_URL is parsed correctly to get host (remove /api)
-            const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000';
+    const connectSocket = () => {
+        if (!user || socket) return;
 
-            const newSocket = io(socketUrl, {
-                auth: {
-                    token: user.token
-                }
-            });
+        // Ensure VITE_API_URL is parsed correctly to get host (remove /api)
+        const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001';
 
-            newSocket.on("connect", () => {
-                console.log("Socket connected:", newSocket.id);
-            });
-
-            setSocket(newSocket);
-
-            return () => {
-                newSocket.disconnect();
-            };
-        } else {
-            if (socket) {
-                socket.disconnect();
-                setSocket(null);
+        const newSocket = io(socketUrl, {
+            auth: {
+                token: user.token
             }
+        });
+
+        newSocket.on("connect", () => {
+            console.log("Socket connected:", newSocket.id);
+        });
+
+        setSocket(newSocket);
+    };
+
+    const disconnectSocket = () => {
+        if (socket) {
+            socket.disconnect();
+            setSocket(null);
+        }
+    };
+
+    // Auto connect if user is logged in (Optional, or explicit call like in Rider)
+    useEffect(() => {
+        if (user && !socket) {
+            connectSocket();
         }
     }, [user]);
 
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (socket) {
+                socket.disconnect();
+            }
+        };
+    }, [socket]);
+
     return (
-        <SocketContext.Provider value={{ socket }}>
+        <SocketContext.Provider value={{ socket, connectSocket, disconnectSocket }}>
             {children}
         </SocketContext.Provider>
     );

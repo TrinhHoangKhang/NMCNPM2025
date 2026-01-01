@@ -5,7 +5,7 @@ export const tripService = {
         // tripData: { pickupLocation, dropoffLocation, vehicleType, paymentMethod }
         return apiClient('/trips/request', {
             method: 'POST',
-            body: JSON.stringify(tripData)
+            body: tripData
         });
     },
 
@@ -17,7 +17,7 @@ export const tripService = {
         // estimateData: { pickupLocation, dropoffLocation, vehicleType }
         return apiClient('/trips/estimate', {
             method: 'POST',
-            body: JSON.stringify(estimateData)
+            body: estimateData
         });
     },
 
@@ -33,5 +33,40 @@ export const tripService = {
         return apiClient('/trips/cancel', {
             method: 'PATCH'
         });
+    },
+
+    getRoute: async (pickup, dropoff) => {
+        // pickup/dropoff = { address, lat, lng }
+        if (!pickup?.lat || !dropoff?.lat) return null;
+
+        const url = `https://router.project-osrm.org/route/v1/driving/${pickup.lng},${pickup.lat};${dropoff.lng},${dropoff.lat}?overview=full&geometries=geojson`;
+
+        try {
+            // Use fetch directly to avoid axios dependency if not imported, or assumes direct usage.
+            // But package.json has axios. Let's use fetch for simplicity in frontend logic without extra check.
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (!data.routes || data.routes.length === 0) throw new Error("No route found");
+
+            const route = data.routes[0];
+            const coords = route.geometry.coordinates.map(c => [c[1], c[0]]); // Swap lng,lat to lat,lng
+
+            console.log("OSRM Found Route with points:", coords.length);
+
+            return {
+                path: coords,
+                distance: (route.distance / 1000).toFixed(1), // km
+                duration: Math.round(route.duration / 60) // min
+            };
+        } catch (error) {
+            console.error("Routing error", error);
+            // Fallback to straight line
+            return {
+                path: [[pickup.lat, pickup.lng], [dropoff.lat, dropoff.lng]],
+                distance: 0,
+                duration: 0
+            };
+        }
     }
 };

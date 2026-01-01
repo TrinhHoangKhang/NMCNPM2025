@@ -59,6 +59,37 @@ class TripController {
                     riderName: req.user.name || "Rider" // Ensure name is available in token or fetched
                 });
                 console.log(`Broadcasted trip ${newTrip.id} to drivers`);
+
+                // STEP 2 [NEW]: Start 60s Timeout for Matching
+                setTimeout(async () => {
+                    try {
+                        const currentTrip = await tripService.getTrip(newTrip.id);
+                        if (currentTrip && currentTrip.status === 'REQUESTED') {
+                            console.log(`Trip ${newTrip.id} timed out. No driver found.`);
+
+                            // Update status to NO_DRIVER_FOUND (or CANCELLED/FAILED)
+                            // Reuse cancelTrip logic or updateStatus directly? 
+                            // Let's perform a direct update via tripService.updateStatus if transparent, 
+                            // or better yet, implement a failTrip method? For now, I'll update manually.
+                            // We need to verify if tripService.updateStatus exists or just create one.
+                            await tripService.updateStatus(newTrip.id, 'NO_DRIVER_FOUND');
+
+                            // Notify Rider
+                            const onlineUsers = req.app.get('onlineUsers');
+                            if (onlineUsers) {
+                                const riderSocketId = onlineUsers.get(riderId);
+                                if (riderSocketId) {
+                                    io.to(riderSocketId).emit('trip_no_driver', {
+                                        tripId: newTrip.id,
+                                        message: "Sorry, no drivers are currently available."
+                                    });
+                                }
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Timeout check failed:", err.message);
+                    }
+                }, 60000); // 1 minute
             }
         } catch (error) {
             console.error("Trip request error:", error);
@@ -87,7 +118,7 @@ class TripController {
             const userId = req.user.uid;
             const currentTrip = await tripService.getCurrentTripForUser(userId);
             if (!currentTrip) {
-                return res.status(404).json({ error: 'No current trip' });
+                return res.status(200).json(null);
             }
             res.status(200).json(currentTrip);
         } catch (error) {

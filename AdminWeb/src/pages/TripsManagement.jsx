@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Badge } from "@/components/ui/badge";
+import { apiClient } from '../services/apiService';
 
 const TripsManagement = () => {
     const [trips, setTrips] = useState([]);
@@ -13,8 +14,8 @@ const TripsManagement = () => {
 
     const fetchTrips = async () => {
         try {
-            const response = await axios.get('http://localhost:4000/api/trips');
-            setTrips(response.data.data || []);
+            const response = await apiClient('/trips');
+            setTrips(response.data || []);
             setLoading(false);
         } catch (err) {
             console.error("Failed to fetch trips", err);
@@ -44,9 +45,9 @@ const TripsManagement = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {trips.map((trip) => (
-                            <tr key={trip._id} className="bg-white border-b hover:bg-gray-50">
-                                <td className="px-6 py-4 font-mono">{trip._id.substring(0, 8)}...</td>
+                        {trips.map((trip, index) => (
+                            <tr key={trip._id || index} className="bg-white border-b hover:bg-gray-50">
+                                <td className="px-6 py-4 font-mono">{trip?._id?.substring ? trip._id.substring(0, 8) : 'N/A'}...</td>
                                 <td className="px-6 py-4">
                                     <div className="text-blue-600">From: {trip.pickup?.address || trip.pickup}</div>
                                     <div className="text-orange-600">To: {trip.dropoff?.address || trip.dropoff}</div>

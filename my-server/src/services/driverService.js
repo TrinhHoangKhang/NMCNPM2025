@@ -1,6 +1,7 @@
 // src/services/driverService.js
-import { db  } from '../config/firebaseConfig.js';
+import { db } from '../config/firebaseConfig.js';
 import Driver from '../models/Driver.js';
+import onlineQueueService from './onlineQueueService.js';
 
 class DriverService {
 
@@ -20,11 +21,20 @@ class DriverService {
         const doc = await db.collection('drivers').doc(driverId).get();
         if (!doc.exists) throw new Error("Driver not found");
 
-        if (newStatus === 'ONLINE' && !doc.data().vehicle) {
-            throw new Error("Cannot go online without a vehicle registered");
+        // if (newStatus === 'ONLINE' && !doc.data().vehicle) {
+        //     throw new Error("Cannot go online without a vehicle registered");
+        // }
+
+        // Update DB
+        await db.collection('drivers').doc(driverId).update({ status: newStatus });
+
+        // Update In-Memory Queue
+        if (newStatus === 'ONLINE') {
+            onlineQueueService.add(driverId);
+        } else {
+            onlineQueueService.remove(driverId);
         }
 
-        await db.collection('drivers').doc(driverId).update({ status: newStatus });
         return { success: true, status: newStatus };
     }
     // 3. Get Driver Profile

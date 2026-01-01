@@ -4,6 +4,7 @@ import {
   ThemeProvider,
   ToastProvider,
   LocaleProvider,
+  DriverProvider,
   SocketProvider
 } from './context';
 import router from './routes';
@@ -15,7 +16,9 @@ function App() {
         <ToastProvider>
           <AuthProvider>
             <SocketProvider>
-              <RouterProvider router={router} />
+              <DriverProvider>
+                <RouterProvider router={router} />
+              </DriverProvider>
             </SocketProvider>
           </AuthProvider>
         </ToastProvider>

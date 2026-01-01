@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 export default function RegisterPage() {
   const { user, register } = useAuth()
@@ -43,6 +43,7 @@ export default function RegisterPage() {
     setIsSubmitting(true)
     try {
       console.log("start", values)
+      // Inject Role Here (Sync with Admin Web but specific to Driver)
       const result = await register({ ...values, role: 'driver' })
       console.log("end", result)
 
@@ -76,7 +77,8 @@ export default function RegisterPage() {
 
               <FormField
                 control={form.control}
-                name="name" render={({ field }) => (
+                name="name"
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>

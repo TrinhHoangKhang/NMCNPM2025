@@ -4,20 +4,20 @@ export const authService = {
   register: async (userData) => {
     return apiClient('/auth/register', {
       method: "POST",
-      body: JSON.stringify({
+      body: {
         email: userData.email,
         password: userData.password,
         name: userData.name,
         phone: userData.phone,
         role: "driver"
-      })
+      }
     });
   },
 
   login: async (email, password) => {
     return apiClient('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password })
+      body: { email, password }
     });
   },
 

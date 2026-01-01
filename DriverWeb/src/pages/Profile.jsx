@@ -1,59 +1,44 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import BentoProfile from '../components/BentoProfile';
+import { Car, Star, TrendingUp, Award } from 'lucide-react';
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
-  if (!user) return <div>Please log in</div>;
+  if (!user) return <div className="p-8 text-center text-slate-500">Please log in</div>;
+
+  // Transform/Mock data for the Bento Profile
+  const bentoData = {
+    name: user.name,
+    role: user.role || "Professional Driver",
+    location: user.location || "Ho Chi Minh City, VN",
+    status: user.status || "Available",
+    avatar: user.avatar,
+    initials: user.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2) : "DR",
+    isOnline: user.status === 'Active' || user.status === 'Available',
+    stats: [
+      { icon: Car, label: "Total Trips", value: user.totalTrips || "1,248", trend: "+12%", trendUp: true },
+      { icon: Star, label: "Rating", value: user.rating || "4.9", trend: "Top 5%", trendUp: true },
+      { icon: Award, label: "Years Exp.", value: "3.5", trend: null },
+    ],
+    skills: [
+      "Sedan 4-Seater",
+      "Air Conditioning",
+      "Free WiFi",
+      "Child Seat",
+      "English Speaker",
+      "Safe Driver Certified"
+    ],
+    socials: {
+      twitter: "#",
+      linkedin: "#"
+    }
+  };
 
   return (
-    <div className="flex justify-center w-full p-4">
-      <Card className="w-full max-w-lg shadow-lg">
-        <CardHeader className="text-center">
-          <Avatar className="mx-auto h-24 w-24 mb-4">
-            <AvatarImage src={user.avatar} alt="User Avatar" />
-            <AvatarFallback className="text-2xl">
-              {user.name ? user.name.charAt(0).toUpperCase() : "D"}
-            </AvatarFallback>
-          </Avatar>
-          <CardTitle className="text-2xl">{user.name}</CardTitle>
-          <CardDescription>
-            <Badge variant="outline" className="mr-2">{user.role}</Badge>
-            Status: <span className="text-green-600 font-bold">{user.status || 'Active'}</span>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-2 text-sm border-b pb-4">
-            <span className="font-semibold text-slate-500">Email</span>
-            <span className="col-span-2">{user.email}</span>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-sm border-b pb-4">
-            <span className="font-semibold text-slate-500">Phone</span>
-            <span className="col-span-2">{user.phone || "Not set"}</span>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-sm border-b pb-4">
-            <span className="font-semibold text-slate-500">Vehicle</span>
-            <span className="col-span-2">{user.vehicleType || "Not Registered"}</span>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-sm border-b pb-4">
-            <span className="font-semibold text-slate-500">License</span>
-            <span className="col-span-2">{user.licensePlate || "N/A"}</span>
-          </div>
-
-          <div className="flex flex-col gap-2 mt-6">
-            <Button variant="outline" onClick={() => alert("Edit Profile Feature Coming Soon")}>
-              Edit Profile
-            </Button>
-            <Button variant="destructive" onClick={logout}>
-              Log Out
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="bg-slate-50 min-h-screen pb-10">
+      <BentoProfile userData={bentoData} />
     </div>
   );
 }

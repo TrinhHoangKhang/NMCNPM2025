@@ -1,9 +1,10 @@
 import ProtectedRoute from '../components/ProtectedRoute';
 import AdminLayout from '../layouts/AdminLayout';
-import UserManagement from '../pages/UserManagement';
 import TripsManagement from '../pages/TripsManagement';
 import RidersManagement from '../pages/RidersManagement';
 import DriversManagement from '../pages/DriversManagement';
+import AdminsManagement from '../pages/AdminsManagement';
+import Dashboard from '../pages/Dashboard';
 import { Navigate } from 'react-router-dom';
 
 export const adminRoutes = [
@@ -14,10 +15,11 @@ export const adminRoutes = [
       {
         element: <AdminLayout />,
         children: [
-          { index: true, element: <Navigate to="/riders" replace /> },
+          { index: true, element: <Navigate to="/dashboard" replace /> },
+          { path: "dashboard", element: <Dashboard /> },
           { path: "riders", element: <RidersManagement /> },
           { path: "drivers", element: <DriversManagement /> },
-          { path: "users", element: <UserManagement /> },
+          { path: "admins", element: <AdminsManagement /> },
           { path: "trips", element: <TripsManagement /> }
         ]
       }

@@ -3,7 +3,7 @@ import { authService } from "../services/authService";
 
 export const AuthContext = createContext(null);
 
-const TTL = 1000 * 60 * 60
+const TTL = 1000 * 60 * 60 * 24; // 24 hours
 const KEY_REGISTERED = "mock_registered_users"
 const KEY_SESSION = "active_session"
 

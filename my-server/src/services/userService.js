@@ -14,7 +14,10 @@ class UserService {
         let query = db.collection('users');
 
         if (filters.role) {
-            query = query.where('role', '==', filters.role);
+            // Support both uppercase and lowercase roles (e.g. 'ADMIN' and 'admin')
+            // to handle legacy data or inconsistencies.
+            const uniqueRoles = [...new Set([filters.role, filters.role.toUpperCase(), filters.role.toLowerCase()])];
+            query = query.where('role', 'in', uniqueRoles);
         }
 
         const snapshot = await query.get();

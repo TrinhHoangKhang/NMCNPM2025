@@ -21,6 +21,7 @@ class Trip {
 
     toJSON() {
         return {
+            id: this.id,
             riderId: this.riderId,
             driverId: this.driverId,
             pickupLocation: this.pickupLocation,
