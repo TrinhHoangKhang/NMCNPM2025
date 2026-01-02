@@ -4,7 +4,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import session from 'express-session';
 import passport from 'passport';
 
 // Initialize Firebase (and db/admin exports)
@@ -21,7 +20,7 @@ import driverRoutes from './routes/driverRoutes.js';
 import tripRoutes from './routes/tripRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
-
+import paymentRoutes from './routes/paymentRoutes.js';
 // ==========================================
 // 1. CONFIGURATION & SETUP
 // ==========================================
@@ -56,17 +55,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session Support
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production' }
-}));
-
-// Initialize Passport Middleware
+// Initialize Passport Middleware (stateless; no express-session)
 app.use(passport.initialize());
-app.use(passport.session());
 
 // ==========================================
 // 3. ROUTE DEFINITIONS
@@ -79,6 +69,7 @@ app.use('/api/drivers', driverRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health Check
 app.get('/', (req, res) => {
