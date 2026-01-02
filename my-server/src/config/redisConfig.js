@@ -7,6 +7,7 @@ dotenv.config();
 let redis;
 
 // Use mock for integration tests or if explicitly requested
+// Use mock for integration tests or if explicitly requested
 if (process.env.NODE_ENV === 'integration') {
     // console.debug('Initializing Redis Mock for Integration Testing');
     redis = new RedisMock();

@@ -34,14 +34,14 @@ export default function BookingForm({
         if (!socket) return;
 
         const onTripAccepted = (data) => {
-            console.log("Trip Accepted:", data);
+            console.log("DEBUG: Trip Accepted Socket Event:", data);
             setFindingDriver(false);
             showToast("Driver Found!", `Your driver ${data.driverName} is on the way.`);
             navigate(`/trip/${data.tripId}`);
         };
 
         const onTripNoDriver = (data) => {
-            console.log("No Driver Found:", data);
+            console.log("DEBUG: No Driver Found Socket Event:", data);
             setFindingDriver(false);
             showToast("No Driver Found", data.message);
             setCountdown(60); // Reset
@@ -112,6 +112,13 @@ export default function BookingForm({
         connectSocket();
 
         try {
+            console.log("DEBUG: Submitting trip request:", {
+                pickupLocation: data.pickupLocation,
+                dropoffLocation: data.dropoffLocation,
+                vehicleType: data.vehicleType,
+                paymentMethod: data.paymentMethod
+            });
+
             await tripService.requestTrip({
                 pickupLocation: data.pickupLocation,
                 dropoffLocation: data.dropoffLocation,
@@ -121,6 +128,7 @@ export default function BookingForm({
                 distance: estimate?.distance || 0
             });
             // Request sent successfully, now wait for driver
+            console.log("DEBUG: requestTrip success. Waiting for driver...");
             setFindingDriver(true);
             setCountdown(60);
         } catch (error) {

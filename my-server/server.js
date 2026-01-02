@@ -89,11 +89,21 @@ io.on('connection', async (socket) => {
 
             // Join Vehicle-Specific Room
             try {
+                console.log(`DEBUG: Fetching profile for driver ${socket.user.uid}`);
                 const driverProfile = await driverService.getDriver(socket.user.uid);
+
+                if (!driverProfile) {
+                    console.log(`DEBUG: No driver profile found for ${socket.user.email}`);
+                } else if (!driverProfile.vehicle) {
+                    console.log(`DEBUG: No vehicle found in profile for ${socket.user.email}`);
+                } else {
+                    console.log(`DEBUG: Driver vehicle:`, driverProfile.vehicle); // Log the whole vehicle object
+                }
+
                 if (driverProfile && driverProfile.vehicle && driverProfile.vehicle.type) {
                     const vehicleRoom = `drivers_${driverProfile.vehicle.type}`;
                     socket.join(vehicleRoom);
-                    console.log(`Driver ${socket.user.email} joined '${vehicleRoom}'`);
+                    console.log(`DEBUG: Driver ${socket.user.email} auto-joined room '${vehicleRoom}'`);
                 }
             } catch (err) {
                 console.warn(`Failed to join vehicle room for ${socket.user.uid}:`, err.message);
@@ -200,6 +210,10 @@ io.on('connection', async (socket) => {
                 }
             }
         });
+        socket.on('debug_check_rooms', () => {
+            console.log(`DEBUG: Driver ${socket.user.email} current rooms:`, Array.from(socket.rooms));
+        });
+
     }
 });
 

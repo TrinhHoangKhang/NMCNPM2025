@@ -5,7 +5,7 @@ import { useAuth } from "./AuthProvider";
 const SocketContext = createContext();
 
 export const SocketProvider = ({ children }) => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const [socket, setSocket] = useState(null);
     const socketRef = useRef(null);
 
@@ -30,6 +30,18 @@ export const SocketProvider = ({ children }) => {
 
         newSocket.on("connect_error", (err) => {
             console.error("Socket connection error:", err);
+            // NEW: Handle expired token
+            if (err.message === "Authentication error" || err.message.includes("jwt expired")) {
+                console.warn("Token expired or invalid. Logging out.");
+                logout();
+                // Optionally redirect or show toast here if we had access to navigate/toast
+                // But logout clears user, which triggers re-render of App -> Login
+                if (socketRef.current) {
+                    socketRef.current.disconnect();
+                    socketRef.current = null;
+                }
+                setSocket(null);
+            }
         });
 
         socketRef.current = newSocket;

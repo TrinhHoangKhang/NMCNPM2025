@@ -175,6 +175,7 @@ export default function Profile() {
         updates.vehicle = updatedVehicles[0];
         // Emit switch_vehicle since we are setting the first vehicle
         if (socket) {
+          console.log("Adding first vehicle, using socket to switch room:", updatedVehicles[0].type);
           socket.emit('switch_vehicle', updatedVehicles[0].type);
         }
       }
@@ -211,6 +212,7 @@ export default function Profile() {
         showToast("Success", `Switched to ${vehicle.model}`, "success");
         // Notify Socket Server to Join correct room
         if (socket) {
+          console.log("Setting active vehicle, emitting switch_vehicle:", vehicle.type);
           socket.emit('switch_vehicle', vehicle.type);
         }
         setSelectedVehicle(null); // Close dialog
@@ -255,6 +257,7 @@ export default function Profile() {
 
         // If active vehicle changed (e.g. was deleted), notify socket
         if (newActiveVehicle && socket) {
+          console.log("Deleted active vehicle, switching to next available:", newActiveVehicle.type);
           socket.emit('switch_vehicle', newActiveVehicle.type);
         } else if (!newActiveVehicle && socket) {
           // No vehicle left? What to emit? 

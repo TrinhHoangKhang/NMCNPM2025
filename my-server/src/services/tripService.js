@@ -200,8 +200,8 @@ class TripService {
     // 4. Get Available Trips (Requested & Pending)
     async getAvailableTrips(vehicleTypeFilter = null) {
         let query = db.collection('trips')
-            .where('status', '==', 'REQUESTED')
-            .orderBy('createdAt', 'desc');
+            .where('status', '==', 'REQUESTED');
+        // .orderBy('createdAt', 'desc'); // Commenting out to avoid manual index creation requirement during dev
 
         if (vehicleTypeFilter) {
             // Precise match: 'Motorbike' drivers only see 'Motorbike' requests
@@ -213,7 +213,10 @@ class TripService {
 
         const snapshot = await query.get();
         const trips = snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
-        // Usually don't populate driver since there is none yet
+
+        // Manual Sort (In-Memory) to bypass Firestore Index requirement
+        trips.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
         return trips;
     }
 

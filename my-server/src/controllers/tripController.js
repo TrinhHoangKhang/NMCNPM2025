@@ -58,6 +58,12 @@ class TripController {
             const io = req.app.get('socketio');
             if (io) {
                 const targetRoom = `drivers_${newTrip.vehicleType}`;
+
+                // DEBUG: Check who is in the room
+                const room = io.sockets.adapter.rooms.get(targetRoom);
+                const numClients = room ? room.size : 0;
+                console.log(`DEBUG: Broadcasting trip ${newTrip.id} to room: ${targetRoom} (Clients: ${numClients})`);
+
                 io.to(targetRoom).emit('new_ride_request', {
                     id: newTrip.id,
                     pickupLocation: newTrip.pickupLocation,
@@ -227,10 +233,21 @@ class TripController {
     async getAvailableTrips(req, res) {
         try {
             const driverId = req.user.uid;
-            const driverProfile = await userService.getUser(driverId);
+            console.log(`DEBUG: Getting available trips for driver ${driverId}`);
+
+            // FIX: Use driverService to ensure we get vehicle data
+            const driverProfile = await driverService.getDriver(driverId);
+
+            if (!driverProfile) {
+                console.log(`DEBUG: Driver profile not found`);
+                return res.status(200).json([]);
+            }
+
             const activeVehicle = driverProfile.vehicle;
+            console.log(`DEBUG: Driver active vehicle:`, activeVehicle);
 
             if (!activeVehicle || !activeVehicle.type) {
+                console.log(`DEBUG: No active vehicle type found`);
                 return res.status(200).json([]);
             }
 

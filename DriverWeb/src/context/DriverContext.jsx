@@ -3,10 +3,12 @@ import { tripService } from "@/services/tripService";
 import { driverService } from "@/services/driverService";
 import { useToast } from "@/hooks/useToast";
 import { useSocket } from "./SocketContext";
+import { useAuth } from "./AuthProvider";
 
 const DriverContext = createContext();
 
 export const DriverProvider = ({ children }) => {
+    const { user } = useAuth();
     const { showToast } = useToast();
     const { connectSocket, disconnectSocket } = useSocket();
     const [trips, setTrips] = useState([]);
@@ -57,6 +59,30 @@ export const DriverProvider = ({ children }) => {
         connectSocket();
     }, []);
 
+    // NEW: Listen for Socket Events
+    const { socket } = useSocket();
+    useEffect(() => {
+        if (!socket) return;
+
+        console.log("DEBUG: Setting up socket listeners in DriverContext");
+
+        socket.on('new_ride_request', (tripData) => {
+            console.log("DEBUG: New ride request received via socket:", tripData);
+            showToast("New Job!", `Pickup: ${tripData.pickupLocation?.address}`, "info");
+
+            setTrips(prev => {
+                // Avoid duplicates
+                if (prev.find(t => t.id === tripData.id)) return prev;
+                return [tripData, ...prev];
+            });
+        });
+
+        // Cleanup
+        return () => {
+            socket.off('new_ride_request');
+        };
+    }, [socket]);
+
     // Countdown Logic
     useEffect(() => {
         let interval;
@@ -91,6 +117,18 @@ export const DriverProvider = ({ children }) => {
                 // connectSocket(); 
                 setTimeLeft(60); // 1 min session
                 showToast("Success", "You are now Working", "success");
+
+                // DEBUG: Check rooms on server
+                if (socket) {
+                    console.log("DEBUG: Emitting debug_check_rooms");
+                    socket.emit('debug_check_rooms');
+
+                    // FORCE RECONNECT TO CORRECT VEHICLE ROOM
+                    if (user && user.vehicle && user.vehicle.type) {
+                        console.log("DEBUG: Force switching to vehicle room on start:", user.vehicle.type);
+                        socket.emit('switch_vehicle', user.vehicle.type);
+                    }
+                }
             } else {
                 setIsOnline(false);
                 // Do NOT disconnect socket - stay connected for updates
