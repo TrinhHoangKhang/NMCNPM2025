@@ -23,6 +23,7 @@ if (process.env.NODE_ENV !== 'test') {
 
   if (admin.apps.length) {
     dbInstance = admin.firestore();
+    dbInstance.settings({ ignoreUndefinedProperties: true });
   } else {
     console.warn("Firebase App not initialized. Creating mock DB that always throws.");
     dbInstance = {

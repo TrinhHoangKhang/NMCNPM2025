@@ -1,5 +1,6 @@
 import tripService from '../services/tripService.js';
 import userService from '../services/userService.js';
+import driverService from '../services/driverService.js';
 import presenceService from '../services/presenceService.js';
 
 class TripController {
@@ -17,6 +18,7 @@ class TripController {
     // 1. POST /api/trips/request
     async requestTrip(req, res) {
         try {
+            console.log('CONTROLLER DEBUG: req.user is', req.user);
             const { pickupLocation, dropoffLocation, vehicleType, paymentMethod } = req.body;
 
             // Validate required fields
@@ -34,6 +36,12 @@ class TripController {
             }
 
             const riderId = req.user.uid; // Identified via JWT token
+
+            // CHECK: Prevent new trip if user has active trip
+            const existingTrip = await tripService.getCurrentTripForUser(riderId, 'RIDER');
+            if (existingTrip) {
+                return res.status(400).json({ error: "You already have an ongoing trip." });
+            }
 
             const newTrip = await tripService.createTripRequest(
                 riderId,
@@ -241,7 +249,8 @@ class TripController {
             const driverId = req.user.uid;
             const { id } = req.params;
 
-            const driverProfile = await userService.getUser(driverId);
+            const driverProfile = await driverService.getDriver(driverId);
+            console.log("DEBUG: Driver Profile:", JSON.stringify(driverProfile, null, 2));
             const activeVehicle = driverProfile.vehicle;
 
             if (!activeVehicle || !activeVehicle.type) {

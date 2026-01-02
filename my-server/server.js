@@ -87,10 +87,8 @@ io.on('connection', (socket) => {
 
         // NEW: Auto-join 'drivers' room for broadcasting job requests
         if (socket.user.role === 'DRIVER') {
-            if (socket.user.role === 'DRIVER') {
-                socket.join('drivers');
-                console.log(`Driver ${socket.user.email} joined 'drivers' room`);
-            }
+            socket.join('drivers');
+            console.log(`Driver ${socket.user.email} joined 'drivers' room`);
         }
 
         // Heartbeat for Presence (Debounced)
@@ -163,7 +161,8 @@ io.on('connection', (socket) => {
                 }
             }
         });
-    });
+    }
+});
 
 // Make io accessible in routes (optional, or export it)
 app.set('socketio', io);

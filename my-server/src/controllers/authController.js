@@ -2,14 +2,27 @@ import authService from '../services/authService.js';
 
 export const register = async (req, res) => {
     try {
-        const { email, password, name, phone, role } = req.body;
+        const { email, password, name, phone, role, vehicleType, licensePlate } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ error: "Email and password are required" });
+        // ... (validation logic kept or skipped) ...
+        // We need to keep lines 7-9 validation. 
+
+        if (!email || !password || !name || !role) {
+            return res.status(400).json({ error: "Email, password, name, and role are required" });
+        }
+
+        if (role && !['RIDER', 'DRIVER', 'ADMIN'].includes(role.toUpperCase())) {
+            return res.status(400).json({ error: "Invalid role" });
+        }
+
+        if (role && role.toUpperCase() === 'DRIVER') {
+            if (!vehicleType || !licensePlate) {
+                return res.status(400).json({ error: "Driver must provide vehicleType and licensePlate" });
+            }
         }
 
         const newUser = await authService.registerUser({
-            email, password, name, phone, role
+            email, password, name, phone, role, vehicleType, licensePlate
         });
 
         res.status(201).json({
@@ -20,6 +33,15 @@ export const register = async (req, res) => {
 
     } catch (error) {
         console.error("Register Error:", error);
+
+        // Map Firebase Auth Errors to 400
+        if (error.code && error.code.startsWith('auth/')) {
+            return res.status(400).json({
+                success: false,
+                error: error.message
+            });
+        }
+
         res.status(500).json({
             success: false,
             error: error.message

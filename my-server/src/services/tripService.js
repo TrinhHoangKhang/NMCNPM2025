@@ -198,6 +198,10 @@ class TripService {
             throw new Error("Unauthorized to cancel this trip");
         }
 
+        if (['CANCELLED', 'COMPLETED'].includes(tripData.status)) {
+            throw new Error("Trip is already finished");
+        }
+
         await tripRef.update({
             status: 'CANCELLED',
             cancelledBy: userId,
