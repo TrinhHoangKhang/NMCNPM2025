@@ -17,6 +17,10 @@ class Trip {
         //Payment related
         this.paymentMethod = data.paymentMethod || "CASH"; // 'CASH', 'WALLET'
         this.paymentStatus = data.paymentStatus || "PENDING"; // 'PENDING', 'COMPLETED''
+
+        this.ratingDriver = data.ratingDriver || null;
+        this.ratingTrip = data.ratingTrip || null;
+        this.ratingComment = data.ratingComment || null;
     }
 
     toJSON() {
@@ -36,13 +40,26 @@ class Trip {
             completedAt: this.completedAt,
             paymentMethod: this.paymentMethod,
             paymentStatus: this.paymentStatus,
+            // Ratings
+            ratingDriver: this.ratingDriver,
+            ratingTrip: this.ratingTrip,
+            ratingComment: this.ratingComment,
+
             // Populated fields
             driverName: this.driverName,
             driverRating: this.driverRating,
             vehiclePlate: this.vehiclePlate,
             vehicleModel: this.vehicleModel,
             vehicleColor: this.vehicleColor,
-            driverPhone: this.driverPhone
+            driverPhone: this.driverPhone,
+            driverEmail: this.driverEmail, // Added recently
+
+            // Rider populated fields
+            riderName: this.riderName,
+            riderPhone: this.riderPhone,
+            riderRating: this.riderRating,
+            riderAvatar: this.riderAvatar,
+            riderEmail: this.riderEmail
         };
     }
 }

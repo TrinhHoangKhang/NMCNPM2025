@@ -9,7 +9,8 @@ import {
 	ShoppingCart,
 	Users,
 	Navigation,
-	Trophy
+	Trophy,
+	MessageCircle
 } from 'lucide-react';
 
 export default function Header() {
@@ -23,7 +24,7 @@ export default function Header() {
 		{ label: 'Find Jobs', href: '/jobs', icon: Package },
 		{ label: 'Ranking', href: '/ranking', icon: Trophy },
 		{ label: 'Trip History', href: '/history', icon: ShoppingCart },
-		{ label: 'Profile', href: '/profile', icon: Users },
+		{ label: 'Chat', href: '/chat', icon: MessageCircle },
 		{ label: 'Simulator', href: '/simulation', icon: Navigation },
 	];
 
@@ -93,7 +94,7 @@ export default function Header() {
 				</button>
 				{isDropdownOpen ? (
 					user ? (
-						<div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 border ring-1 ring-black ring-opacity-5">
+						<div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 border ring-1 ring-black ring-opacity-5 z-50">
 							<div className="px-4 py-2 border-b">
 								<p className="text-sm font-medium text-slate-900 truncate">{user.name}</p>
 								<p className="text-xs text-slate-500 truncate">{user.email}</p>
@@ -104,7 +105,7 @@ export default function Header() {
 							<button onClick={logout} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">Logout</button>
 						</div>
 					) : (
-						<div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 border ring-1 ring-black ring-opacity-5">
+						<div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 border ring-1 ring-black ring-opacity-5 z-50">
 							<Link to="/login" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Login</Link>
 							<Link to="/register" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Register</Link>
 						</div>

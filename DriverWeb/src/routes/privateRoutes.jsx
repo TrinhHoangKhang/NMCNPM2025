@@ -10,6 +10,7 @@ import Ranking from '../pages/Ranking';
 import Profile from '../pages/Profile';
 import Simulation from '../pages/Simulation';
 import TripDetails from '../pages/TripDetails';
+import Chat from '../pages/Chat';
 
 export const privateRoutes = [
   {
@@ -27,7 +28,8 @@ export const privateRoutes = [
           { path: "/settings", element: <Settings /> },
           { path: "/achievements", element: <Achievement /> },
           { path: "/simulation", element: <Simulation /> },
-          { path: "/trip/:id", element: <TripDetails /> }
+          { path: "/trip/:id", element: <TripDetails /> },
+          { path: "/chat", element: <Chat /> }
         ]
       }
     ]

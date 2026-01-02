@@ -22,6 +22,7 @@ import tripRoutes from './routes/tripRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import rankingRoutes from './routes/rankingRoutes.js';
+import friendRoutes from './routes/friendRoutes.js';
 
 // ==========================================
 // 1. CONFIGURATION & SETUP
@@ -81,6 +82,7 @@ app.use('/api/trips', tripRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/ranks', rankingRoutes);
+app.use('/api/friends', friendRoutes);
 
 // Health Check
 app.get('/', (req, res) => {

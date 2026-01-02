@@ -14,7 +14,8 @@ import {
     ArrowLeft,
     Loader2,
     User,
-    Star
+    Star,
+    MessageSquare
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -260,9 +261,14 @@ export default function TripDetails() {
                                         </div>
                                     </div>
                                 </div>
-                                <Button variant="outline" size="sm" onClick={() => navigate(`/profile/${trip.riderId || 'mock-id'}`)}>
-                                    View Profile
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => navigate(`/chat?friendId=${trip.riderId}`)}>
+                                        <MessageSquare className="w-4 h-4 mr-2" /> Chat
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => navigate(`/profile/${trip.riderId || 'mock-id'}`)}>
+                                        View Profile
+                                    </Button>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

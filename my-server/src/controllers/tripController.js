@@ -276,6 +276,12 @@ class TripController {
                 return res.status(400).json({ error: "No active vehicle found. Please update your vehicle profile." });
             }
 
+            // CHECK: Prevent if Driver already has an active trip
+            const existingTrip = await tripService.getCurrentTripForUser(driverId, 'DRIVER');
+            if (existingTrip) {
+                return res.status(400).json({ error: "You already have an ongoing trip." });
+            }
+
             const trip = await tripService.acceptTrip(id, driverId, activeVehicle.type);
 
             // STEP 3: Socket Logic - Join Room & Notify Rider
@@ -377,9 +383,10 @@ class TripController {
         try {
             const userId = req.user.uid;
             const { id } = req.params;
-            const { rating, comment } = req.body;
+            const { driverRating, tripRating, comment } = req.body;
+            console.log("CONTROLLER RATE:", { driverRating, tripRating, comment });
 
-            const result = await tripService.rateTrip(id, userId, rating, comment);
+            const result = await tripService.rateTrip(id, userId, driverRating, tripRating, comment);
             res.status(200).json(result);
         } catch (error) {
             res.status(400).json({ error: error.message });

@@ -7,6 +7,10 @@ import Profile from '../pages/Profile';
 import Settings from '../pages/Settings';
 import Achievement from '../pages/Achievement';
 import TripDetails from '../pages/TripDetails';
+import Friends from '../pages/Friends';
+import Chat from '../pages/Chat';
+import Chatbot from '../pages/Chatbot';
+import DriverProfile from '../pages/DriverProfile';
 
 export const privateRoutes = [
   {
@@ -19,9 +23,13 @@ export const privateRoutes = [
           { path: "/dashboard", element: <Dashboard /> },
           { path: "/history", element: <History /> },
           { path: "/profile", element: <Profile /> },
+          { path: "/profile/:id", element: <DriverProfile /> },
           { path: "/settings", element: <Settings /> },
           { path: "/achievements", element: <Achievement /> },
-          { path: "/trip/:id", element: <TripDetails /> }
+          { path: "/trip/:id", element: <TripDetails /> },
+          { path: "/friends", element: <Friends /> },
+          { path: "/chat", element: <Chat /> },
+          { path: "/chatbot", element: <Chatbot /> }
         ]
       }
     ]

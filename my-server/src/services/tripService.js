@@ -3,6 +3,7 @@ import Trip from '../models/Trip.js';
 import mapsService from './mapsService.js';
 import rankingService from './rankingService.js';
 import driverService from './driverService.js';
+import friendService from './friendService.js';
 //const { v4: uuidv4 } = require('uuid'); // Need to install uuid, or just use Firestore auto-ID
 
 // Pricing Config (could be a separate file)
@@ -50,6 +51,7 @@ class TripService {
                 trip.vehicleModel = dData.vehicle?.model || "Standard";
                 trip.vehicleColor = dData.vehicle?.color || "White";
                 trip.driverPhone = dData.phone;
+                trip.driverEmail = dData.email;
             }
         } catch (e) {
             console.error(`Failed to populate driver for trip ${trip.id}:`, e);
@@ -68,6 +70,7 @@ class TripService {
                 trip.riderPhone = rData.phone || "";
                 trip.riderRating = rData.rating || 5.0; // Assuming riders have ratings
                 trip.riderAvatar = rData.avatar || null;
+                trip.riderEmail = rData.email;
             }
         } catch (e) {
             console.error(`Failed to populate rider for trip ${trip.id}:`, e);
@@ -320,7 +323,23 @@ class TripService {
 
         const updated = await tripRef.get();
         const trip = new Trip(tripId, updated.data());
-        return await this._populateAll(trip);
+        const populatedTrip = await this._populateAll(trip);
+
+        // Auto-connect Rider and Driver for Chat
+        try {
+            if (populatedTrip.riderId && populatedTrip.driverId && populatedTrip.riderEmail && populatedTrip.driverEmail) {
+                await friendService.forceAddFriend(
+                    populatedTrip.driverId,
+                    populatedTrip.driverEmail,
+                    populatedTrip.riderId,
+                    populatedTrip.riderEmail
+                );
+            }
+        } catch (e) {
+            console.error("Failed to auto-connect chat:", e);
+        }
+
+        return populatedTrip;
     }
 
     // ... (keep markTripPickup, markTripComplete same but maybe return populate?)
@@ -392,7 +411,7 @@ class TripService {
     }
 
     // 6. Rate Trip
-    async rateTrip(tripId, userId, rating, comment = "") {
+    async rateTrip(tripId, userId, driverRating, tripRating, comment = "") {
         const tripRef = db.collection('trips').doc(tripId);
         const doc = await tripRef.get();
         if (!doc.exists) throw new Error("Trip not found");
@@ -402,21 +421,30 @@ class TripService {
         // Validation
         if (data.riderId !== userId) throw new Error("Unauthorized to rate this trip");
         if (data.status !== 'COMPLETED') throw new Error("Can only rate completed trips");
-        if (data.rating) throw new Error("Trip already rated");
+        if (data.ratingDriver || data.ratingTrip) throw new Error("Trip already rated");
 
-        const ratingVal = parseFloat(rating);
-        if (isNaN(ratingVal) || ratingVal < 1 || ratingVal > 5) {
-            throw new Error("Rating must be between 1 and 5");
+        const driverRatingVal = parseFloat(driverRating);
+        const tripRatingVal = parseFloat(tripRating);
+
+        if (isNaN(driverRatingVal) || driverRatingVal < 1 || driverRatingVal > 5) {
+            throw new Error("Driver rating must be between 1 and 5");
+        }
+        // Trip rating is optional or can be 0? Let's enforce 1-5 if provided, or allow skip?
+        // Requirement said "Add trip rating". Assuming mandatory or standard 1-5.
+        // Let's assume both are required for simplicity in this pass, or handle null.
+        if (isNaN(tripRatingVal) || tripRatingVal < 1 || tripRatingVal > 5) {
+            throw new Error("Trip rating must be between 1 and 5");
         }
 
         // Update Trip
         await tripRef.update({
-            rating: ratingVal,
+            ratingDriver: driverRatingVal,
+            ratingTrip: tripRatingVal,
             ratingComment: comment,
             ratedAt: new Date().toISOString()
         });
 
-        // Update Driver Stats
+        // Update Driver Stats using DRIVER RATING
         if (data.driverId) {
             try {
                 const driverRef = db.collection('drivers').doc(data.driverId);
@@ -430,7 +458,7 @@ class TripService {
                     // Total Score = (current * count) + new
                     // New Avg = Total Score / (count + 1)
                     const newCount = currentCount + 1;
-                    const newRating = ((currentRating * currentCount) + ratingVal) / newCount;
+                    const newRating = ((currentRating * currentCount) + driverRatingVal) / newCount;
 
                     await driverRef.update({
                         rating: parseFloat(newRating.toFixed(2)),
@@ -445,7 +473,13 @@ class TripService {
             }
         }
 
-        return { id: tripId, ...data, rating: ratingVal, ratingComment: comment };
+        return {
+            id: tripId,
+            ...data,
+            ratingDriver: driverRatingVal,
+            ratingTrip: tripRatingVal,
+            ratingComment: comment
+        };
     }
 }
 

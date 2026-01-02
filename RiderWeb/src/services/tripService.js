@@ -36,11 +36,15 @@ export const tripService = {
         });
     },
 
-    rateTrip: async (tripId, rating, comment) => {
+    rateTrip: async (tripId, driverRating, tripRating, comment) => {
         return apiClient(`/trips/${tripId}/rate`, {
             method: 'POST',
-            body: { rating, comment }
+            body: { driverRating, tripRating, comment }
         });
+    },
+
+    getUserDetails: async (userId) => {
+        return apiClient(`/users/${userId}`);
     },
 
     getRoute: async (pickup, dropoff) => {

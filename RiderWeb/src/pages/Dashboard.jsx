@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, CreditCard, Star, Clock, ArrowUpRight, TrendingUp, ShieldCheck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { tripService } from "@/services/tripService";
 import { useAuth } from "@/context/AuthProvider";
 
 export default function Dashboard() {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [currentTrip, setCurrentTrip] = useState(null);
     const [stats, setStats] = useState([
         { title: "Total Trips", value: "0", change: "+0 from last month", icon: MapPin, color: "text-blue-600", bg: "bg-blue-100" },
@@ -126,7 +127,10 @@ export default function Dashboard() {
 
                 {/* Active Trip Card */}
                 {currentTrip && (
-                    <Card className="border-l-4 border-l-indigo-600 shadow-md animate-in slide-in-from-top-4 duration-500">
+                    <Card
+                        className="border-l-4 border-l-indigo-600 shadow-md animate-in slide-in-from-top-4 duration-500 cursor-pointer hover:bg-slate-50 transition-colors"
+                        onClick={() => navigate(`/trip/${currentTrip.id}`)}
+                    >
                         <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
                             <div className="flex items-center gap-4">
                                 <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center animate-pulse">
@@ -144,11 +148,9 @@ export default function Dashboard() {
                                     </p>
                                 </div>
                             </div>
-                            <Link to={`/trip/${currentTrip.id}`}>
-                                <Button className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700">
-                                    View Trip Details <ArrowUpRight className="ml-2 h-4 w-4" />
-                                </Button>
-                            </Link>
+                            <Button className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700">
+                                View Trip Details <ArrowUpRight className="ml-2 h-4 w-4" />
+                            </Button>
                         </CardContent>
                     </Card>
                 )}
