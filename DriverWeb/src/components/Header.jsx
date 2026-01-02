@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useDriver } from '@/context/DriverContext';
 import {
 	LayoutDashboard,
 	Package,
@@ -13,6 +14,7 @@ import {
 
 export default function Header() {
 	const { user, logout } = useAuth();
+	const { isOnline, currentTrip } = useDriver();
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const location = useLocation();
 
@@ -66,7 +68,19 @@ export default function Header() {
 				</nav>
 			</div>
 
-			<div className="relative">
+			<div className="flex items-center gap-4 relative">
+				{/* Status Indicator */}
+				<div className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 transition-colors
+					${currentTrip
+						? 'bg-amber-100 text-amber-700 border-amber-200'
+						: isOnline
+							? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+							: 'bg-slate-100 text-slate-500 border-slate-200'
+					}`}>
+					<span className={`h-2 w-2 rounded-full ${currentTrip ? 'bg-amber-500 animate-pulse' : isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+					{currentTrip ? 'WORKING' : isOnline ? 'ONLINE' : 'OFFLINE'}
+				</div>
+
 				<button className="flex items-center space-x-2 focus:outline-none hover:bg-slate-50 p-1 rounded-full px-2 transition-colors border"
 					onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
 					<Avatar className="h-8 w-8">

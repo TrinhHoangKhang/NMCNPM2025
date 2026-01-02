@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { tripService } from '@/services/tripService';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -39,12 +40,26 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 function LocationMarker({ selectionMode, setPickupLocation, setDropoffLocation, setSelectionMode }) {
   const map = useMapEvents({
-    click(e) {
+    async click(e) {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+
+      // Default placeholder while loading
+      let addressName = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+      // Fetch actual address
+      try {
+        const result = await tripService.reverseGeocode(lat, lng);
+        if (result) addressName = result;
+      } catch (err) {
+        console.warn("Geocoding failed, using coordinates");
+      }
+
       if (selectionMode === 'PICKUP') {
-        setPickupLocation({ lat: e.latlng.lat, lng: e.latlng.lng, address: `${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}` });
+        setPickupLocation({ lat, lng, address: addressName });
         setSelectionMode(null); // Exit selection mode after picking
       } else if (selectionMode === 'DROPOFF') {
-        setDropoffLocation({ lat: e.latlng.lat, lng: e.latlng.lng, address: `${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}` });
+        setDropoffLocation({ lat, lng, address: addressName });
         setSelectionMode(null); // Exit selection mode after picking
       }
     },

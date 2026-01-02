@@ -103,11 +103,12 @@ class TripController {
     // 1b. POST /api/trips/estimate
     async getTripEstimate(req, res) {
         try {
-            const { pickupLocation, dropoffLocation, vehicleType } = req.body;
+            const { pickupLocation, dropoffLocation, vehicleType, distance } = req.body;
             const estimate = await tripService.estimateTrip(
                 pickupLocation,
                 dropoffLocation,
-                vehicleType
+                vehicleType,
+                distance
             );
             res.status(200).json(estimate);
         } catch (error) {
@@ -158,7 +159,7 @@ class TripController {
     async cancelTrip(req, res) {
         try {
             const userId = req.user.uid;
-            let { tripId } = req.body;
+            let { tripId } = req.body || {};
 
             if (!tripId) {
                 const currentTrip = await tripService.getCurrentTripForUser(userId);

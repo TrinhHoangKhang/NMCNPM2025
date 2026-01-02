@@ -24,6 +24,7 @@ export default function BookingForm({
     const { showToast } = useToast();
     const { connectSocket, socket } = useSocket();
     const [estimate, setEstimate] = useState(null);
+    const [routeInfo, setRouteInfo] = useState(null); // { distance, duration } from Create Path
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [findingDriver, setFindingDriver] = useState(false);
     const [countdown, setCountdown] = useState(60);
@@ -88,8 +89,9 @@ export default function BookingForm({
                 setCountdown(prev => prev - 1);
             }, 1000);
         } else if (countdown === 0) {
-            // Client-side timeout safety (Waiting for server confirmation though)
-            // setFindingDriver(false); 
+            // Client-side timeout safety
+            setFindingDriver(false);
+            showToast("Timeout", "No driver found. Please try again.");
         }
         return () => clearInterval(timer);
     }, [findingDriver, countdown]);
@@ -138,10 +140,12 @@ export default function BookingForm({
 
         try {
             // Mock estimate or call API
+            // Pass calculated distance if available to ensure consistency
             const result = await tripService.estimateTrip({
                 pickupLocation: values.pickupLocation.address,
                 dropoffLocation: values.dropoffLocation.address,
-                vehicleType: values.vehicleType
+                vehicleType: values.vehicleType,
+                distance: routeInfo?.distance // Optional override
             });
             setEstimate(result);
         } catch (error) {
@@ -177,6 +181,9 @@ export default function BookingForm({
             const routeData = await tripService.getRoute(values.pickupLocation, values.dropoffLocation);
             if (routeData) {
                 onCreatePath(routeData.path);
+                setRouteInfo({ distance: routeData.distance, duration: routeData.duration });
+                // Optional: Auto-set estimate with 0 price to show distance immediately?
+                // setEstimate({ distance: routeData.distance, price: 0, duration: routeData.duration });
             }
         } catch (error) {
             console.error("Path creation error", error);
@@ -376,15 +383,19 @@ export default function BookingForm({
 
                         {/* Payment Method removed as per request, defaulting to CASH */}
 
-                        {estimate && (
+                        {(estimate || routeInfo) && (
                             <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-sm space-y-1">
                                 <div className="flex justify-between items-center">
                                     <span className="text-slate-600 font-medium">Est. Distance</span>
-                                    <span className="font-bold text-slate-900">{estimate.distance} km</span>
+                                    <span className="font-bold text-slate-900">{estimate?.distance || routeInfo?.distance} km</span>
                                 </div>
                                 <div className="flex justify-between items-center text-lg">
                                     <span className="text-slate-600 font-medium">Total Price</span>
-                                    <span className="font-bold text-indigo-700">{estimate.price} VND</span>
+                                    {estimate ? (
+                                        <span className="font-bold text-indigo-700">{estimate.price} VND</span>
+                                    ) : (
+                                        <span className="text-slate-400 italic text-sm">Click Check Price</span>
+                                    )}
                                 </div>
                             </div>
                         )}

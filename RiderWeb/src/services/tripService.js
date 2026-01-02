@@ -31,7 +31,8 @@ export const tripService = {
 
     cancelTrip: async () => {
         return apiClient('/trips/cancel', {
-            method: 'PATCH'
+            method: 'PATCH',
+            body: {} // Ensure body exists
         });
     },
 
@@ -42,8 +43,6 @@ export const tripService = {
         const url = `https://router.project-osrm.org/route/v1/driving/${pickup.lng},${pickup.lat};${dropoff.lng},${dropoff.lat}?overview=full&geometries=geojson`;
 
         try {
-            // Use fetch directly to avoid axios dependency if not imported, or assumes direct usage.
-            // But package.json has axios. Let's use fetch for simplicity in frontend logic without extra check.
             const response = await fetch(url);
             const data = await response.json();
 
@@ -67,6 +66,23 @@ export const tripService = {
                 distance: 0,
                 duration: 0
             };
+        }
+    },
+
+    reverseGeocode: async (lat, lng) => {
+        try {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'RideGo-App/1.0' // Required by Nominatim
+                }
+            });
+            const data = await response.json();
+            // Return display_name or a constructed address
+            return data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        } catch (error) {
+            console.error("Reverse Geocoding Error:", error);
+            return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
         }
     }
 };

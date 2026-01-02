@@ -2,6 +2,7 @@ import { db, admin } from '../config/firebaseConfig.js';
 import Trip from '../models/Trip.js';
 import mapsService from './mapsService.js';
 import rankingService from './rankingService.js';
+import driverService from './driverService.js';
 //const { v4: uuidv4 } = require('uuid'); // Need to install uuid, or just use Firestore auto-ID
 
 // Pricing Config (could be a separate file)
@@ -108,7 +109,39 @@ class TripService {
         return newTrip;
     }
 
-    // ... (keep estimateTrip same)
+    // 1b. Estimate Trip Price & Distance
+    async estimateTrip(pickup, dropoff, vehicleType, distanceOverride = null) {
+        let distanceKm = 0;
+        let durationMin = 0;
+
+        if (distanceOverride) {
+            // Use client-provided distance if verified/trusted logic allows
+            distanceKm = parseFloat(distanceOverride);
+            // Estimate duration roughly if not provided (e.g. 30km/h avg)
+            durationMin = Math.round((distanceKm / 30) * 60);
+        } else {
+            // Calculate route
+            const routeData = await mapsService.calculateRoute(pickup, dropoff);
+            // Distance in KM
+            distanceKm = routeData.distance.value / 1000;
+            durationMin = Math.round(routeData.duration.value / 60);
+        }
+
+        // Calculate Fare
+        const rates = PRICING[vehicleType] || PRICING['4 SEAT'];
+        let fare = rates.BASE + (distanceKm * rates.PER_KM);
+        fare = Math.round(fare * 1000); // Standardize to integer VND (e.g. 15000)
+
+        // Ensure minimum fare? (Optional logic, let's keep it simple)
+        if (fare < rates.BASE * 1000) fare = rates.BASE * 1000;
+
+        return {
+            distance: distanceKm.toFixed(1), // km string
+            duration: durationMin, // min
+            price: fare,
+            currency: 'VND'
+        };
+    }
 
     // 2. Get Trip History for a specific User
     async getUserTripHistory(userId) {
@@ -209,6 +242,15 @@ class TripService {
         });
 
         const updated = await tripRef.get();
+
+        if (updated.data().status === 'CANCELLED') {
+            // Revert Driver if assigned
+            const dId = updated.data().driverId;
+            if (dId) {
+                await driverService.updateStatus(dId, 'ONLINE').catch(err => console.error("Cancel Trip Status Error:", err));
+            }
+        }
+
         return { id: tripId, ...updated.data() };
     }
 
@@ -247,6 +289,9 @@ class TripService {
             driverId,
             acceptedAt: new Date().toISOString()
         });
+
+        // Update Driver Status to WORKING
+        await driverService.updateStatus(driverId, 'WORKING');
 
         const updated = await tripRef.get();
         const trip = new Trip(tripId, updated.data());
@@ -300,10 +345,15 @@ class TripService {
         } catch (err) {
             console.error(`Failed to update stats for driver ${driverId}:`, err);
             // Non-blocking error
+            // Non-blocking error
         }
+
+        // Revert Driver Status to ONLINE
+        await driverService.updateStatus(driverId, 'ONLINE');
 
         const updated = await tripRef.get();
         const trip = new Trip(tripId, updated.data());
+
         return await this._populateDriverDetails(trip);
     }
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useDriver } from "@/context";
+import { useDriver, useSocket } from "@/context";
 import { tripService } from "@/services/tripService";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
@@ -70,7 +70,30 @@ export default function TripDetails() {
         if (id) {
             fetchTrip();
         }
-    }, [id]); // Removed currentTrip dependency to prevent auto-switching
+    }, [id]);
+
+    const { socket } = useSocket();
+
+    useEffect(() => {
+        if (!socket || !id) return;
+
+        const onTripCancelled = (data) => {
+            console.log("Trip Cancelled Event:", data);
+            if (data.tripId === id) {
+                setTrip(prev => ({ ...prev, status: 'CANCELLED' }));
+                showToast("Trip Cancelled", "The rider has cancelled the trip.", "info");
+                // Stop simulation
+                setDriverLocation(null);
+                setRoutePath(null);
+            }
+        };
+
+        socket.on('trip_cancelled', onTripCancelled);
+
+        return () => {
+            socket.off('trip_cancelled', onTripCancelled);
+        };
+    }, [socket, id]); // Removed currentTrip dependency to prevent auto-switching
 
     // FETCH REAL RIDER DATA
     const [riderDetails, setRiderDetails] = useState(null);

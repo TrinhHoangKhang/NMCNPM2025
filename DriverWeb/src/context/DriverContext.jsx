@@ -48,46 +48,34 @@ export const DriverProvider = ({ children }) => {
         }
     };
 
-    // Initial Load
+    // Initial Load & Auto-Online
     useEffect(() => {
         loadData();
+        // Auto-Online Logic
+        setIsOnline(true);
+        connectSocket();
+        setTimeLeft(60 * 60); // 1 hour default session
+        showToast("Info", "Going Online...", "info");
     }, []);
 
-    // Reload jobs when online status changes
-    useEffect(() => {
-        if (!currentTrip) {
-            fetchAvailableJobs();
-        }
-    }, [isOnline]);
-
-    // Countdown Logic
-    useEffect(() => {
-        let interval;
-        if (isOnline && timeLeft > 0) {
-            interval = setInterval(() => {
-                setTimeLeft((prev) => prev - 1);
-            }, 1000);
-        } else if (timeLeft === 0 && isOnline) {
-            setIsOnline(false);
-            disconnectSocket(); // Ensure socket disconnects on timeout
-            showToast("Info", "Online session expired. Please go online again.", "info");
-        }
-        return () => clearInterval(interval);
-    }, [isOnline, timeLeft]);
+    // ... (keep useEffects for socket listeners)
 
     const toggleStatus = async () => {
         const newStatus = isOnline ? 'OFFLINE' : 'ONLINE';
         try {
+            // Server now handles DB status via socket, but we call API for explicit actions
+            // or if we needed to pass extra params.
+            // For now, let's keep the API call as a backup/explicit intent.
             await tripService.updateDriverStatus(newStatus);
 
             if (newStatus === 'ONLINE') {
                 setIsOnline(true);
-                connectSocket(); // Connect when going online
-                setTimeLeft(1 * 60); // 1 minute
-                showToast("Success", "You are now ONLINE (1 min)", "success");
+                connectSocket();
+                setTimeLeft(60 * 60);
+                showToast("Success", "You are now ONLINE", "success");
             } else {
                 setIsOnline(false);
-                disconnectSocket(); // Disconnect when going offline
+                disconnectSocket();
                 setTimeLeft(0);
                 showToast("Success", "You are now OFFLINE", "success");
             }

@@ -11,6 +11,7 @@ import { admin } from './src/config/firebaseConfig.js';
 import jwt from 'jsonwebtoken';
 import driverService from './src/services/driverService.js';
 import presenceService from './src/services/presenceService.js';
+import userService from './src/services/userService.js';
 
 const PORT = process.env.PORT || 4000;
 
@@ -73,7 +74,7 @@ io.use(async (socket, next) => {
 });
 
 // Socket.io Events
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
     console.log('New client connected:', socket.id);
 
     if (socket.user) {
@@ -86,6 +87,11 @@ io.on('connection', (socket) => {
         if (socket.user.role === 'DRIVER') {
             socket.join('drivers');
             console.log(`Driver ${socket.user.email} joined 'drivers' room`);
+            // Automatically set Driver to ONLINE
+            await driverService.updateStatus(socket.user.uid, 'ONLINE').catch(err => console.error("Auto-Online Error:", err.message));
+        } else if (socket.user.role === 'RIDER') {
+            // Automatically set Rider to ONLINE
+            await userService.updateUser(socket.user.uid, { status: 'ONLINE' }).catch(err => console.error("Rider Auto-Online Error:", err.message));
         }
 
         // Heartbeat for Presence (Debounced)
@@ -146,8 +152,10 @@ io.on('connection', (socket) => {
 
                         // NEW: Automatically mark driver as OFFLINE in DB
                         if (socket.user.role === 'DRIVER') {
-                            // await driverService.updateStatus(socket.user.uid, 'OFFLINE');
+                            await driverService.updateStatus(socket.user.uid, 'OFFLINE').catch(err => console.error("Auto-Offline Error:", err.message));
                             console.log(`Driver ${socket.user.email} disconnected. Status cleanup.`);
+                        } else if (socket.user.role === 'RIDER') {
+                            await userService.updateUser(socket.user.uid, { status: 'OFFLINE' }).catch(err => console.error("Rider Auto-Offline Error:", err.message));
                         }
                     } else {
                         console.log(`User Socket Disconnect: ${socket.user.email} (Remaining sockets: ${count})`);
