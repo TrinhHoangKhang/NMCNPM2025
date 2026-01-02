@@ -88,8 +88,8 @@ export default function Dashboard() {
               <Power className="w-6 h-6" />
             </div>
             <div>
-              <div className="font-semibold text-lg">{isOnline ? 'You are Online' : 'You are Offline'}</div>
-              <div className="text-sm text-slate-500">{isOnline ? `Auto-offline in: ${formatTime(timeLeft)}` : 'Go online to receive jobs'}</div>
+              <div className="font-semibold text-lg">{isOnline ? 'On Working' : 'Not Working'}</div>
+              <div className="text-sm text-slate-500">{isOnline ? `Auto-offline in: ${formatTime(timeLeft)}` : 'Switch on to receive jobs'}</div>
             </div>
             <Switch
               checked={isOnline}

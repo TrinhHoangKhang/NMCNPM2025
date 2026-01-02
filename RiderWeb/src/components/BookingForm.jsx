@@ -101,7 +101,7 @@ export default function BookingForm({
         defaultValues: {
             pickupLocation: pickupLocation,
             dropoffLocation: dropoffLocation,
-            vehicleType: "MOTORBIKE",
+            vehicleType: "Motorbike",
             paymentMethod: "CASH" // Defaulting to CASH as UI is removed
         }
     });
@@ -314,10 +314,10 @@ export default function BookingForm({
                                         >
                                             <FormItem>
                                                 <FormControl>
-                                                    <RadioGroupItem value="MOTORBIKE" id="MOTORBIKE" className="peer sr-only" />
+                                                    <RadioGroupItem value="Motorbike" id="Motorbike" className="peer sr-only" />
                                                 </FormControl>
                                                 <Label
-                                                    htmlFor="MOTORBIKE"
+                                                    htmlFor="Motorbike"
                                                     className="flex items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-slate-50 peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:bg-indigo-50 [&:has([data-state=checked])]:border-indigo-600 cursor-pointer transition-all"
                                                 >
                                                     <div className="flex items-center gap-4">
@@ -325,7 +325,7 @@ export default function BookingForm({
                                                             <Bike className="h-6 w-6 text-slate-600" />
                                                         </div>
                                                         <div className="space-y-1">
-                                                            <div className="font-semibold leading-none">RideGo Bike</div>
+                                                            <div className="font-semibold leading-none">Motorbike</div>
                                                             <div className="text-xs text-muted-foreground">Fast & Affordable</div>
                                                         </div>
                                                     </div>
@@ -335,10 +335,10 @@ export default function BookingForm({
 
                                             <FormItem>
                                                 <FormControl>
-                                                    <RadioGroupItem value="4 SEAT" id="4_SEAT" className="peer sr-only" />
+                                                    <RadioGroupItem value="Car 4-Seat" id="Car 4-Seat" className="peer sr-only" />
                                                 </FormControl>
                                                 <Label
-                                                    htmlFor="4_SEAT"
+                                                    htmlFor="Car 4-Seat"
                                                     className="flex items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-slate-50 peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:bg-indigo-50 [&:has([data-state=checked])]:border-indigo-600 cursor-pointer transition-all"
                                                 >
                                                     <div className="flex items-center gap-4">
@@ -346,7 +346,7 @@ export default function BookingForm({
                                                             <Car className="h-6 w-6 text-slate-600" />
                                                         </div>
                                                         <div className="space-y-1">
-                                                            <div className="font-semibold leading-none">RideGo Car 4</div>
+                                                            <div className="font-semibold leading-none">Car 4 Seat</div>
                                                             <div className="text-xs text-muted-foreground">Comfort for 4</div>
                                                         </div>
                                                     </div>
@@ -356,10 +356,10 @@ export default function BookingForm({
 
                                             <FormItem>
                                                 <FormControl>
-                                                    <RadioGroupItem value="7 SEAT" id="7_SEAT" className="peer sr-only" />
+                                                    <RadioGroupItem value="Car 7-Seat" id="Car 7-Seat" className="peer sr-only" />
                                                 </FormControl>
                                                 <Label
-                                                    htmlFor="7_SEAT"
+                                                    htmlFor="Car 7-Seat"
                                                     className="flex items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-slate-50 peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:bg-indigo-50 [&:has([data-state=checked])]:border-indigo-600 cursor-pointer transition-all"
                                                 >
                                                     <div className="flex items-center gap-4">
@@ -367,7 +367,7 @@ export default function BookingForm({
                                                             <Car className="h-6 w-6 text-slate-600" />
                                                         </div>
                                                         <div className="space-y-1">
-                                                            <div className="font-semibold leading-none">RideGo Car 7</div>
+                                                            <div className="font-semibold leading-none">Car 7 Seat</div>
                                                             <div className="text-xs text-muted-foreground">Spacious for groups</div>
                                                         </div>
                                                     </div>
@@ -384,15 +384,19 @@ export default function BookingForm({
                         {/* Payment Method removed as per request, defaulting to CASH */}
 
                         {(estimate || routeInfo) && (
-                            <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-sm space-y-1">
+                            <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-sm space-y-2">
                                 <div className="flex justify-between items-center">
                                     <span className="text-slate-600 font-medium">Est. Distance</span>
                                     <span className="font-bold text-slate-900">{estimate?.distance || routeInfo?.distance} km</span>
                                 </div>
-                                <div className="flex justify-between items-center text-lg">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-600 font-medium">Est. Time</span>
+                                    <span className="font-bold text-slate-900">{estimate?.duration || routeInfo?.duration} min</span>
+                                </div>
+                                <div className="border-t border-indigo-200 pt-2 flex justify-between items-center text-lg">
                                     <span className="text-slate-600 font-medium">Total Price</span>
                                     {estimate ? (
-                                        <span className="font-bold text-indigo-700">{estimate.price} VND</span>
+                                        <span className="font-bold text-indigo-700">{estimate.price.toLocaleString()} VND</span>
                                     ) : (
                                         <span className="text-slate-400 italic text-sm">Click Check Price</span>
                                     )}

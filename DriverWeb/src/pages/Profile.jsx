@@ -6,26 +6,41 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Car, Plus, Trash2, Star, ShieldCheck, TrendingUp, Clock, Calendar, MapPin } from 'lucide-react';
+import { Loader2, Car, Plus, Trash2, Star, ShieldCheck, TrendingUp, Clock, Calendar, MapPin, CheckCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/useToast';
 import { tripService } from '@/services/tripService';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { vehicleSchema } from "@/schemas/vehicleSchema";
+import { useSocket } from '../context/SocketContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Profile() {
   const { user, updateUser } = useAuth();
   const { showToast } = useToast();
+  const { socket } = useSocket();
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [recentTrips, setRecentTrips] = useState([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  // Detail View State
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [vehicleToDelete, setVehicleToDelete] = useState(null);
 
-  // New Vehicle Form State
-  const [newVehicle, setNewVehicle] = useState({
-    plate: '',
-    model: '',
-    color: '',
-    type: 'Motorbike'
-  });
+
+
+
 
   // Stats State
   const [stats, setStats] = useState({
@@ -39,6 +54,8 @@ export default function Profile() {
     points: 0,
     pointsNeeded: 50
   });
+
+
 
   // Fetch Trip History for Stats
   useEffect(() => {
@@ -118,28 +135,54 @@ export default function Profile() {
   // Use registeredVehicles from user, or fallback to current vehicle if array is empty
   const vehicles = user.registeredVehicles || (user.vehicle ? [user.vehicle] : []);
 
-  const handleAddVehicle = async () => {
-    if (!newVehicle.plate || !newVehicle.model) {
-      showToast("Error", "Please fill in all fields", "error");
-      return;
+  // React Hook Form
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors }
+  } = useForm({
+    resolver: zodResolver(vehicleSchema),
+    defaultValues: {
+      type: "Motorbike",
+      plate: "",
+      color: "",
+      model: ""
     }
+  });
 
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (isAddOpen) {
+      reset({
+        type: "Motorbike",
+        plate: "",
+        color: "",
+        model: ""
+      });
+    }
+  }, [isAddOpen, reset]);
+
+  const onSubmitVehicle = async (data) => {
     setLoading(true);
     try {
-      const updatedVehicles = [...vehicles, { ...newVehicle, id: Date.now().toString() }];
+      const updatedVehicles = [...vehicles, { ...data, id: Date.now().toString() }];
 
       // If this is the first vehicle, set it as active immediately
-      // Or if user had no active vehicle (e.g. wiped list then added one)
       const updates = { registeredVehicles: updatedVehicles };
       if (!user.vehicle || vehicles.length === 0) {
         updates.vehicle = updatedVehicles[0];
+        // Emit switch_vehicle since we are setting the first vehicle
+        if (socket) {
+          socket.emit('switch_vehicle', updatedVehicles[0].type);
+        }
       }
 
       const res = await updateUser(updates);
       if (res.success) {
         showToast("Success", "Vehicle added successfully", "success");
         setIsAddOpen(false);
-        setNewVehicle({ plate: '', model: '', color: '', type: 'Motorbike' });
       } else {
         showToast("Error", res.error || "Failed to add vehicle", "error");
       }
@@ -151,30 +194,83 @@ export default function Profile() {
     }
   };
 
-  const handleRemoveVehicle = async (vehicleIndex) => {
-    if (!confirm("Are you sure you want to remove this vehicle?")) return;
+  const handleSetActiveVehicle = async (vehicle) => {
+    setLoading(true);
+    try {
+      // Optimistic check: if already active, do nothing
+      if (user.vehicle && user.vehicle.id === vehicle.id) {
+        showToast("Info", "This vehicle is already active", "info");
+        setLoading(false);
+        return;
+      }
+
+      const updates = { vehicle: vehicle };
+      const res = await updateUser(updates);
+
+      if (res.success) {
+        showToast("Success", `Switched to ${vehicle.model}`, "success");
+        // Notify Socket Server to Join correct room
+        if (socket) {
+          socket.emit('switch_vehicle', vehicle.type);
+        }
+        setSelectedVehicle(null); // Close dialog
+      } else {
+        showToast("Error", res.error || "Failed to switch vehicle", "error");
+      }
+
+    } catch (err) {
+      console.error("Error switching vehicle:", err);
+      showToast("Error", "Failed to switch vehicle", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveVehicle = (e, idx) => {
+    e.stopPropagation();
+    setVehicleToDelete(idx);
+  };
+
+  const confirmDeleteVehicle = async () => {
+    if (vehicleToDelete === null) return;
 
     setLoading(true);
     try {
-      const updatedVehicles = vehicles.filter((_, idx) => idx !== vehicleIndex);
+      const updatedVehicles = vehicles.filter((_, idx) => idx !== vehicleToDelete);
 
-      // Determine what the new active vehicle should be
-      // If list is empty, active vehicle is null.
-      // If list has items, use the first one (or keep current if checking IDs, but simplest is first)
       const newActiveVehicle = updatedVehicles.length > 0 ? updatedVehicles[0] : null;
 
-      const res = await updateUser({
+      const updates = {
         registeredVehicles: updatedVehicles,
         vehicle: newActiveVehicle
-      });
+      };
+
+      const res = await updateUser(updates);
 
       if (res.success) {
         showToast("Success", "Vehicle removed", "success");
+        if (selectedVehicle && vehicles[vehicleToDelete] && selectedVehicle.id === vehicles[vehicleToDelete].id) {
+          setSelectedVehicle(null);
+        }
+
+        // If active vehicle changed (e.g. was deleted), notify socket
+        if (newActiveVehicle && socket) {
+          socket.emit('switch_vehicle', newActiveVehicle.type);
+        } else if (!newActiveVehicle && socket) {
+          // No vehicle left? What to emit? 
+          // Maybe nothing, or leave all rooms. 'switch_vehicle' with null checks might fail.
+          // But if they have no vehicle, they effectively can't receive trips anyway (getAvailableTrips checks).
+        }
+
+      } else {
+        showToast("Error", res.error || "Failed to remove vehicle", "error");
       }
     } catch (err) {
+      console.error(err);
       showToast("Error", "Failed to remove vehicle", "error");
     } finally {
       setLoading(false);
+      setVehicleToDelete(null);
     }
   };
 
@@ -200,9 +296,16 @@ export default function Profile() {
               <span>•</span>
               <span>{stats.totalTrips} Trips</span>
             </div>
-            <Badge variant="secondary" className="mt-2 text-slate-600 bg-slate-100">
-              {stats.rank} Driver
-            </Badge>
+            <div className="flex gap-2 mt-2">
+              <Badge variant="secondary" className="text-slate-600 bg-slate-100">
+                {stats.rank} Driver
+              </Badge>
+              {user.vehicle && (
+                <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-200">
+                  {user.vehicle.model} - {user.vehicle.plate}
+                </Badge>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -338,49 +441,52 @@ export default function Profile() {
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>Vehicle Type</Label>
-                  <Select
-                    value={newVehicle.type}
-                    onValueChange={(val) => setNewVehicle({ ...newVehicle, type: val })}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Motorbike">Motorbike</SelectItem>
-                      <SelectItem value="Car 4-Seat">Car 4-Seat</SelectItem>
-                      <SelectItem value="Car 7-Seat">Car 7-Seat</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>Vehicle Type <span className="text-red-500">*</span></Label>
+                  <div className="relative">
+                    <select
+                      className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
+                      {...register("type")}
+                    >
+                      <option value="Motorbike">Motorbike</option>
+                      <option value="Car 4-Seat">Car 4-Seat</option>
+                      <option value="Car 7-Seat">Car 7-Seat</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-50"><path d="M4.93179 5.43179C4.75605 5.25605 4.75605 4.97113 4.93179 4.79539C5.10753 4.61965 5.39245 4.61965 5.56819 4.79539L7.49999 6.72718L9.43179 4.79539C9.60753 4.61965 9.89245 4.61965 10.0682 4.79539C10.2439 4.97113 10.2439 5.25605 10.0682 5.43179L7.81819 7.68179C7.73379 7.76619 7.61933 7.8136 7.49999 7.8136C7.38064 7.8136 7.26618 7.76619 7.18179 7.68179L4.93179 5.43179Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path></svg>
+                    </div>
+                  </div>
+                  {errors.type && <p className="text-red-500 text-xs">{errors.type.message}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>License Plate</Label>
+                    <Label>License Plate <span className="text-red-500">*</span></Label>
                     <Input
                       placeholder="59-X1 123.45"
-                      value={newVehicle.plate}
-                      onChange={(e) => setNewVehicle({ ...newVehicle, plate: e.target.value })}
+                      {...register("plate")}
                     />
+                    {errors.plate && <p className="text-red-500 text-xs">{errors.plate.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label>Color</Label>
+                    <Label>Color <span className="text-red-500">*</span></Label>
                     <Input
                       placeholder="Red, White..."
-                      value={newVehicle.color}
-                      onChange={(e) => setNewVehicle({ ...newVehicle, color: e.target.value })}
+                      {...register("color")}
                     />
+                    {errors.color && <p className="text-red-500 text-xs">{errors.color.message}</p>}
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Model</Label>
+                  <Label>Model <span className="text-red-500">*</span></Label>
                   <Input
                     placeholder="Honda Vision, Toyota Vios..."
-                    value={newVehicle.model}
-                    onChange={(e) => setNewVehicle({ ...newVehicle, model: e.target.value })}
+                    {...register("model")}
                   />
+                  {errors.model && <p className="text-red-500 text-xs">{errors.model.message}</p>}
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddVehicle} disabled={loading} className="bg-slate-900 text-white">
+                <Button onClick={handleSubmit(onSubmitVehicle)} disabled={loading} className="bg-slate-900 text-white">
                   {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />} Save
                 </Button>
               </DialogFooter>
@@ -395,26 +501,115 @@ export default function Profile() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {vehicles.map((v, idx) => (
-                <div key={idx} className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 transition">
+                <div
+                  key={idx}
+                  className={`flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 transition cursor-pointer ${user.vehicle?.id === v.id ? 'border-green-500 bg-green-50' : ''}`}
+                  onClick={() => setSelectedVehicle(v)}
+                >
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center">
-                      <Car className="w-6 h-6" />
+                    <div className={`h-12 w-12 rounded-full flex items-center justify-center ${user.vehicle?.id === v.id ? 'bg-green-100 text-green-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                      {user.vehicle?.id === v.id ? <CheckCircle className="w-6 h-6" /> : <Car className="w-6 h-6" />}
                     </div>
                     <div>
                       <h3 className="font-bold text-slate-900">{v.model}</h3>
                       <p className="text-sm text-slate-500">{v.plate} • {v.color}</p>
-                      <Badge variant="outline" className="mt-1 text-xs">{v.type}</Badge>
+                      <div className="flex gap-2 items-center mt-1">
+                        <Badge variant="outline" className="text-xs">{v.type}</Badge>
+                        {user.vehicle?.id === v.id && (
+                          <span className="text-xs font-semibold text-green-600">Active</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => handleRemoveVehicle(idx)}>
-                    <Trash2 className="w-5 h-5" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {user.vehicle?.id !== v.id && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-8 px-2 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSetActiveVehicle(v);
+                        }}
+                      >
+                        Activate
+                      </Button>
+                    )}
+                    <Button size="icon" variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={(e) => handleRemoveVehicle(e, idx)}>
+                      <Trash2 className="w-5 h-5" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Vehicle Detail Dialog */}
+      <Dialog open={!!selectedVehicle} onOpenChange={(open) => !open && setSelectedVehicle(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Vehicle Details</DialogTitle>
+          </DialogHeader>
+          {selectedVehicle && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-slate-500 uppercase">Type</Label>
+                  <p className="font-medium text-slate-900">{selectedVehicle.type}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-500 uppercase">License Plate</Label>
+                  <p className="font-medium text-slate-900">{selectedVehicle.plate}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-500 uppercase">Model</Label>
+                  <p className="font-medium text-slate-900">{selectedVehicle.model}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-500 uppercase">Color</Label>
+                  <p className="font-medium text-slate-900">{selectedVehicle.color}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs text-slate-500 uppercase">Status</Label>
+                  <div className="mt-1 flex items-center justify-between">
+                    <Badge className={user.vehicle?.id === selectedVehicle.id ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-700"}>
+                      {user.vehicle?.id === selectedVehicle.id ? "Active & Verified" : "Verified Only"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            {selectedVehicle && user.vehicle?.id !== selectedVehicle.id && (
+              <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700 mr-auto" onClick={() => handleSetActiveVehicle(selectedVehicle)}>
+                Set as Active
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setSelectedVehicle(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={vehicleToDelete !== null} onOpenChange={(open) => !open && setVehicleToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Vehicle?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently remove the vehicle from your profile.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteVehicle} className="bg-red-600 hover:bg-red-700">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

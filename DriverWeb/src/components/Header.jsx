@@ -71,14 +71,12 @@ export default function Header() {
 			<div className="flex items-center gap-4 relative">
 				{/* Status Indicator */}
 				<div className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 transition-colors
-					${currentTrip
-						? 'bg-amber-100 text-amber-700 border-amber-200'
-						: isOnline
-							? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-							: 'bg-slate-100 text-slate-500 border-slate-200'
+					${isOnline
+						? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+						: 'bg-slate-100 text-slate-500 border-slate-200'
 					}`}>
-					<span className={`h-2 w-2 rounded-full ${currentTrip ? 'bg-amber-500 animate-pulse' : isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-					{currentTrip ? 'WORKING' : isOnline ? 'ONLINE' : 'OFFLINE'}
+					<span className={`h-2 w-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+					{isOnline ? 'WORKING' : 'NOT WORKING'}
 				</div>
 
 				<button className="flex items-center space-x-2 focus:outline-none hover:bg-slate-50 p-1 rounded-full px-2 transition-colors border"

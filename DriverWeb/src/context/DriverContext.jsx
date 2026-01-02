@@ -48,17 +48,34 @@ export const DriverProvider = ({ children }) => {
         }
     };
 
-    // Initial Load & Auto-Online
+    // Initial Load
     useEffect(() => {
         loadData();
-        // Auto-Online Logic
-        setIsOnline(true);
+        // Default: Not Working (isOnline false by default)
+        // We still connect socket for updates, but status in DB might be 'ONLINE' (Connected)
+        // User must explicitly toggle "Working" to start session timer.
         connectSocket();
-        setTimeLeft(60 * 60); // 1 hour default session
-        showToast("Info", "Going Online...", "info");
     }, []);
 
-    // ... (keep useEffects for socket listeners)
+    // Countdown Logic
+    useEffect(() => {
+        let interval;
+        if (isOnline && timeLeft > 0) {
+            interval = setInterval(() => {
+                setTimeLeft((prev) => {
+                    if (prev <= 1) {
+                        // Auto-offline when time runs out
+                        toggleStatus();
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } else if (!isOnline) {
+            setTimeLeft(0);
+        }
+        return () => clearInterval(interval);
+    }, [isOnline, timeLeft]);
 
     const toggleStatus = async () => {
         const newStatus = isOnline ? 'OFFLINE' : 'ONLINE';
@@ -70,14 +87,16 @@ export const DriverProvider = ({ children }) => {
 
             if (newStatus === 'ONLINE') {
                 setIsOnline(true);
-                connectSocket();
-                setTimeLeft(60 * 60);
-                showToast("Success", "You are now ONLINE", "success");
+                // Socket stays connected
+                // connectSocket(); 
+                setTimeLeft(60); // 1 min session
+                showToast("Success", "You are now Working", "success");
             } else {
                 setIsOnline(false);
-                disconnectSocket();
+                // Do NOT disconnect socket - stay connected for updates
+                // disconnectSocket(); 
                 setTimeLeft(0);
-                showToast("Success", "You are now OFFLINE", "success");
+                showToast("Paused", "You are now Not Working", "info");
             }
         } catch (e) {
             showToast("Error", e.message || "Failed to update status", "error");

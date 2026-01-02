@@ -102,7 +102,7 @@ jest.unstable_mockModule('../../src/services/driverService.js', () => ({
             vehicle: { type: 'MOTORBIKE', plate: 'TEST-PLATE' },
             status: 'ONLINE'
         })),
-        updateStatus: jest.fn()
+        updateStatus: jest.fn().mockResolvedValue(true)
     }
 }));
 
@@ -181,7 +181,7 @@ describe('Order Ride Flow Acceptance', () => {
         expect(tripAfterReq.fare).toBeGreaterThan(0);
 
         // Verify Socket Broadcast to "drivers" room
-        expect(mockSocketTo).toHaveBeenCalledWith('drivers');
+        expect(mockSocketTo).toHaveBeenCalledWith('drivers_MOTORBIKE');
         expect(mockSocketEmit).toHaveBeenCalledWith('new_ride_request', expect.objectContaining({
             id: tripId,
             vehicleType: 'MOTORBIKE'
@@ -252,7 +252,8 @@ describe('Order Ride Flow Acceptance', () => {
         const tripId = reqRes.body.id;
 
         // 2. Accept
-        await request(app).patch(`/api/trips/${tripId}/accept`).set('Authorization', 'Bearer driver-token');
+        const acceptRes = await request(app).patch(`/api/trips/${tripId}/accept`).set('Authorization', 'Bearer driver-token');
+        expect(acceptRes.statusCode).toBe(200);
 
         // 3. Cancel (by Rider)
         const cancelRes = await request(app)

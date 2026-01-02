@@ -86,6 +86,19 @@ io.on('connection', async (socket) => {
         // NEW: Auto-join 'drivers' room for broadcasting job requests
         if (socket.user.role === 'DRIVER') {
             socket.join('drivers');
+
+            // Join Vehicle-Specific Room
+            try {
+                const driverProfile = await driverService.getDriver(socket.user.uid);
+                if (driverProfile && driverProfile.vehicle && driverProfile.vehicle.type) {
+                    const vehicleRoom = `drivers_${driverProfile.vehicle.type}`;
+                    socket.join(vehicleRoom);
+                    console.log(`Driver ${socket.user.email} joined '${vehicleRoom}'`);
+                }
+            } catch (err) {
+                console.warn(`Failed to join vehicle room for ${socket.user.uid}:`, err.message);
+            }
+
             console.log(`Driver ${socket.user.email} joined 'drivers' room`);
             // Automatically set Driver to ONLINE
             await driverService.updateStatus(socket.user.uid, 'ONLINE').catch(err => console.error("Auto-Online Error:", err.message));
@@ -130,6 +143,27 @@ io.on('connection', async (socket) => {
                     lng: data.lng,
                     heading: data.heading
                 });
+            }
+        });
+
+        // NEW: Handle Vehicle Switching
+        socket.on('switch_vehicle', async (vehicleType) => {
+            if (socket.user && socket.user.role === 'DRIVER' && vehicleType) {
+                // Leave all vehicle specific rooms (assuming format drivers_Type)
+                const rooms = Array.from(socket.rooms);
+                rooms.forEach(room => {
+                    if (room.startsWith('drivers_') && room !== 'drivers') {
+                        socket.leave(room);
+                    }
+                });
+
+                // Join new vehicle room
+                const newRoom = `drivers_${vehicleType}`;
+                socket.join(newRoom);
+                console.log(`Driver ${socket.user.email} switched to '${newRoom}'`);
+
+                // Update active vehicle in DB (Optional, but good for consistency if not done via HTTP)
+                // driverService.updateDriver(socket.user.uid, { "vehicle.type": vehicleType });
             }
         });
 

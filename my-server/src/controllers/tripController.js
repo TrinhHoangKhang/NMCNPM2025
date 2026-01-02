@@ -57,7 +57,8 @@ class TripController {
             // STEP 1 [NEW]: Broadcast to all online drivers
             const io = req.app.get('socketio');
             if (io) {
-                io.to('drivers').emit('new_ride_request', {
+                const targetRoom = `drivers_${newTrip.vehicleType}`;
+                io.to(targetRoom).emit('new_ride_request', {
                     id: newTrip.id,
                     pickupLocation: newTrip.pickupLocation,
                     dropoffLocation: newTrip.dropoffLocation,

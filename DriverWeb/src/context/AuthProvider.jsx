@@ -90,8 +90,47 @@ export const AuthProvider = ({ children }) => {
     localStorage.clear();
   };
 
+  // 5. UPDATE USER FUNCTION
+  const updateUser = async (updates) => {
+    if (!user || (!user.uid && !user.id)) return { success: false, error: "Not authenticated" };
+    const id = user.uid || user.id;
+
+    try {
+      // Import dynamically or assume it's available?
+      // Better to import at top, but for now let's assume `driverService` is needed.
+      // Wait, AuthProvider uses authService. I should import driverService.
+      // Or move this logic to Profile? But Profile expects updateUser from context.
+
+      // Let's rely on authService or driverService.
+      // Since this is AuthProvider, maybe it should be generic?
+      // But we know it's DriverWeb.
+
+      const { driverService } = await import("../services/driverService");
+      const result = await driverService.updateDriver(id, updates);
+
+      if (result) {
+        // Merge updates into local user state
+        // API might return the updated user, or just success.
+        // Assuming result is the updated data or we merge updates manually.
+        // Let's assume result contains the updated fields or success.
+
+        // If result is the updated object (usually is from apiClient)
+        // Check structure.
+
+        const updatedUser = { ...user, ...updates, ...result };
+        setUser(updatedUser);
+        setSessionWithTTL(updatedUser);
+        return { success: true, user: updatedUser };
+      }
+      return { success: false, error: "Update failed" };
+    } catch (e) {
+      console.error(e);
+      return { success: false, error: e.message || "Update failed" };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading, updateUser }}>
       {!loading && children}
     </AuthContext.Provider>
   );

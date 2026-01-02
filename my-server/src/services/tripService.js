@@ -8,15 +8,15 @@ import driverService from './driverService.js';
 // Pricing Config (could be a separate file)
 // Pricing Config (loaded from .env)
 const PRICING = {
-    'MOTORBIKE': {
+    'Motorbike': {
         BASE: parseFloat(process.env.PRICE_BASE_MOTORBIKE || '1.00'),
         PER_KM: parseFloat(process.env.PRICE_KM_MOTORBIKE || '0.50')
     },
-    '4 SEAT': {
+    'Car 4-Seat': {
         BASE: parseFloat(process.env.PRICE_BASE_4SEAT || '2.00'),
         PER_KM: parseFloat(process.env.PRICE_KM_4SEAT || '1.00')
     },
-    '7 SEAT': {
+    'Car 7-Seat': {
         BASE: parseFloat(process.env.PRICE_BASE_7SEAT || '5.00'),
         PER_KM: parseFloat(process.env.PRICE_KM_7SEAT || '2.00')
     }
@@ -82,7 +82,7 @@ class TripService {
         const distanceKm = routeData.distance.value / 1000;
 
         // B. Calculate Fare based on vehicle type
-        const rates = PRICING[vehicleType] || PRICING['4 SEAT'];
+        const rates = PRICING[vehicleType] || PRICING['Car 4-Seat'];
         let fare = rates.BASE + (distanceKm * rates.PER_KM);
         fare = Math.round(fare * 100) / 100;
 
@@ -128,7 +128,7 @@ class TripService {
         }
 
         // Calculate Fare
-        const rates = PRICING[vehicleType] || PRICING['4 SEAT'];
+        const rates = PRICING[vehicleType] || PRICING['Car 4-Seat'];
         let fare = rates.BASE + (distanceKm * rates.PER_KM);
         fare = Math.round(fare * 1000); // Standardize to integer VND (e.g. 15000)
 

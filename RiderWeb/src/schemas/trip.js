@@ -13,7 +13,7 @@ export const tripRequestSchema = z.object({
         address: z.string().optional()
     }, { message: "Dropoff location is required" }),
 
-    vehicleType: z.enum(["MOTORBIKE", "4 SEAT", "7 SEAT"], {
+    vehicleType: z.enum(["Motorbike", "Car 4-Seat", "Car 7-Seat"], {
         message: "Invalid vehicle type"
     }),
 
@@ -31,5 +31,5 @@ export const tripEstimateSchema = z.object({
         lat: z.number(),
         lng: z.number()
     }),
-    vehicleType: z.enum(["MOTORBIKE", "4 SEAT", "7 SEAT"])
+    vehicleType: z.enum(["Motorbike", "Car 4-Seat", "Car 7-Seat"])
 });

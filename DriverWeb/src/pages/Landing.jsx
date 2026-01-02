@@ -57,7 +57,7 @@ const Landing = () => {
           <BenefitCard
             icon={<Calendar className="w-10 h-10 text-green-600" />}
             title="Flexible Schedule"
-            description="You decide when and how often you drive. Offline? No problem. Online? You're earning."
+            description="You decide when and how often you drive. Not Working? No problem. Working? You're earning."
           />
           <BenefitCard
             icon={<TrendingUp className="w-10 h-10 text-purple-600" />}

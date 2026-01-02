@@ -42,7 +42,7 @@ export default function AvailableJobs() {
                 <h1 className="text-2xl font-bold">Available Jobs</h1>
                 <div className="flex gap-2">
                     <Button variant={isOnline ? "destructive" : "default"} onClick={toggleStatus}>
-                        {isOnline ? `Online (${formatTime(timeLeft)})` : "Go Online"}
+                        {isOnline ? `Stop Working (${formatTime(timeLeft)})` : "Start Working"}
                     </Button>
                     <Button variant="outline" onClick={fetchAvailableJobs} size="sm">Refresh</Button>
                 </div>
@@ -50,7 +50,7 @@ export default function AvailableJobs() {
 
             {trips.length === 0 ? (
                 <div className="text-center text-slate-500 border-2 border-dashed p-10 rounded-lg">
-                    {isOnline ? "No jobs available right now. Check back later!" : "You are Offline. Go Online to see jobs."}
+                    {isOnline ? "No jobs available right now. Check back later!" : "You are Not Working. Switch to Working mode to see jobs."}
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

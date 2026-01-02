@@ -9,7 +9,7 @@ export const driverService = {
         // driverData: { vehicleType, licensePlate, etc. }
         return apiClient(`/drivers/${id}`, {
             method: 'PATCH',
-            body: JSON.stringify(driverData)
+            body: driverData
         });
     },
 
@@ -17,7 +17,7 @@ export const driverService = {
         // status: "ONLINE" | "OFFLINE" | "BUSY"
         return apiClient('/drivers/status', {
             method: 'PATCH',
-            body: JSON.stringify({ status })
+            body: { status }
         });
     },
 
@@ -25,7 +25,7 @@ export const driverService = {
         // location: { lat, lng }
         return apiClient(`/drivers/${id}/location`, {
             method: 'PATCH',
-            body: JSON.stringify({ location })
+            body: { location }
         });
     }
 };
