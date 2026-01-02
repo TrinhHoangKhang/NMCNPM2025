@@ -95,50 +95,7 @@ export default function TripDetails() {
         };
     }, [socket, id]); // Removed currentTrip dependency to prevent auto-switching
 
-    // FETCH REAL RIDER DATA
-    const [riderDetails, setRiderDetails] = useState(null);
-    useEffect(() => {
-        const fetchRider = async () => {
-            if (!trip?.riderId) return;
-            try {
-                // Use apiClient from tripService context or direct import if available. 
-                // Since tripService.js exports named tripService, we can use that if imported, or import apiClient directly.
-                // Assuming apiClient is available through tripService which calls it.
-                // Let's import { apiClient } from env or just use tripService if we add a method.
-                // Best quick fix: Use the token correctly or add a method to tripService.
-                // Adding method 'getUserDetails' to tripService is cleaner.
 
-                // Temporary fix here: manually handle token better OR invoke service
-                const token = localStorage.getItem('token');
-
-                // Better approach: Add getUserDetails to tripService and use it
-                // For now, let's just fix the fetch header to ensure it's correct.
-                // The error 401 might be due to missing token in localStorage if key is different.
-
-                // Let's verify token existence
-                if (!token) {
-                    console.warn("No token found for rider fetch");
-                    return;
-                }
-
-                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/users/${trip.riderId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (response.ok) {
-                    const resData = await response.json();
-                    if (resData.success) {
-                        setRiderDetails(resData.data);
-                    } else {
-                        setRiderDetails(resData); // Fallback if structure is flat
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to fetch rider info", err);
-            }
-        };
-        fetchRider();
-    }, [trip?.riderId]);
 
     // Simulation Logic (Adapted from Dashboard)
     useEffect(() => {
@@ -292,14 +249,14 @@ export default function TripDetails() {
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-3">
                                     <Avatar className="h-10 w-10 border">
-                                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${riderDetails?.name || trip.riderName || 'Rider'}`} />
+                                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${trip.riderName || 'Rider'}`} />
                                         <AvatarFallback>R</AvatarFallback>
                                     </Avatar>
                                     <div className="cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors" onClick={() => navigate(`/profile/${trip.riderId || 'mock-id'}`)}>
-                                        <div className="font-semibold text-slate-900">{riderDetails?.name || trip.riderName || "Unknown Passenger"}</div>
+                                        <div className="font-semibold text-slate-900">{trip.riderName || "Unknown Passenger"}</div>
                                         <div className="flex items-center gap-1 text-xs text-slate-500">
                                             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                            <span>{riderDetails?.rating || "5.0"}</span> • <span>50+ Trips</span>
+                                            <span>{trip.riderRating || "5.0"}</span> • <span>{trip.riderPhone || 'No Phone'}</span>
                                         </div>
                                     </div>
                                 </div>

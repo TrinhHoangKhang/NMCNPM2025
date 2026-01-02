@@ -371,6 +371,20 @@ class TripController {
             res.status(400).json({ error: error.message });
         }
     }
+
+    // 5. POST /api/trips/:id/rate
+    async rateTrip(req, res) {
+        try {
+            const userId = req.user.uid;
+            const { id } = req.params;
+            const { rating, comment } = req.body;
+
+            const result = await tripService.rateTrip(id, userId, rating, comment);
+            res.status(200).json(result);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
 }
 
 export default new TripController();

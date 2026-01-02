@@ -36,6 +36,13 @@ export const tripService = {
         });
     },
 
+    rateTrip: async (tripId, rating, comment) => {
+        return apiClient(`/trips/${tripId}/rate`, {
+            method: 'POST',
+            body: { rating, comment }
+        });
+    },
+
     getRoute: async (pickup, dropoff) => {
         // pickup/dropoff = { address, lat, lng }
         if (!pickup?.lat || !dropoff?.lat) return null;

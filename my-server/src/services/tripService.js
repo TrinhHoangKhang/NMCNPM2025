@@ -36,19 +36,17 @@ class TripService {
             if (driverDoc.exists) {
                 dData = driverDoc.data();
             } else {
-                console.warn(`Driver doc ${trip.driverId} missing for trip ${trip.id}. Trying users collection.`);
+                // console.warn(`Driver doc ${trip.driverId} missing for trip ${trip.id}. Trying users collection.`);
                 const userDoc = await db.collection('users').doc(trip.driverId).get();
                 if (userDoc.exists) {
                     dData = userDoc.data();
-                    // Users collection might not have vehicle info
                 }
             }
 
             if (dData) {
-                // Inject driver info.
                 trip.driverName = dData.name || "Unknown Driver";
                 trip.driverRating = dData.rating || 5.0;
-                trip.vehiclePlate = dData.vehicle?.plate || dData.licensePlate; // Fallback
+                trip.vehiclePlate = dData.vehicle?.plate || dData.licensePlate;
                 trip.vehicleModel = dData.vehicle?.model || "Standard";
                 trip.vehicleColor = dData.vehicle?.color || "White";
                 trip.driverPhone = dData.phone;
@@ -59,11 +57,36 @@ class TripService {
         return trip;
     }
 
+    // Helper: Fetch rider details
+    async _populateRiderDetails(trip) {
+        if (!trip.riderId) return trip;
+        try {
+            const userDoc = await db.collection('users').doc(trip.riderId).get();
+            if (userDoc.exists) {
+                const rData = userDoc.data();
+                trip.riderName = rData.name || "Unknown Rider";
+                trip.riderPhone = rData.phone || "";
+                trip.riderRating = rData.rating || 5.0; // Assuming riders have ratings
+                trip.riderAvatar = rData.avatar || null;
+            }
+        } catch (e) {
+            console.error(`Failed to populate rider for trip ${trip.id}:`, e);
+        }
+        return trip;
+    }
+
+    // Helper: Populate everything
+    async _populateAll(trip) {
+        await this._populateDriverDetails(trip);
+        await this._populateRiderDetails(trip);
+        return trip;
+    }
+
     // 0. Get All Trips (Admin)
     async getAllTrips() {
         const snapshot = await db.collection('trips').orderBy('createdAt', 'desc').get();
         const trips = snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
-        return Promise.all(trips.map(t => this._populateDriverDetails(t)));
+        return Promise.all(trips.map(t => this._populateAll(t)));
     }
 
     // 1. Create a Trip Request
@@ -150,7 +173,7 @@ class TripService {
             .get();
 
         const trips = snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
-        const populatedTrips = await Promise.all(trips.map(t => this._populateDriverDetails(t)));
+        const populatedTrips = await Promise.all(trips.map(t => this._populateAll(t)));
 
         return populatedTrips.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
@@ -178,8 +201,7 @@ class TripService {
         const driverSnap = await driverQuery.get();
         if (!driverSnap.empty) {
             const trip = new Trip(driverSnap.docs[0].id, driverSnap.docs[0].data());
-            // Populate rider info?
-            return trip;
+            return await this._populateAll(trip);
         }
 
         // 2. Check if user is a RIDER
@@ -191,7 +213,7 @@ class TripService {
         const riderSnap = await riderQuery.get();
         if (!riderSnap.empty) {
             const trip = new Trip(riderSnap.docs[0].id, riderSnap.docs[0].data());
-            return await this._populateDriverDetails(trip);
+            return await this._populateAll(trip);
         }
 
         return null;
@@ -217,7 +239,7 @@ class TripService {
         // Manual Sort (In-Memory) to bypass Firestore Index requirement
         trips.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        return trips;
+        return Promise.all(trips.map(t => this._populateRiderDetails(t)));
     }
 
     // 3. PATCH /api/trips/cancel
@@ -298,7 +320,7 @@ class TripService {
 
         const updated = await tripRef.get();
         const trip = new Trip(tripId, updated.data());
-        return await this._populateDriverDetails(trip);
+        return await this._populateAll(trip);
     }
 
     // ... (keep markTripPickup, markTripComplete same but maybe return populate?)
@@ -317,7 +339,7 @@ class TripService {
 
         const updated = await tripRef.get();
         const trip = new Trip(tripId, updated.data());
-        return await this._populateDriverDetails(trip);
+        return await this._populateAll(trip);
     }
 
     async markTripComplete(tripId, driverId, paymentStatusOverride = null) {
@@ -357,7 +379,7 @@ class TripService {
         const updated = await tripRef.get();
         const trip = new Trip(tripId, updated.data());
 
-        return await this._populateDriverDetails(trip);
+        return await this._populateAll(trip);
     }
 
     // 5. Get Trip Details by ID
@@ -366,7 +388,64 @@ class TripService {
         const doc = await db.collection('trips').doc(tripId).get();
         if (!doc.exists) throw new Error("Trip not found");
         const trip = new Trip(tripId, doc.data());
-        return await this._populateDriverDetails(trip);
+        return await this._populateAll(trip);
+    }
+
+    // 6. Rate Trip
+    async rateTrip(tripId, userId, rating, comment = "") {
+        const tripRef = db.collection('trips').doc(tripId);
+        const doc = await tripRef.get();
+        if (!doc.exists) throw new Error("Trip not found");
+
+        const data = doc.data();
+
+        // Validation
+        if (data.riderId !== userId) throw new Error("Unauthorized to rate this trip");
+        if (data.status !== 'COMPLETED') throw new Error("Can only rate completed trips");
+        if (data.rating) throw new Error("Trip already rated");
+
+        const ratingVal = parseFloat(rating);
+        if (isNaN(ratingVal) || ratingVal < 1 || ratingVal > 5) {
+            throw new Error("Rating must be between 1 and 5");
+        }
+
+        // Update Trip
+        await tripRef.update({
+            rating: ratingVal,
+            ratingComment: comment,
+            ratedAt: new Date().toISOString()
+        });
+
+        // Update Driver Stats
+        if (data.driverId) {
+            try {
+                const driverRef = db.collection('drivers').doc(data.driverId);
+                const driverDoc = await driverRef.get();
+                if (driverDoc.exists) {
+                    const driverData = driverDoc.data();
+                    const currentRating = driverData.rating || 5.0;
+                    const currentCount = driverData.ratingCount || 0;
+
+                    // Calculate new average
+                    // Total Score = (current * count) + new
+                    // New Avg = Total Score / (count + 1)
+                    const newCount = currentCount + 1;
+                    const newRating = ((currentRating * currentCount) + ratingVal) / newCount;
+
+                    await driverRef.update({
+                        rating: parseFloat(newRating.toFixed(2)),
+                        ratingCount: newCount
+                    });
+
+                    // Sync with Redis Ranking (Optional but good)
+                    await rankingService.updateScore(data.driverId, 0); // Score might depend on rating?
+                }
+            } catch (err) {
+                console.error("Failed to update driver rating stats:", err);
+            }
+        }
+
+        return { id: tripId, ...data, rating: ratingVal, ratingComment: comment };
     }
 }
 

@@ -7,51 +7,51 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
-      - MONGO_URI=mongodb://mongo:27017/rideshare
-      # Add other env vars here or use env_file
+      - REDIS_URL=redis://redis:6379
+      # Firebase Creds should be passed via .env file or env_file
+    env_file:
+      - ./my-server/.env
     depends_on:
-      - mongo
+      - redis
 
   # Rider Web App
   rider-web:
     build:
-      context: ./RiderWeb
+      context: .
+      dockerfile: ./RiderWeb/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3000/api
     ports:
       - "5175:80"
-    environment:
-      - VITE_API_URL=http://localhost:3000/api
     depends_on:
       - server
 
   # Driver Web App
   driver-web:
     build:
-      context: ./DriverWeb
+      context: .
+      dockerfile: ./DriverWeb/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3000/api
     ports:
       - "5177:80"
-    environment:
-      - VITE_API_URL=http://localhost:3000/api
     depends_on:
       - server
 
   # Admin Web App
   admin-web:
     build:
-      context: ./AdminWeb
+      context: .
+      dockerfile: ./AdminWeb/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3000/api
     ports:
       - "5176:80"
-    environment:
-      - VITE_API_URL=http://localhost:3000/api
     depends_on:
       - server
 
-  # Database
-  mongo:
-    image: mongo:latest
+  # Redis
+  redis:
+    image: redis:alpine
     ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
-volumes:
-  mongo-data:
+      - "6379:6379"

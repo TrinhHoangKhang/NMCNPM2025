@@ -69,4 +69,8 @@ router.patch('/:id/complete', checkRole(['DRIVER']), tripController.markTripComp
 // Input: none (Chỉ cần jwt token)
 router.get('/driver/history', checkRole(['DRIVER']), tripController.getDriverTripHistory);
 
+// POST /api/trips/:id/rate - Đánh giá chuyến đi (Rider Only)
+// Input: rating (number 1-5), comment (string)
+router.post('/:id/rate', tripController.rateTrip);
+
 export default router;
