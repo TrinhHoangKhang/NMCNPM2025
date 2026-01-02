@@ -4,85 +4,98 @@ import { Button } from "@/components/ui/button";
 import { MapPin, CreditCard, Star, Clock, ArrowUpRight, TrendingUp, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { tripService } from "@/services/tripService";
+import { useAuth } from "@/context/AuthProvider";
 
 export default function Dashboard() {
+    const { user } = useAuth();
     const [currentTrip, setCurrentTrip] = useState(null);
+    const [stats, setStats] = useState([
+        { title: "Total Trips", value: "0", change: "+0 from last month", icon: MapPin, color: "text-blue-600", bg: "bg-blue-100" },
+        { title: "Total Spent", value: "0 ₫", change: "+0% from last month", icon: CreditCard, color: "text-green-600", bg: "bg-green-100" },
+        { title: "Average Rating", value: "5.0", change: "Consistently high", icon: Star, color: "text-yellow-600", bg: "bg-yellow-100" },
+        { title: "Ride Hours", value: "0", change: "Total time in rides", icon: Clock, color: "text-purple-600", bg: "bg-purple-100" },
+    ]);
+    const [recentActivity, setRecentActivity] = useState([]);
 
     useEffect(() => {
-        const fetchCurrentTrip = async () => {
+        const fetchData = async () => {
             try {
+                // 1. Fetch Current Trip
                 const trip = await tripService.getCurrentTrip();
-                // Only show if trip is active (not completed)
                 if (trip && ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS', 'PICKUP', 'ARRIVED'].includes(trip.status)) {
                     setCurrentTrip(trip);
                 }
+
+                // 2. Fetch Trip History for Stats
+                const history = await tripService.getTripHistory();
+
+                if (history && Array.isArray(history)) {
+                    // Process Stats
+                    const completedTrips = history.filter(t => t.status === 'COMPLETED');
+
+                    const totalTripsCount = completedTrips.length;
+                    const totalSpentVal = completedTrips.reduce((sum, t) => sum + (Number(t.fare) || 0), 0);
+                    // Duration is usually in seconds (from OSRM or estimates), assuming t.duration is in seconds
+                    const totalSeconds = completedTrips.reduce((sum, t) => sum + (Number(t.duration) || 0), 0);
+                    const totalHoursVal = (totalSeconds / 3600).toFixed(1);
+
+                    // Update Stats State
+                    setStats([
+                        {
+                            title: "Total Trips",
+                            value: totalTripsCount.toString(),
+                            change: "Lifetime trips", // Simplified for now
+                            icon: MapPin,
+                            color: "text-blue-600",
+                            bg: "bg-blue-100",
+                        },
+                        {
+                            title: "Total Spent",
+                            value: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalSpentVal),
+                            change: "Lifetime spend",
+                            icon: CreditCard,
+                            color: "text-green-600",
+                            bg: "bg-green-100",
+                        },
+                        {
+                            title: "Average Rating",
+                            value: totalTripsCount === 0 ? "0.0" : (user?.rating ? Number(user.rating).toFixed(1) : "5.0"),
+                            change: totalTripsCount === 0 ? "No ratings yet" : "Based on driver feedback",
+                            icon: Star,
+                            color: "text-yellow-600",
+                            bg: "bg-yellow-100",
+                        },
+                        {
+                            title: "Ride Hours",
+                            value: totalHoursVal,
+                            change: "Total time in rides",
+                            icon: Clock,
+                            color: "text-purple-600",
+                            bg: "bg-purple-100",
+                        },
+                    ]);
+
+                    // Process Recent Activity (Top 3)
+                    // History is presumably sorted by date desc from backend, but verify or slice
+                    const recent = history.slice(0, 3).map(t => ({
+                        id: t.id,
+                        pickup: t.pickupLocation?.address || "Unknown",
+                        dropoff: t.dropoffLocation?.address || "Unknown",
+                        date: new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+                        price: new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(t.fare || 0),
+                        status: t.status.charAt(0).toUpperCase() + t.status.slice(1).toLowerCase(), // Capitalize first letter
+                        originalStatus: t.status // keep for logic if needed
+                    }));
+                    setRecentActivity(recent);
+                }
+
             } catch (error) {
-                console.error("Failed to fetch current trip", error);
+                console.error("Failed to fetch dashboard data", error);
             }
         };
-        fetchCurrentTrip();
-    }, []);
-    const stats = [
-        {
-            title: "Total Trips",
-            value: "24",
-            change: "+4 from last month",
-            icon: MapPin,
-            color: "text-blue-600",
-            bg: "bg-blue-100",
-        },
-        {
-            title: "Total Spent",
-            value: "1,250,000 ₫",
-            change: "+12% from last month",
-            icon: CreditCard,
-            color: "text-green-600",
-            bg: "bg-green-100",
-        },
-        {
-            title: "Average Rating",
-            value: "4.9",
-            change: "Consistently high",
-            icon: Star,
-            color: "text-yellow-600",
-            bg: "bg-yellow-100",
-        },
-        {
-            title: "Ride Hours",
-            value: "18.5",
-            change: "Total time in rides",
-            icon: Clock,
-            color: "text-purple-600",
-            bg: "bg-purple-100",
-        },
-    ];
 
-    const recentActivity = [
-        {
-            id: 1,
-            pickup: "University of Science",
-            dropoff: "Ben Thanh Market",
-            date: "Today, 10:30 AM",
-            price: "45,000 ₫",
-            status: "Completed",
-        },
-        {
-            id: 2,
-            pickup: "Landmark 81",
-            dropoff: "Bitexco Tower",
-            date: "Yesterday, 08:15 PM",
-            price: "62,000 ₫",
-            status: "Completed",
-        },
-        {
-            id: 3,
-            pickup: "District 7 Lotte Mart",
-            dropoff: "RMIT University",
-            date: "Dec 28, 02:45 PM",
-            price: "38,000 ₫",
-            status: "Cancelled",
-        },
-    ];
+        fetchData();
+    }, [user]); // Re-run if user object changes (e.g. rating updates)
 
     return (
         <div className="flex flex-col min-h-screen bg-slate-50/50">
@@ -90,7 +103,7 @@ export default function Dashboard() {
             <div className="relative bg-gradient-to-r from-violet-600 to-indigo-600 text-white p-8 rounded-b-3xl shadow-lg mb-8">
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome back, Rider!</h1>
+                        <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome back, {user?.name || "Rider"}!</h1>
                         <p className="text-indigo-100 text-lg">Ready for your next journey?</p>
                     </div>
                     <Link to="/map">
@@ -170,35 +183,41 @@ export default function Dashboard() {
                     <Card className="md:col-span-2 border-none shadow-md">
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle className="text-xl font-bold text-slate-800">Recent Activity</CardTitle>
-                            <Button variant="ghost" size="sm" className="text-indigo-600">View All</Button>
+                            <Link to="/history">
+                                <Button variant="ghost" size="sm" className="text-indigo-600">View All</Button>
+                            </Link>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-6">
-                                {recentActivity.map((trip) => (
-                                    <div key={trip.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 hover:bg-slate-50 rounded-lg transition-colors border-b border-slate-100 last:border-0">
-                                        <div className="flex items-start gap-4">
-                                            <div className="mt-1 bg-indigo-50 p-2 rounded-full">
-                                                <MapPin className="h-5 w-5 text-indigo-600" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <div className="font-semibold text-slate-800 flex items-center gap-2">
-                                                    {trip.dropoff}
-                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${trip.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                        {trip.status}
-                                                    </span>
+                                {recentActivity.length > 0 ? (
+                                    recentActivity.map((trip) => (
+                                        <div key={trip.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 hover:bg-slate-50 rounded-lg transition-colors border-b border-slate-100 last:border-0">
+                                            <div className="flex items-start gap-4">
+                                                <div className="mt-1 bg-indigo-50 p-2 rounded-full">
+                                                    <MapPin className="h-5 w-5 text-indigo-600" />
                                                 </div>
-                                                <p className="text-sm text-slate-500">From: {trip.pickup}</p>
-                                                <p className="text-xs text-slate-400 flex items-center">
-                                                    <Clock className="h-3 w-3 mr-1" /> {trip.date}
-                                                </p>
+                                                <div className="space-y-1">
+                                                    <div className="font-semibold text-slate-800 flex items-center gap-2">
+                                                        {trip.dropoff}
+                                                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${trip.originalStatus === 'COMPLETED' ? 'bg-green-100 text-green-700' : trip.originalStatus === 'CANCELLED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                            {trip.status}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm text-slate-500">From: {trip.pickup}</p>
+                                                    <p className="text-xs text-slate-400 flex items-center">
+                                                        <Clock className="h-3 w-3 mr-1" /> {trip.date}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right sm:self-center">
+                                                <div className="font-bold text-slate-900">{trip.price}</div>
+                                                <div className="text-xs text-slate-500">RideGo</div>
                                             </div>
                                         </div>
-                                        <div className="text-right sm:self-center">
-                                            <div className="font-bold text-slate-900">{trip.price}</div>
-                                            <div className="text-xs text-slate-500">RideGo Bike</div>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p className="text-center text-slate-500 py-8">No recent activity found.</p>
+                                )}
                             </div>
                         </CardContent>
                     </Card>

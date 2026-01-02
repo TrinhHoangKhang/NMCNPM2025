@@ -21,6 +21,7 @@ import driverRoutes from './routes/driverRoutes.js';
 import tripRoutes from './routes/tripRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import rankingRoutes from './routes/rankingRoutes.js';
 
 // ==========================================
 // 1. CONFIGURATION & SETUP
@@ -79,6 +80,7 @@ app.use('/api/drivers', driverRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/ranks', rankingRoutes);
 
 // Health Check
 app.get('/', (req, res) => {

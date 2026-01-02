@@ -28,7 +28,9 @@ export default function AvailableJobs() {
             setCurrentTrip(trip);
             navigate("/dashboard"); // Go to Active Trip view
         } catch (e) {
-            showToast("Error", "Failed to accept trip", "error");
+            console.error("Accept error:", e);
+            const msg = e.response?.data?.error || e.message || "Failed to accept trip";
+            showToast("Error", msg, "error");
         }
     };
 

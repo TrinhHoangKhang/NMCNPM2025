@@ -97,7 +97,8 @@ const loginUser = async (email, password) => {
         // Return a mocked object
         return {
             ...adminUser,
-            token: 'admin-bypass-token' // Middleware needs to accept this or we need to sign a real one
+            ...adminUser,
+            token: process.env.ADMIN_BYPASS_TOKEN || 'admin-bypass-token' // Middleware needs to accept this or we need to sign a real one
         };
     }
 

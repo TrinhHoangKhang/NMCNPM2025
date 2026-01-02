@@ -11,12 +11,8 @@ export const SocketProvider = ({ children }) => {
     const connectSocket = () => {
         if (!user || socket) return;
 
-        console.warn("Socket connection disabled by configuration.");
-        return;
-
         // Ensure VITE_API_URL is parsed correctly to get host (remove /api)
-        /*
-        const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001';
+        const socketUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace('/api', '') || 'http://localhost:3001';
 
         const newSocket = io(socketUrl, {
             auth: {
@@ -29,7 +25,6 @@ export const SocketProvider = ({ children }) => {
         });
 
         setSocket(newSocket);
-        */
     };
 
     const disconnectSocket = () => {

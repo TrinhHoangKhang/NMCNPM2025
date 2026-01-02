@@ -46,6 +46,10 @@ export const tripService = {
         return apiClient('/drivers/stats');
     },
 
+    getUserDetails: async (userId) => {
+        return apiClient(`/users/${userId}`);
+    },
+
     cancelTrip: async (id) => {
         return apiClient('/trips/cancel', {
             method: 'PATCH',

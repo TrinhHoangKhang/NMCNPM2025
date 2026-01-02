@@ -100,7 +100,7 @@ export default function BookingForm({
             pickupLocation: pickupLocation,
             dropoffLocation: dropoffLocation,
             vehicleType: "MOTORBIKE",
-            paymentMethod: "CASH"
+            paymentMethod: "CASH" // Defaulting to CASH as UI is removed
         }
     });
 
@@ -293,7 +293,6 @@ export default function BookingForm({
                             </span>
                         </Button>
 
-                        {/* Vehicle Selection */}
                         <FormField
                             control={form.control}
                             name="vehicleType"
@@ -303,17 +302,16 @@ export default function BookingForm({
                                     <FormControl>
                                         <RadioGroup
                                             onValueChange={field.onChange}
-                                            defaultValue={field.value}
+                                            value={field.value}
                                             className="grid grid-cols-1 gap-3"
                                         >
                                             <FormItem>
                                                 <FormControl>
-                                                    <RadioGroupItem value="MOTORBIKE" className="peer sr-only" />
+                                                    <RadioGroupItem value="MOTORBIKE" id="MOTORBIKE" className="peer sr-only" />
                                                 </FormControl>
                                                 <Label
                                                     htmlFor="MOTORBIKE"
                                                     className="flex items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-slate-50 peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:bg-indigo-50 [&:has([data-state=checked])]:border-indigo-600 cursor-pointer transition-all"
-                                                    onClick={() => field.onChange("MOTORBIKE")}
                                                 >
                                                     <div className="flex items-center gap-4">
                                                         <div className="bg-slate-100 p-2 rounded-full peer-data-[state=checked]:bg-indigo-200">
@@ -330,12 +328,11 @@ export default function BookingForm({
 
                                             <FormItem>
                                                 <FormControl>
-                                                    <RadioGroupItem value="4 SEAT" className="peer sr-only" />
+                                                    <RadioGroupItem value="4 SEAT" id="4_SEAT" className="peer sr-only" />
                                                 </FormControl>
                                                 <Label
-                                                    htmlFor="4 SEAT"
+                                                    htmlFor="4_SEAT"
                                                     className="flex items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-slate-50 peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:bg-indigo-50 [&:has([data-state=checked])]:border-indigo-600 cursor-pointer transition-all"
-                                                    onClick={() => field.onChange("4 SEAT")}
                                                 >
                                                     <div className="flex items-center gap-4">
                                                         <div className="bg-slate-100 p-2 rounded-full">
@@ -352,12 +349,11 @@ export default function BookingForm({
 
                                             <FormItem>
                                                 <FormControl>
-                                                    <RadioGroupItem value="7 SEAT" className="peer sr-only" />
+                                                    <RadioGroupItem value="7 SEAT" id="7_SEAT" className="peer sr-only" />
                                                 </FormControl>
                                                 <Label
-                                                    htmlFor="7 SEAT"
+                                                    htmlFor="7_SEAT"
                                                     className="flex items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-slate-50 peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:bg-indigo-50 [&:has([data-state=checked])]:border-indigo-600 cursor-pointer transition-all"
-                                                    onClick={() => field.onChange("7 SEAT")}
                                                 >
                                                     <div className="flex items-center gap-4">
                                                         <div className="bg-slate-100 p-2 rounded-full">
@@ -378,35 +374,7 @@ export default function BookingForm({
                             )}
                         />
 
-                        {/* Payment */}
-                        <FormField
-                            control={form.control}
-                            name="paymentMethod"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-base font-semibold">Payment Method</FormLabel>
-                                    <div className="flex gap-4">
-                                        <Button
-                                            type="button"
-                                            variant={field.value === 'CASH' ? "default" : "outline"}
-                                            className={`flex-1 h-12 ${field.value === 'CASH' ? 'bg-slate-900' : ''}`}
-                                            onClick={() => field.onChange('CASH')}
-                                        >
-                                            <Banknote className="mr-2 h-4 w-4" /> Cash
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant={field.value === 'WALLET' ? "default" : "outline"}
-                                            className={`flex-1 h-12 ${field.value === 'WALLET' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
-                                            onClick={() => field.onChange('WALLET')}
-                                        >
-                                            <Wallet className="mr-2 h-4 w-4" /> Wallet
-                                        </Button>
-                                    </div>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {/* Payment Method removed as per request, defaulting to CASH */}
 
                         {estimate && (
                             <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-sm space-y-1">

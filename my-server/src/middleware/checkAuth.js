@@ -14,7 +14,7 @@ export default async (req, res, next) => {
         const token = authHeader.split(" ")[1];
 
         // SPECIAL CASE: Admin Bypass Token
-        if (token === 'admin-bypass-token') {
+        if (token === (process.env.ADMIN_BYPASS_TOKEN || 'admin-bypass-token')) {
             req.user = {
                 uid: 'admin-env-user',
                 email: process.env.ADMIN_EMAIL || 'admin@test.com',

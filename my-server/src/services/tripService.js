@@ -1,6 +1,7 @@
-import { db } from '../config/firebaseConfig.js';
+import { db, admin } from '../config/firebaseConfig.js';
 import Trip from '../models/Trip.js';
 import mapsService from './mapsService.js';
+import rankingService from './rankingService.js';
 //const { v4: uuidv4 } = require('uuid'); // Need to install uuid, or just use Firestore auto-ID
 
 // Pricing Config (could be a separate file)
@@ -163,14 +164,59 @@ class TripService {
         return null;
     }
 
-    // ... (keep getAvailableTrips same)
+    // 4. Get Available Trips (Requested & Pending)
+    async getAvailableTrips(vehicleTypeFilter = null) {
+        let query = db.collection('trips')
+            .where('status', '==', 'REQUESTED')
+            .orderBy('createdAt', 'desc');
 
-    // ... (keep cancelTrip same)
+        if (vehicleTypeFilter) {
+            // Precise match: 'Motorbike' drivers only see 'Motorbike' requests
+            // 'Car 4-Seat' drivers -> 'Car 4-Seat' requests.
+            // If we want 'Car 7-Seat' to also see 'Car 4-Seat', we need logic here.
+            // For now, strict match as requested.
+            query = query.where('vehicleType', '==', vehicleTypeFilter);
+        }
 
-    // ... (keep updateStatus same)
+        const snapshot = await query.get();
+        const trips = snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
+        // Usually don't populate driver since there is none yet
+        return trips;
+    }
+
+    // 3. PATCH /api/trips/cancel
+    async cancelTrip(tripId, userId) {
+        const tripRef = db.collection('trips').doc(tripId);
+        const doc = await tripRef.get();
+        if (!doc.exists) throw new Error("Trip not found");
+
+        const tripData = doc.data();
+        // Allow rider or driver involved to cancel? Or just creator?
+        // Usually rider cancels request. Driver cancels if accepted?
+        // Let's assume standard permission: check if userId matches riderId or driverId
+        if (tripData.riderId !== userId && tripData.driverId !== userId) {
+            throw new Error("Unauthorized to cancel this trip");
+        }
+
+        await tripRef.update({
+            status: 'CANCELLED',
+            cancelledBy: userId,
+            cancelledAt: new Date().toISOString()
+        });
+
+        const updated = await tripRef.get();
+        return { id: tripId, ...updated.data() };
+    }
+
+    async updateStatus(tripId, status) {
+        const tripRef = db.collection('trips').doc(tripId);
+        await tripRef.update({ status, updatedAt: new Date().toISOString() });
+        const updated = await tripRef.get();
+        return { id: tripId, ...updated.data() };
+    }
 
     // 4a. Driver accepts a trip
-    async acceptTrip(tripId, driverId) {
+    async acceptTrip(tripId, driverId, driverVehicleType) {
         const tripRef = db.collection('trips').doc(tripId);
         const doc = await tripRef.get();
         if (!doc.exists) throw new Error('Trip not found');
@@ -178,6 +224,18 @@ class TripService {
         const data = doc.data();
         if (data.status !== 'REQUESTED') {
             throw new Error(`Cannot accept trip with status ${data.status}`);
+        }
+
+        // Validate Vehicle Type
+        // We ensure the driver's vehicle MATCHES the requested type.
+        // Normalize strings to ensure case-insensitivity (e.g. 'Motorbike' vs 'MOTORBIKE')
+        if (driverVehicleType && data.vehicleType) {
+            const driverType = driverVehicleType.toUpperCase();
+            const requiredType = data.vehicleType.toUpperCase();
+
+            if (driverType !== requiredType) {
+                throw new Error(`Vehicle type mismatch. Required: ${data.vehicleType}, Yours: ${driverVehicleType}`);
+            }
         }
 
         await tripRef.update({
@@ -223,6 +281,22 @@ class TripService {
             completedAt: new Date().toISOString(),
             paymentStatus: paymentStatusOverride || data.paymentStatus || 'PENDING'
         });
+
+        // NEW: Increment Trip Count for Driver (DB + Redis)
+        try {
+            // 1. DB Increment (Atomic)
+            const driverRef = db.collection('drivers').doc(driverId);
+            await driverRef.update({
+                tripCount: admin.firestore.FieldValue.increment(1)
+            });
+
+            // 2. Redis Ranking
+            await rankingService.updateScore(driverId, 1);
+
+        } catch (err) {
+            console.error(`Failed to update stats for driver ${driverId}:`, err);
+            // Non-blocking error
+        }
 
         const updated = await tripRef.get();
         const trip = new Trip(tripId, updated.data());

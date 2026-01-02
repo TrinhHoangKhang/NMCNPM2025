@@ -16,6 +16,17 @@ export default function Profile() {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [recentTrips, setRecentTrips] = useState([]);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+
+  // New Vehicle Form State
+  const [newVehicle, setNewVehicle] = useState({
+    plate: '',
+    model: '',
+    color: '',
+    type: 'Motorbike'
+  });
+
   // Stats State
   const [stats, setStats] = useState({
     totalTrips: 0,
@@ -106,6 +117,69 @@ export default function Profile() {
 
   // Use registeredVehicles from user, or fallback to current vehicle if array is empty
   const vehicles = user.registeredVehicles || (user.vehicle ? [user.vehicle] : []);
+
+  const handleAddVehicle = async () => {
+    if (!newVehicle.plate || !newVehicle.model) {
+      showToast("Error", "Please fill in all fields", "error");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const updatedVehicles = [...vehicles, { ...newVehicle, id: Date.now().toString() }];
+
+      // If this is the first vehicle, set it as active immediately
+      // Or if user had no active vehicle (e.g. wiped list then added one)
+      const updates = { registeredVehicles: updatedVehicles };
+      if (!user.vehicle || vehicles.length === 0) {
+        updates.vehicle = updatedVehicles[0];
+      }
+
+      const res = await updateUser(updates);
+      if (res.success) {
+        showToast("Success", "Vehicle added successfully", "success");
+        setIsAddOpen(false);
+        setNewVehicle({ plate: '', model: '', color: '', type: 'Motorbike' });
+      } else {
+        showToast("Error", res.error || "Failed to add vehicle", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Error", "Something went wrong", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveVehicle = async (vehicleIndex) => {
+    if (!confirm("Are you sure you want to remove this vehicle?")) return;
+
+    setLoading(true);
+    try {
+      const updatedVehicles = vehicles.filter((_, idx) => idx !== vehicleIndex);
+
+      // Determine what the new active vehicle should be
+      // If list is empty, active vehicle is null.
+      // If list has items, use the first one (or keep current if checking IDs, but simplest is first)
+      const newActiveVehicle = updatedVehicles.length > 0 ? updatedVehicles[0] : null;
+
+      const res = await updateUser({
+        registeredVehicles: updatedVehicles,
+        vehicle: newActiveVehicle
+      });
+
+      if (res.success) {
+        showToast("Success", "Vehicle removed", "success");
+      }
+    } catch (err) {
+      showToast("Error", "Failed to remove vehicle", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Set first vehicle as active if none set (logic for Add as well)
+  // ... Or just ensure Add updates it if it's the first one.
 
   // ... (Keep existing handlers)
 

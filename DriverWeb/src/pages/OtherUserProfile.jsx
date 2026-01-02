@@ -5,36 +5,46 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, Calendar, Clock, ArrowLeft, Shield } from 'lucide-react';
+import { tripService } from '@/services/tripService';
+import { useToast } from '@/hooks/useToast';
 
 export default function OtherUserProfile() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Mock fetching user data based on ID
-        // In a real app, this would be: const data = await userService.getUserById(id);
         const fetchUser = async () => {
+            if (!id) return;
             setLoading(true);
-            setTimeout(() => { // Simulate network delay
-                setUser({
-                    id: id,
-                    name: "Nguyen Van Rider",
-                    email: "rider@example.com",
-                    phone: "0912***456",
-                    rating: 4.8,
-                    totalTrips: 42,
-                    joinDate: "2024-05-15",
-                    tier: "Gold",
-                    reviews: [
-                        { id: 1, text: "Great passenger, very polite!", rating: 5, date: "2024-12-20", author: "Driver X" },
-                        { id: 2, text: "Punctual.", rating: 5, date: "2024-12-10", author: "Driver Y" },
-                        { id: 3, text: "Changed destination mid-trip but paid extra.", rating: 4, date: "2024-11-05", author: "Driver Z" }
-                    ]
-                });
+            try {
+                // Fetch real user data
+                const response = await tripService.getUserDetails(id);
+                const userData = response?.data || response;
+
+                if (userData) {
+                    setUser({
+                        id: userData.uid,
+                        name: userData.name || "Unknown User",
+                        email: userData.email, // Can hide if privacy needed
+                        phone: userData.phone,
+                        rating: userData.rating || 5.0,
+                        totalTrips: userData.totalTrips || 0,
+                        joinDate: userData.createdAt || new Date().toISOString(),
+                        tier: userData.rank || "Member", // Use rank from backend if user/driver
+                        reviews: [] // Reviews not yet implemented in backend, keep empty or mock
+                    });
+                } else {
+                    showToast("Error", "User not found", "error");
+                }
+            } catch (err) {
+                console.error("Failed to fetch user profile", err);
+                showToast("Error", "Failed to load profile", "error");
+            } finally {
                 setLoading(false);
-            }, 800);
+            }
         };
         fetchUser();
     }, [id]);
@@ -58,7 +68,7 @@ export default function OtherUserProfile() {
             <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-600 to-indigo-700 text-white overflow-hidden">
                 <CardContent className="p-8 flex flex-col md:flex-row items-center gap-6">
                     <Avatar className="h-24 w-24 border-4 border-white/30 shadow-xl">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} />
+                        <AvatarImage src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} />
                         <AvatarFallback className="bg-indigo-300 text-indigo-900 text-2xl font-bold">
                             {user.name.charAt(0)}
                         </AvatarFallback>
@@ -67,7 +77,7 @@ export default function OtherUserProfile() {
                         <h1 className="text-3xl font-bold">{user.name}</h1>
                         <div className="flex justify-center md:justify-start items-center gap-2 text-blue-100">
                             <Shield className="w-4 h-4" />
-                            <span>{user.tier} Member</span>
+                            <span>{user.tier}</span>
                             <span>•</span>
                             <span>Joined {new Date(user.joinDate).getFullYear()}</span>
                         </div>
@@ -75,7 +85,7 @@ export default function OtherUserProfile() {
                     <div className="flex flex-col items-center bg-white/10 p-4 rounded-xl backdrop-blur-sm min-w-[120px]">
                         <div className="flex items-center gap-1 text-yellow-300">
                             <Star className="w-6 h-6 fill-yellow-300" />
-                            <span className="text-2xl font-bold">{user.rating}</span>
+                            <span className="text-2xl font-bold">{Number(user.rating).toFixed(1)}</span>
                         </div>
                         <span className="text-sm text-blue-100">Rating</span>
                     </div>
@@ -103,9 +113,9 @@ export default function OtherUserProfile() {
                         </div>
                         <div className="flex justify-between items-center py-2">
                             <span className="text-slate-500 flex items-center gap-2">
-                                <Clock className="w-4 h-4" /> Payment Reliability
+                                <Clock className="w-4 h-4" /> Activity
                             </span>
-                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">High</Badge>
+                            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Active</Badge>
                         </div>
                     </CardContent>
                 </Card>
@@ -113,27 +123,33 @@ export default function OtherUserProfile() {
                 {/* Reviews */}
                 <Card className="md:col-span-2">
                     <CardHeader>
-                        <CardTitle className="text-lg">Recent Reviews from Drivers</CardTitle>
-                        <CardDescription>What other drivers say about {user.name}</CardDescription>
+                        <CardTitle className="text-lg">User Reviews</CardTitle>
+                        <CardDescription>Recent feedback from drivers</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {user.reviews.map((review) => (
-                            <div key={review.id} className="bg-slate-50 p-4 rounded-lg space-y-2">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex items-center gap-1">
-                                        {[...Array(5)].map((_, i) => (
-                                            <Star
-                                                key={i}
-                                                className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200'}`}
-                                            />
-                                        ))}
+                        {user.reviews && user.reviews.length > 0 ? (
+                            user.reviews.map((review) => (
+                                <div key={review.id} className="bg-slate-50 p-4 rounded-lg space-y-2">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-1">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star
+                                                    key={i}
+                                                    className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200'}`}
+                                                />
+                                            ))}
+                                        </div>
+                                        <span className="text-xs text-slate-400">{new Date(review.date).toLocaleDateString()}</span>
                                     </div>
-                                    <span className="text-xs text-slate-400">{new Date(review.date).toLocaleDateString()}</span>
+                                    <p className="text-slate-700 italic">"{review.text}"</p>
+                                    <p className="text-xs text-slate-500 font-medium">- {review.author}</p>
                                 </div>
-                                <p className="text-slate-700 italic">"{review.text}"</p>
-                                <p className="text-xs text-slate-500 font-medium">- {review.author}</p>
+                            ))
+                        ) : (
+                            <div className="text-center py-8 text-slate-400 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                                No reviews available yet.
                             </div>
-                        ))}
+                        )}
                     </CardContent>
                 </Card>
             </div>

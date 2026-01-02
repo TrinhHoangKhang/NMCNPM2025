@@ -1,6 +1,6 @@
 import tripService from '../services/tripService.js';
 import userService from '../services/userService.js';
-
+import presenceService from '../services/presenceService.js';
 
 class TripController {
     // 0. ADMIN - Get all trips
@@ -67,23 +67,18 @@ class TripController {
                         if (currentTrip && currentTrip.status === 'REQUESTED') {
                             console.log(`Trip ${newTrip.id} timed out. No driver found.`);
 
-                            // Update status to NO_DRIVER_FOUND (or CANCELLED/FAILED)
-                            // Reuse cancelTrip logic or updateStatus directly? 
-                            // Let's perform a direct update via tripService.updateStatus if transparent, 
-                            // or better yet, implement a failTrip method? For now, I'll update manually.
-                            // We need to verify if tripService.updateStatus exists or just create one.
+                            // Update status to NO_DRIVER_FOUND
                             await tripService.updateStatus(newTrip.id, 'NO_DRIVER_FOUND');
 
                             // Notify Rider
-                            const onlineUsers = req.app.get('onlineUsers');
-                            if (onlineUsers) {
-                                const riderSocketId = onlineUsers.get(riderId);
-                                if (riderSocketId) {
-                                    io.to(riderSocketId).emit('trip_no_driver', {
+                            const riderSocketIds = await presenceService.getUserSocketIds(riderId);
+                            if (riderSocketIds.length > 0) {
+                                riderSocketIds.forEach(socketId => {
+                                    io.to(socketId).emit('trip_no_driver', {
                                         tripId: newTrip.id,
                                         message: "Sorry, no drivers are currently available."
                                     });
-                                }
+                                });
                             }
                         }
                     } catch (err) {
@@ -97,7 +92,7 @@ class TripController {
         }
     }
 
-    // 1b. POST /api/trips/estimate (Before the user confirm the ride)
+    // 1b. POST /api/trips/estimate
     async getTripEstimate(req, res) {
         try {
             const { pickupLocation, dropoffLocation, vehicleType } = req.body;
@@ -112,7 +107,7 @@ class TripController {
         }
     }
 
-    // 1c. GET /api/trips/current - Get current (active) trip for the authenticated user
+    // 1c. GET /api/trips/current
     async getCurrentTrip(req, res) {
         try {
             const userId = req.user.uid;
@@ -132,7 +127,6 @@ class TripController {
         try {
             const userId = req.user.uid;
             const history = await tripService.getUserTripHistory(userId);
-            // Ensure trip IDs are included in the response
             const withIds = history.map(trip => ({ id: trip.id, ...trip.toJSON() }));
             res.status(200).json(withIds);
         } catch (error) {
@@ -158,7 +152,6 @@ class TripController {
             const userId = req.user.uid;
             let { tripId } = req.body;
 
-            // If no tripId provided, fallback to finding the current active trip for the user (Rider flow)
             if (!tripId) {
                 const currentTrip = await tripService.getCurrentTripForUser(userId);
                 if (currentTrip) {
@@ -176,14 +169,29 @@ class TripController {
             if (result.status === 'CANCELLED') {
                 const io = req.app.get('socketio');
                 if (io) {
-                    const roomName = `trip_${tripId}`;
-                    // Notify Rider
-                    io.to(roomName).emit('trip_cancelled', {
-                        tripId: tripId,
-                        cancelledBy: userId,
-                        reason: "Driver Abandoned/Cancelled"
-                    });
-                    console.log(`Socket emitted trip_cancelled for ${tripId}`);
+                    // Determine recipient: If cancelled by Rider, notify Driver. If by Driver, notify Rider.
+                    // We need to know who the other party is.
+                    // result usually contains trip info. Let's assume result is the cancelled trip object.
+                    // If userId is Rider, target Driver.
+
+                    let targetUserId = null;
+                    if (userId === result.riderId) { // Cancelled by Rider
+                        targetUserId = result.driverId;
+                    } else if (userId === result.driverId) { // Cancelled by Driver
+                        targetUserId = result.riderId;
+                    }
+
+                    if (targetUserId) {
+                        const socketIds = await presenceService.getUserSocketIds(targetUserId);
+                        socketIds.forEach(socketId => {
+                            io.to(socketId).emit('trip_cancelled', {
+                                tripId: tripId,
+                                cancelledBy: userId,
+                                reason: "Trip Cancelled"
+                            });
+                        });
+                        console.log(`Socket emitted trip_cancelled to ${targetUserId}`);
+                    }
                 }
             }
 
@@ -193,9 +201,8 @@ class TripController {
         }
     }
 
-    // 4. GET /api/trips/:id (For specific trip details)
+    // 4. GET /api/trips/:id
     async getTripDetails(req, res) {
-        console.log("GET TRIP DETAILS CALLED");
         try {
             const { id } = req.params;
             const trip = await tripService.getTrip(id);
@@ -206,56 +213,71 @@ class TripController {
     }
 
     // ===== DRIVER SIDE =====
-    // GET /api/trips/available - list of available trip requests
+    // GET /api/trips/available
     async getAvailableTrips(req, res) {
         try {
-            const trips = await tripService.getAvailableTrips();
+            const driverId = req.user.uid;
+            const driverProfile = await userService.getUser(driverId);
+            const activeVehicle = driverProfile.vehicle;
+
+            if (!activeVehicle || !activeVehicle.type) {
+                return res.status(200).json([]);
+            }
+
+            const vehicleType = activeVehicle.type;
+            const trips = await tripService.getAvailableTrips(vehicleType);
             const withIds = trips.map(trip => ({ id: trip.id, ...trip.toJSON() }));
+
             res.status(200).json(withIds);
         } catch (error) {
+            console.error("Get Available Trips Error:", error);
             res.status(500).json({ error: error.message });
         }
     }
 
-    // PATCH /api/trips/:id/accept - driver accepts a ride
-    // PATCH /api/trips/:id/accept - driver accepts a ride
+    // PATCH /api/trips/:id/accept
     async acceptTrip(req, res) {
         try {
             const driverId = req.user.uid;
             const { id } = req.params;
-            const trip = await tripService.acceptTrip(id, driverId);
 
-            // STEP 2: Socket Logic - Join Room & Notify Rider
+            const driverProfile = await userService.getUser(driverId);
+            const activeVehicle = driverProfile.vehicle;
+
+            if (!activeVehicle || !activeVehicle.type) {
+                return res.status(400).json({ error: "No active vehicle found. Please update your vehicle profile." });
+            }
+
+            const trip = await tripService.acceptTrip(id, driverId, activeVehicle.type);
+
+            // STEP 3: Socket Logic - Join Room & Notify Rider
             const io = req.app.get('socketio');
-            const onlineUsers = req.app.get('onlineUsers');
-
-            if (io && onlineUsers) {
+            if (io) {
                 const roomName = `trip_${trip.id}`;
 
                 // 1. Get Sockets
-                const riderSocketId = onlineUsers.get(trip.riderId);
-                const driverSocketId = onlineUsers.get(driverId);
+                const riderSocketIds = await presenceService.getUserSocketIds(trip.riderId);
+                const driverSocketIds = await presenceService.getUserSocketIds(driverId);
 
                 // 2. Make Driver Join Room
-                if (driverSocketId) {
-                    const driverSocket = io.sockets.sockets.get(driverSocketId);
-                    if (driverSocket) driverSocket.join(roomName);
-                }
+                driverSocketIds.forEach(socketId => {
+                    const socket = io.sockets.sockets.get(socketId);
+                    if (socket) socket.join(roomName);
+                });
 
                 // 3. Make Rider Join Room and Notify
-                if (riderSocketId) {
-                    const riderSocket = io.sockets.sockets.get(riderSocketId);
-                    if (riderSocket) {
-                        riderSocket.join(roomName);
-                        // Notify Rider specifically that trip is accepted
-                        io.to(riderSocketId).emit('trip_accepted', {
+                riderSocketIds.forEach(socketId => {
+                    const socket = io.sockets.sockets.get(socketId);
+                    if (socket) {
+                        socket.join(roomName);
+                        io.to(socketId).emit('trip_accepted', {
                             tripId: trip.id,
                             driverId: driverId,
-                            driverName: req.user.name || "Driver", // Should fetch full profile usually
+                            driverName: req.user.name || "Driver",
                             status: 'ACCEPTED'
                         });
                     }
-                }
+                });
 
                 console.log(`Sockets joined room ${roomName}`);
             }
@@ -267,7 +289,7 @@ class TripController {
         }
     }
 
-    // PATCH /api/trips/:id/pickup - driver marks pickup (start ride)
+    // PATCH /api/trips/:id/pickup
     async markTripPickup(req, res) {
         try {
             const driverId = req.user.uid;
@@ -279,14 +301,11 @@ class TripController {
         }
     }
 
-    // PATCH /api/trips/:id/complete - driver completes the ride
-    // PATCH /api/trips/:id/complete - driver completes the ride
+    // PATCH /api/trips/:id/complete
     async markTripComplete(req, res) {
         try {
             const driverId = req.user.uid;
             const { id } = req.params;
-
-            // 1. Mark Complete in DB
             const { cashCollected } = req.body;
             let paymentStatus = null;
             if (cashCollected === true) {
@@ -295,40 +314,27 @@ class TripController {
 
             const trip = await tripService.markTripComplete(id, driverId, paymentStatus);
 
-            // 2. Handle Payment (Scenario)
-            // USER REQUEST: Leave transaction blank first. 
-            // The driver confirms payment manually in Frontend.
-            // When we reach here, we assume payment is done (Cash or Direct Transfer).
-
-            // Placeholder function for future banking integration:
-            const processPayment = (trip) => {
-                // TODO: Integrate Banking Provider here
-                console.log(`[BLANK] Processing payment for trip ${trip.id}. Payment Method: ${trip.paymentMethod}`);
-                return true;
-            };
-
-            processPayment(trip);
-
-            // Note: We are NOT deducting from internal wallet anymore per request.
-            // await userService.updateWalletBalance(...) <--- REMOVED
-
-            // 3. Socket: Notify Completion & Cleanup
+            // Socket: Notify Completion & Cleanup
             const io = req.app.get('socketio');
             if (io) {
-                const roomName = `trip_${trip.id}`;
+                // Notify Rider and Driver Specifically
+                const riderSocketIds = await presenceService.getUserSocketIds(trip.riderId);
+                const driverSocketIds = await presenceService.getUserSocketIds(driverId);
 
-                // Notify Everyone
-                io.to(roomName).emit('trip_completed', {
-                    tripId: trip.id,
-                    fare: trip.fare,
-                    status: 'COMPLETED'
+                const allSockets = [...riderSocketIds, ...driverSocketIds];
+
+                allSockets.forEach(socketId => {
+                    io.to(socketId).emit('trip_completed', {
+                        tripId: trip.id,
+                        fare: trip.fare,
+                        status: 'COMPLETED'
+                    });
                 });
 
-                // Force leave room (cleanup)
-                io.in(roomName).socketsJoin('completed_trips_archive'); // Move them out implies leaving logic or just clear
+                // Cleanup room (Optional now, as we don't rely on it, but good practice)
+                const roomName = `trip_${trip.id}`;
                 io.in(roomName).socketsLeave(roomName);
-
-                console.log(`Trip ${trip.id} completed. Room closed.`);
+                console.log(`Trip ${trip.id} completed. Notifications sent via Redis.`);
             }
 
             res.status(200).json({ id: trip.id, ...trip.toJSON() });

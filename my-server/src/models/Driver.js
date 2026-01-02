@@ -8,6 +8,7 @@ class Driver extends User {
         this.licenseNumber = data.licenseNumber;
         this.status = data.status || 'OFFLINE'; // OFFLINE, ONLINE, BUSY
         this.rating = data.rating || 5.0;
+        this.tripCount = data.tripCount || 0; // NEW: Track total trips
         this.walletBalance = data.walletBalance || 0;
 
         // Composition: A Driver HAS A Vehicle
@@ -31,6 +32,7 @@ class Driver extends User {
             licenseNumber: this.licenseNumber,
             status: this.status,
             rating: this.rating,
+            tripCount: this.tripCount,
             currentLocation: this.currentLocation,
             vehicle: this.vehicle // Stores the vehicle object inside
         };
