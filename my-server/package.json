@@ -33,6 +33,7 @@
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
+    "ioredis-mock": "^8.13.1",
     "jest": "^30.2.0",
     "nodemon": "^3.1.11",
     "supertest": "^7.1.4"

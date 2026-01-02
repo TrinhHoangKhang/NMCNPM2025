@@ -1,14 +1,7 @@
-import Redis from 'ioredis';
+import redis from '../config/redisConfig.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
-
-// Re-use or create new connection. For simplicity, new connection.
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
-
-redis.on('error', (err) => {
-    console.error('RankingService Redis Error:', err.message);
-});
 
 class RankingService {
     constructor() {

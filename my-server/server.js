@@ -1,8 +1,8 @@
 import http from 'http';
 import { Server } from 'socket.io';
-import Redis from 'ioredis';
 import app from './src/app.js';
 import dotenv from 'dotenv';
+import redis from './src/config/redisConfig.js';
 
 // Load environment variables
 dotenv.config();
@@ -24,9 +24,6 @@ export const io = new Server(server, {
         methods: ["GET", "POST"]
     }
 });
-
-// Initialize Redis Client
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
 redis.on('error', (err) => {
     console.error('Redis connection error:', err);

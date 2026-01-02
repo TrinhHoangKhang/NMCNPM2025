@@ -21,7 +21,7 @@ describe('Socket Flow Integration', () => {
             console.log("Starting Test Server...");
             serverProcess = spawn('node', ['server.js'], {
                 cwd: path.resolve(''),
-                env: { ...process.env, PORT: PORT, NODE_ENV: 'test' },
+                env: { ...process.env, PORT: PORT, NODE_ENV: 'integration' },
                 detached: false
             });
 
