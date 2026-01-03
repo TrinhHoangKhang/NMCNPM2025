@@ -13,7 +13,8 @@ async function registerUser(name, email, phone, role) {
                 email,
                 phone,
                 password: 'password123',
-                role
+                role,
+                ...(role === 'driver' ? { vehicleType: 'Bike', licensePlate: '59-A1 12345' } : {})
             })
         });
 

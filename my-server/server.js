@@ -225,3 +225,18 @@ server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
+
+// Graceful Shutdown
+process.on('SIGTERM', async () => {
+    console.log('SIGTERM received. Shutting down gracefully...');
+    server.close(() => {
+        console.log('HTTP server closed.');
+        redis.quit().then(() => {
+            console.log('Redis client closed.');
+            process.exit(0);
+        }).catch(err => {
+            console.error('Redis close error:', err);
+            process.exit(1);
+        });
+    });
+});

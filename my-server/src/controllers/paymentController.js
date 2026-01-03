@@ -1,56 +1,54 @@
-import admin from "firebase-admin";
-
-const db = admin.firestore();
+import { admin, db } from "../config/firebaseConfig.js";
 
 class PaymentController {
-// === 1. SINH MÃ VIETQR CHO RIDER ===
- async generatePaymentQR(req, res) {
-    try {
-        const { id } = req.params; // tripId
-        const tripRef = db.collection('trips').doc(id);
-        const tripDoc = await tripRef.get();
+    // === 1. SINH MÃ VIETQR CHO RIDER ===
+    async generatePaymentQR(req, res) {
+        try {
+            const { id } = req.params; // tripId
+            const tripRef = db.collection('trips').doc(id);
+            const tripDoc = await tripRef.get();
 
-        if (!tripDoc.exists) {
-            return res.status(404).json({ success: false, message: "Không tìm thấy chuyến đi" });
+            if (!tripDoc.exists) {
+                return res.status(404).json({ success: false, message: "Không tìm thấy chuyến đi" });
+            }
+
+            const tripData = tripDoc.data();
+
+            // Kiểm tra trạng thái chuyến đi
+            if (tripData.status !== 'COMPLETED') {
+                return res.status(400).json({ success: false, message: "Chuyến đi chưa hoàn thành" });
+            }
+
+            if (tripData.paymentMethod !== 'WALLET') {
+                return res.status(400).json({ success: false, message: "Phương thức thanh toán không phải Ví" });
+            }
+
+            // Lấy thông tin ngân hàng của Driver
+            const driverDoc = await db.collection('users').doc(tripData.driverId).get();
+            const driverData = driverDoc.data();
+
+            if (!driverData.bankAccount || !driverData.bankName) {
+                return res.status(400).json({ success: false, message: "Tài xế chưa cập nhật thông tin ngân hàng" });
+            }
+
+            // Tạo link VietQR động
+            const description = encodeURIComponent(`RideGo thanh toan ${id}`);
+            const qrUrl = `https://img.vietqr.io/image/${driverData.bankName}-${driverData.bankAccount}-qr_only.png?amount=${tripData.fare}&addInfo=${description}&accountName=${encodeURIComponent(driverData.bankOwnerName)}`;
+
+            res.status(200).json({
+                success: true,
+                qrUrl: qrUrl,
+                amount: tripData.fare,
+                message: "Mã QR đã được khởi tạo thành công"
+            });
+
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
         }
+    };
 
-        const tripData = tripDoc.data();
-
-        // Kiểm tra trạng thái chuyến đi
-        if (tripData.status !== 'COMPLETED') {
-            return res.status(400).json({ success: false, message: "Chuyến đi chưa hoàn thành" });
-        }
-
-        if (tripData.paymentMethod !== 'WALLET') {
-            return res.status(400).json({ success: false, message: "Phương thức thanh toán không phải Ví" });
-        }
-
-        // Lấy thông tin ngân hàng của Driver
-        const driverDoc = await db.collection('users').doc(tripData.driverId).get();
-        const driverData = driverDoc.data();
-
-        if (!driverData.bankAccount || !driverData.bankName) {
-            return res.status(400).json({ success: false, message: "Tài xế chưa cập nhật thông tin ngân hàng" });
-        }
-
-        // Tạo link VietQR động
-        const description = encodeURIComponent(`RideGo thanh toan ${id}`);
-        const qrUrl = `https://img.vietqr.io/image/${driverData.bankName}-${driverData.bankAccount}-qr_only.png?amount=${tripData.fare}&addInfo=${description}&accountName=${encodeURIComponent(driverData.bankOwnerName)}`;
-
-        res.status(200).json({
-            success: true,
-            qrUrl: qrUrl,
-            amount: tripData.fare,
-            message: "Mã QR đã được khởi tạo thành công"
-        });
-
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-};
-
-// === 2. DRIVER XÁC NHẬN ĐÃ NHẬN TIỀN ===
-async confirmPayment(req, res) {
+    // === 2. DRIVER XÁC NHẬN ĐÃ NHẬN TIỀN ===
+    async confirmPayment(req, res) {
         try {
             const { id } = req.params; // tripId
             const tripRef = db.collection('trips').doc(id);
@@ -69,7 +67,7 @@ async confirmPayment(req, res) {
                 });
 
                 // 2. Tính toán nợ (Ví dụ chiết khấu 20%)
-                const commission = tripData.fare * 0.2; 
+                const commission = tripData.fare * 0.2;
                 const driverRef = db.collection('users').doc(tripData.driverId);
 
                 // 3. Cộng nợ vào data của Driver

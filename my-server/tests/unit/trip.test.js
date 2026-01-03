@@ -73,7 +73,8 @@ const mockGetAvailableDriver = jest.fn();
 jest.unstable_mockModule('../../src/services/driverService.js', () => ({
     default: {
         getDriver: mockGetDriver,
-        getAvailableDriver: mockGetAvailableDriver
+        getAvailableDriver: mockGetAvailableDriver,
+        updateStatus: jest.fn().mockResolvedValue(true)
     }
 }));
 
@@ -105,6 +106,7 @@ describe('Trip API Comprehensive Tests', () => {
 
         mockSet.mockResolvedValue({});
         mockUpdate.mockResolvedValue({});
+        mockWhereGet.mockResolvedValue({ empty: true, docs: [] });
 
         // Default Maps Mock
         mapsService.calculateRoute.mockResolvedValue({
@@ -390,9 +392,11 @@ describe('Trip API Comprehensive Tests', () => {
             });
 
             // 2. Mock Get Sequence:
-            // Call 1: cancelTrip -> check doc exists? (Returns initial)
-            // Call 2: cancelTrip -> return updated doc (Returns updated)
-            mockGet.mockResolvedValueOnce({ exists: true, data: () => initial })
+            // Call 1: _populateRiderDetails (Rider check) - Return valid user
+            // Call 2: cancelTrip -> check doc exists? (Returns initial)
+            // Call 3: cancelTrip -> return updated doc (Returns updated)
+            mockGet.mockResolvedValueOnce({ exists: true, data: () => ({ name: 'Rider' }) })
+                .mockResolvedValueOnce({ exists: true, data: () => initial })
                 .mockResolvedValueOnce({ exists: true, data: () => updated });
 
             const res = await request(app).patch('/api/trips/cancel').send({});
