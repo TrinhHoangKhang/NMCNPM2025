@@ -94,6 +94,28 @@ class TripService {
         return snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
     }
 
+    // 2a. Get completed trips for a user within the last N months
+    async getUserCompletedTripsWithinMonths(userId, months = 3, limit = 200) {
+        const snapshot = await db.collection('trips')
+            .where('riderId', '==', userId)
+            .where('status', '==', 'COMPLETED')
+            .orderBy('createdAt', 'desc')
+            .limit(limit)
+            .get();
+
+        const allTrips = snapshot.docs.map(doc => new Trip(doc.id, doc.data()));
+
+        const cutoff = new Date();
+        cutoff.setMonth(cutoff.getMonth() - months);
+
+        return allTrips.filter((trip) => {
+            const rawDate = trip.completedAt || trip.createdAt;
+            const dt = rawDate?.toDate ? rawDate.toDate() : new Date(rawDate);
+            if (!dt || isNaN(dt.getTime())) return false;
+            return dt >= cutoff;
+        });
+    }
+
     // 2c. Get Trip History for a specific Driver
     async getDriverTripHistory(driverId) {
         const snapshot = await db.collection('trips')
