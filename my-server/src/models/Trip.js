@@ -5,6 +5,9 @@ class Trip {
         this.driverId = data.driverId || null;
         this.pickupLocation = data.pickupLocation; // { lat, lng, address }
         this.dropoffLocation = data.dropoffLocation; // { lat, lng, address }
+        // Preserve original naming variants from DB
+        this.pickup = data.pickup || data.pickupLocation || null;
+        this.destination = data.destination || data.dropoffLocation || null;
         this.vehicleType = data.vehicleType;
         this.fare = data.fare || 0;
         this.distance = data.distance || 0; // in meters
@@ -30,6 +33,8 @@ class Trip {
             driverId: this.driverId,
             pickupLocation: this.pickupLocation,
             dropoffLocation: this.dropoffLocation,
+            pickup: this.pickup,
+            destination: this.destination,
             vehicleType: this.vehicleType,
             fare: this.fare,
             distance: this.distance,
