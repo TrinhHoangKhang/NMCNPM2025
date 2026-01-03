@@ -2,71 +2,19 @@ package com.example.ridego.ui.auth
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.CountDownTimer
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import com.example.ridego.data.AuthRepository
 import com.example.ridego.databinding.ActivityLoginBinding
 import com.example.ridego.ui.rider.main.RiderMainActivity
-import com.google.firebase.FirebaseException
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.PhoneAuthOptions
-import com.google.firebase.auth.PhoneAuthProvider
-import java.util.concurrent.TimeUnit
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
-    private val viewModel: AuthViewModel by viewModels { AuthViewModelFactory(AuthRepository()) }
-
-    private var cooldownTimer: CountDownTimer? = null
-    private val defaultCooldownMs: Long = 60_000L
-
-    private val isAddPhoneMode: Boolean
-        get() = intent.getStringExtra("MODE") == "ADD_PHONE"
-
-    private val callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-        override fun onVerificationCompleted(credential: PhoneAuthCredential) {
-            Log.d(TAG, "onVerificationCompleted")
-            if (isAddPhoneMode) {
-                viewModel.linkPhoneCredential(credential)
-            } else {
-                viewModel.signInWithCredential(credential)
-            }
-        }
-
-        override fun onVerificationFailed(e: FirebaseException) {
-            Log.e(TAG, "onVerificationFailed", e)
-            when (e) {
-                is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException -> {
-                    Toast.makeText(this@LoginActivity, "Số điện thoại không hợp lệ", Toast.LENGTH_LONG).show()
-                }
-                is com.google.firebase.FirebaseTooManyRequestsException -> {
-                    Toast.makeText(this@LoginActivity, "Quá nhiều yêu cầu, vui lòng thử lại sau", Toast.LENGTH_LONG).show()
-                    startCooldown()
-                }
-                else -> {
-                    Toast.makeText(this@LoginActivity, "Xác thực thất bại: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            }
-            enablePhoneInput()
-        }
-
-        override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
-            super.onCodeSent(verificationId, token)
-            Log.d(TAG, "onCodeSent verificationId=$verificationId")
-
-            PhoneAuthHelper.verificationId = verificationId
-            PhoneAuthHelper.resendToken = token
-
-            val intent = Intent(this@LoginActivity, OtpVerifyActivity::class.java)
-            intent.putExtra("MODE", if (isAddPhoneMode) "ADD_PHONE" else null)
-            startActivity(intent)
-        }
-    }
+    private val viewModel: AuthViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,35 +23,22 @@ class LoginActivity : AppCompatActivity() {
 
         setupEvents()
         observeViewModel()
+        
+        // Force show Email input for API login
+        binding.layoutEmailInput.visibility = View.VISIBLE
+        binding.layoutPhoneInput.visibility = View.GONE
+        binding.btnContinue.visibility = View.GONE // Ensure the 'Continue' button for phone is hidden if present
+        
+        // Since we are forcing Email, maybe we should hide the toggle 'tvEmailLogin' or update its text.
+        // For now, let's just make it work.
     }
 
     private fun setupEvents() {
-        binding.btnContinue.setOnClickListener {
-            val phoneInput = binding.edtPhoneNumber.text.toString().trim()
-            if (phoneInput.isBlank()) {
-                Toast.makeText(this, "Vui lòng nhập số điện thoại", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            startPhoneNumberVerification(phoneInput)
-        }
-
-        binding.tvEmailLogin.setOnClickListener {
-            if (binding.layoutEmailInput.visibility == View.GONE) {
-                binding.layoutEmailInput.visibility = View.VISIBLE
-                binding.layoutPhoneInput.visibility = View.GONE
-                binding.btnContinue.visibility = View.GONE
-            } else {
-                binding.layoutEmailInput.visibility = View.GONE
-                binding.layoutPhoneInput.visibility = View.VISIBLE
-                binding.btnContinue.visibility = View.VISIBLE
-            }
-        }
-
         binding.btnLogin.setOnClickListener {
             val email = binding.edtEmail.text.toString().trim()
             val password = binding.edtPassword.text.toString().trim()
             if (email.isEmpty() || password.length < 6) {
-                Toast.makeText(this, "Email hoặc mật khẩu không hợp lệ", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Email or password invalid", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             viewModel.login(email, password)
@@ -114,7 +49,8 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.tvSkipLogin.setOnClickListener {
-            navigateToHome()
+            // For dev/testing
+             navigateToHome()
         }
     }
 
@@ -122,37 +58,20 @@ class LoginActivity : AppCompatActivity() {
         viewModel.authState.observe(this) { state ->
             when (state) {
                 is AuthState.Loading -> {
-                    // Có thể show progress bar
+                    // Show progress
+                    binding.btnLogin.isEnabled = false
                 }
                 is AuthState.Success -> {
-                    if (isAddPhoneMode) {
-                        Toast.makeText(this, "Liên kết số điện thoại thành công!", Toast.LENGTH_LONG).show()
-                        navigateToHome()  // Vào app luôn vì đã có tài khoản email rồi
-                    } else {
-                        Toast.makeText(this, "Đăng nhập thành công", Toast.LENGTH_SHORT).show()
-                        val currentUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-                        if (currentUser?.displayName.isNullOrBlank()) {
-                            startActivity(Intent(this, CompleteProfileActivity::class.java))
-                        } else {
-                            navigateToHome()
-                        }
-                    }
-                    finishAffinity()
-                    viewModel.resetState()
+                    Toast.makeText(this, "Login Successful: ${state.user.name}", Toast.LENGTH_SHORT).show()
+                    navigateToHome()
                 }
                 is AuthState.Error -> {
-                    Toast.makeText(this, "Lỗi: ${state.message}", Toast.LENGTH_LONG).show()
-                    enablePhoneInput()
-                    viewModel.resetState()
-                }
-                is AuthState.EmailVerificationNeeded -> {
-                    val i = Intent(this, EmailVerificationActivity::class.java)
-                    i.putExtra("email", state.email)
-                    startActivity(i)
-                    viewModel.resetState()
+                    binding.btnLogin.isEnabled = true
+                    Toast.makeText(this, "Error: ${state.message}", Toast.LENGTH_LONG).show()
+                    viewModel.resetState() // Reset so we can try again
                 }
                 else -> {
-                    enablePhoneInput()
+                    binding.btnLogin.isEnabled = true
                 }
             }
         }
@@ -163,78 +82,5 @@ class LoginActivity : AppCompatActivity() {
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
-    }
-
-    private fun startPhoneNumberVerification(rawPhone: String) {
-        val phone = toE164(rawPhone, "84")
-        if (phone == null) {
-            Toast.makeText(this, "Số điện thoại không hợp lệ. Ví dụ: 0912345678", Toast.LENGTH_LONG).show()
-            return
-        }
-
-        Log.d(TAG, "startPhoneNumberVerification -> phone=$phone")
-        PhoneAuthHelper.lastPhoneNumber = phone
-
-        binding.btnContinue.isEnabled = false
-        binding.edtPhoneNumber.isEnabled = false
-
-        val options = PhoneAuthOptions.newBuilder()
-            .setPhoneNumber(phone)
-            .setTimeout(60L, TimeUnit.SECONDS)
-            .setActivity(this)
-            .setCallbacks(callbacks)
-            .build()
-
-        PhoneAuthProvider.verifyPhoneNumber(options)
-    }
-
-    private fun enablePhoneInput() {
-        binding.btnContinue.isEnabled = true
-        binding.edtPhoneNumber.isEnabled = true
-        binding.btnContinue.text = "Tiếp tục"
-    }
-
-    private fun startCooldown(durationMs: Long = defaultCooldownMs) {
-        binding.btnContinue.isEnabled = false
-        binding.edtPhoneNumber.isEnabled = false
-        cooldownTimer?.cancel()
-        cooldownTimer = object : CountDownTimer(durationMs, 1000L) {
-            override fun onTick(millisUntilFinished: Long) {
-                val sec = millisUntilFinished / 1000
-                binding.btnContinue.text = "Bạn có thể gửi lại sau ${sec}s"
-            }
-
-            override fun onFinish() {
-                binding.btnContinue.text = "Tiếp tục"
-                enablePhoneInput()
-            }
-        }.start()
-    }
-
-    override fun onDestroy() {
-        cooldownTimer?.cancel()
-        super.onDestroy()
-    }
-
-    private fun toE164(raw: String, defaultCountryCode: String = "84"): String? {
-        var s = raw.trim()
-        if (s.isEmpty()) return null
-        s = s.replace(Regex("[\\s\\-()]+"), "")
-        if (s.startsWith("+")) {
-            return if (s.substring(1).all { it.isDigit() }) s else null
-        }
-        if (s.startsWith(defaultCountryCode)) {
-            val rest = s.substring(defaultCountryCode.length)
-            return if (rest.all { it.isDigit() }) "+$defaultCountryCode$rest" else null
-        }
-        if (s.startsWith("0")) {
-            val withoutZero = s.drop(1)
-            return if (withoutZero.all { it.isDigit() }) "+$defaultCountryCode$withoutZero" else null
-        }
-        return if (s.all { it.isDigit() }) "+$defaultCountryCode$s" else null
-    }
-
-    companion object {
-        private const val TAG = "LoginActivity"
     }
 }
