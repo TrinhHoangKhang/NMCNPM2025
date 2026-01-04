@@ -45,7 +45,7 @@
         android:layout_height="56dp"
         android:layout_marginHorizontal="24dp"
         android:layout_marginBottom="48dp"
-        android:background="@drawable/bg_button_gradient"
+        android:background="@drawable/bg_button_gradient_ripple"
         android:drawableEnd="@drawable/ic_arrow_right"
         android:paddingHorizontal="16dp"
         android:text="Tiếp theo"
@@ -53,5 +53,7 @@
         android:textColor="@color/white"
         android:textSize="18sp"
         android:textStyle="bold"
+        android:clickable="true"
+        android:focusable="true"
         app:layout_constraintBottom_toBottomOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

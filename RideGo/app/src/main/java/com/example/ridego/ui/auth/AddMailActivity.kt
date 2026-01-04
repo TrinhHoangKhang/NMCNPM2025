@@ -43,6 +43,11 @@ class AddEmailActivity : AppCompatActivity() {
             binding.btnAddEmail.isEnabled = false
             viewModel.linkEmail(email, password)
         }
+
+        // Nút bỏ qua - vào thẳng màn hình chính
+        binding.tvSkip.setOnClickListener {
+            navigateToHome()
+        }
     }
 
     private fun observeViewModel() {

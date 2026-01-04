@@ -59,7 +59,10 @@ class EmailVerificationActivity : AppCompatActivity() {
                 }
 
                 is AuthState.EmailVerified -> {
-                    showAddPhoneDialog()
+                    Toast.makeText(this, "Email đã xác thực thành công!", Toast.LENGTH_SHORT).show()
+                    // Chuyển thẳng sang màn hình thêm sđt
+                    startActivity(Intent(this, AddPhoneActivity::class.java))
+                    finish()
                 }
 
                 is AuthState.Error -> {
