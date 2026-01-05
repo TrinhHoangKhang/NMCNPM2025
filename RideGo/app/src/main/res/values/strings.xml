@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">RideGo</string>
+    <!-- Web Client ID từ Firebase Console -->
+    <string name="google_web_client_id">185412908380-5vjdgvgcitj6el7cdt1nl8mvr07c87nf.apps.googleusercontent.com</string>
 </resources>

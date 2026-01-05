@@ -39,7 +39,16 @@ class RegisterActivity : AppCompatActivity() {
                 Toast.makeText(this, "Invalid input", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            viewModel.register(name, email, password, "0909000000") 
+            showLoading(true)
+            if (intent.getStringExtra("MODE") == "ADD_EMAIL_AFTER_PHONE") {
+                viewModel.linkEmail(email, password)  // Link thay vì register
+            } else {
+                viewModel.register(name, email, password)  // Bình thường
+            }
+        }
+
+        binding.tvLogin.setOnClickListener {
+            finish()
         }
     }
 
@@ -47,22 +56,44 @@ class RegisterActivity : AppCompatActivity() {
         viewModel.authState.observe(this) { state ->
             when (state) {
                 is AuthState.Loading -> {
-                    binding.btnRegister.isEnabled = false
+                    showLoading(true)
                 }
                 is AuthState.Success -> {
-                    Toast.makeText(this, "Register Successful", Toast.LENGTH_SHORT).show()
-                    startActivity(Intent(this, RiderMainActivity::class.java))
-                    finishAffinity()
+                    showLoading(false)
+                    viewModel.resetState()
+                }
+                is AuthState.EmailVerificationNeeded -> {
+                    showLoading(false)
+                    val i = Intent(this, EmailVerificationActivity::class.java)
+                    i.putExtra("email", state.email)
+                    startActivity(i)
+                    finish()
+                    viewModel.resetState()
+                }
+                is AuthState.EmailVerificationNeeded -> {
+                    showLoading(false)
+                    val i = Intent(this, EmailVerificationActivity::class.java)
+                    i.putExtra("email", state.email)
+                    startActivity(i)
+                    finish()
+                    viewModel.resetState()
                 }
                 is AuthState.Error -> {
-                    binding.btnRegister.isEnabled = true
-                    Toast.makeText(this, "Error: ${state.message}", Toast.LENGTH_LONG).show()
+                    showLoading(false)
+                    Toast.makeText(this, "Lỗi: ${state.message}", Toast.LENGTH_LONG).show()
                     viewModel.resetState()
                 }
                 else -> {
-                    binding.btnRegister.isEnabled = true
+                    showLoading(false)
                 }
             }
         }
     }
+
+    private fun showLoading(isLoading: Boolean) {
+        binding.progressBarRegister.visibility = if (isLoading) android.view.View.VISIBLE else android.view.View.GONE
+        binding.btnRegister.isEnabled = !isLoading
+        binding.btnRegister.text = if (isLoading) "" else "Đăng ký"
+    }
+
 }

@@ -77,6 +77,14 @@ class AddPhoneActivity : AppCompatActivity() {
             }
             startPhoneNumberVerification(phoneInput)
         }
+
+        // Nút bỏ qua - vào thẳng màn hình chính
+        binding.tvSkip.setOnClickListener {
+            val intent = Intent(this, RiderMainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        }
     }
 
     private fun observeViewModel() {
@@ -153,6 +161,14 @@ class AddPhoneActivity : AppCompatActivity() {
     override fun onDestroy() {
         cooldownTimer?.cancel()
         super.onDestroy()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Enable lại phone input khi quay lại (trường hợp nhấn back từ OTP)
+        if (!binding.btnContinue.isEnabled) {
+            enablePhoneInput()
+        }
     }
 
     private fun toE164(raw: String, defaultCountryCode: String = "84"): String? {

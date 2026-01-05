@@ -41,6 +41,7 @@
         <activity android:name=".ui.auth.RegisterActivity" android:exported="false" />
         <activity android:name=".ui.auth.AddPhoneActivity" />
         <activity android:name=".ui.auth.AddEmailActivity" />
+        <activity android:name=".ui.auth.ForgotPasswordActivity" android:exported="false" />
 
 
 

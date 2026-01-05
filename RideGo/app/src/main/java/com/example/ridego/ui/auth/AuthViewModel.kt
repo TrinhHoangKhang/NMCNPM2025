@@ -39,14 +39,31 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun register(name: String, email: String, password: String, phone: String = "") {
+    fun signInWithGoogle(idToken: String) {
+        _authState.value = AuthState.Loading
+        viewModelScope.launch {
+            val res = repo.signInWithGoogle(idToken)
+            if (res.isSuccess) {
+                _authState.value = AuthState.Success(res.getOrThrow())
+            } else {
+                _authState.value = AuthState.Error(res.exceptionOrNull()?.message ?: "Lỗi đăng nhập Google")
+            }
+        }
+    }
+
+    fun register(name: String?, email: String, password: String, phone: String = "") {
         _authState.value = AuthState.Loading
         viewModelScope.launch {
             // Default role to 'rider'
             val res = repo.register(name, email, password, phone, "rider")
             if (res.isSuccess) {
-                 val registerResponse = res.getOrThrow()
-                _authState.value = AuthState.Success(registerResponse.user)
+                // Gửi email xác thực
+                val sendRes = repo.sendEmailVerification()
+                if (sendRes.isSuccess) {
+                    _authState.value = AuthState.EmailVerificationNeeded(email)
+                } else {
+                    _authState.value = AuthState.Error(sendRes.exceptionOrNull()?.message ?: "Gửi email xác thực thất bại")
+                }
             } else {
                 _authState.value = AuthState.Error(res.exceptionOrNull()?.message ?: "Register failed")
             }

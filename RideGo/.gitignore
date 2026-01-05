@@ -1,3 +1,9 @@
+# Kotlin / Android Studio
+.kotlin/
+*.log
+
+# Firebase 
+app/google-services.json
 *.iml
 .gradle
 /local.properties
