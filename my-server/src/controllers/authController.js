@@ -2,7 +2,7 @@ import authService from '../services/authService.js';
 
 export const register = async (req, res) => {
     try {
-        const { email, password, name, phone, role, vehicleType, licensePlate } = req.body;
+        const { email, password, name, phone, role} = req.body;
 
         // ... (validation logic kept or skipped) ...
         // We need to keep lines 7-9 validation. 
@@ -15,14 +15,14 @@ export const register = async (req, res) => {
             return res.status(400).json({ error: "Invalid role" });
         }
 
-        if (role && role.toUpperCase() === 'DRIVER') {
-            if (!vehicleType || !licensePlate) {
-                return res.status(400).json({ error: "Driver must provide vehicleType and licensePlate" });
-            }
-        }
+        // if (role && role.toUpperCase() === 'DRIVER') {
+        //     if (!vehicleType || !licensePlate) {
+        //         return res.status(400).json({ error: "Driver must provide vehicleType and licensePlate" });
+        //     }
+        // }
 
         const newUser = await authService.registerUser({
-            email, password, name, phone, role, vehicleType, licensePlate
+            email, password, name, phone, role
         });
 
         res.status(201).json({
