@@ -3,12 +3,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/homeFragment">
+    app:startDestination="@id/mapFragment">
 
     <fragment
-        android:id="@+id/homeFragment"
-        android:name="com.example.ridego.ui.home.HomeFragment"
-        android:label="Home"
-        tools:layout="@layout/fragment_home" />
+        android:id="@+id/mapFragment"
+        android:name="com.example.ridego.ui.rider.main.MapFragment"
+        android:label="Map" />
 
 </navigation>

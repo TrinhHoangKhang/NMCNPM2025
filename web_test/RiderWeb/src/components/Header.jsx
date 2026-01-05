@@ -1,0 +1,112 @@
+
+import React, { useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useSocket } from '@/context/SocketContext';
+import {
+	LayoutDashboard,
+	Map as MapIcon,
+	Package,
+	Users,
+	MessageCircle,
+	Bot
+} from 'lucide-react';
+
+export default function Header() {
+	const { user, logout } = useAuth();
+	const { socket } = useSocket();
+	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+	const location = useLocation();
+
+	const navItems = [
+		{ label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+		{ label: 'Book a Ride', href: '/map', icon: MapIcon },
+		{ label: 'Trip History', href: '/history', icon: Package },
+		{ label: 'Chat', href: '/chat', icon: MessageCircle },
+		{ label: 'AI Assistant', href: '/chatbot', icon: Bot },
+	];
+
+	const getInitials = (name) => {
+		if (!name) return "U"
+		return name
+			.split(" ")
+			.map((n) => n[0])
+			.join("")
+			.toUpperCase()
+			.slice(0, 2)
+	}
+
+	return (
+		<header className="px-6 py-4 flex bg-white justify-between items-center border-b sticky top-0 z-50 shadow-sm h-16">
+			<div className='flex items-center gap-8'>
+				<Link to="/" className='flex items-center gap-2'>
+					<img src="/home.svg" alt="Logo" className="h-8 w-8" />
+					<span className="text-xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">RideGo</span>
+				</Link>
+
+				{/* Desktop Navigation */}
+				<nav className="hidden md:flex items-center space-x-1">
+					{navItems.map((item) => {
+						const isActive = location.pathname === item.href;
+						const Icon = item.icon;
+						return (
+							<Link
+								key={item.href}
+								to={item.href}
+								className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors
+									${isActive
+										? 'bg-indigo-50 text-indigo-700'
+										: 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+									}`}
+							>
+								<Icon className="h-4 w-4" />
+								{item.label}
+							</Link>
+						);
+					})}
+				</nav>
+			</div>
+
+			<div className="flex items-center gap-4 relative">
+				<div className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 transition-colors
+					${socket ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+					<span className={`h-2 w-2 rounded-full ${socket ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+					{socket ? 'ONLINE' : 'OFFLINE'}
+				</div>
+
+				<button className="flex items-center space-x-2 focus:outline-none hover:bg-slate-50 p-1 rounded-full px-2 transition-colors border"
+					onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+					<Avatar className="h-8 w-8">
+						<AvatarImage src="" />
+						<AvatarFallback className="bg-indigo-100 text-indigo-700 font-bold text-xs ring-2 ring-white">
+							{getInitials(user?.name) || "U"}
+						</AvatarFallback>
+					</Avatar>
+					<span className="text-sm font-medium text-slate-700 hidden md:block">
+						{user?.name || "Guest"}
+					</span>
+				</button>
+				{isDropdownOpen ? (
+					user ? (
+						<div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 border ring-1 ring-black ring-opacity-5 z-50">
+							<div className="px-4 py-2 border-b">
+								<p className="text-sm font-medium text-slate-900 truncate">{user.name}</p>
+								<p className="text-xs text-slate-500 truncate">{user.email}</p>
+							</div>
+							<Link to="/profile" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">Profile</Link>
+							<Link to="/achievements" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">Achievements</Link>
+							<Link to="/settings" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">Settings</Link>
+							<button onClick={logout} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">Logout</button>
+						</div>
+					) : (
+						<div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 border ring-1 ring-black ring-opacity-5 z-50">
+							<Link to="/login" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Login</Link>
+							<Link to="/register" className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Register</Link>
+						</div>
+					)
+				) : null}
+			</div>
+		</header>
+	);
+}

@@ -1,0 +1,57 @@
+services:
+  # Backend Server
+  server:
+    build: 
+      context: ./my-server
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+      # Firebase Creds should be passed via .env file or env_file
+    env_file:
+      - ./my-server/.env
+    depends_on:
+      - redis
+
+  # Rider Web App
+  rider-web:
+    build:
+      context: .
+      dockerfile: ./RiderWeb/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3000/api
+    ports:
+      - "5175:80"
+    depends_on:
+      - server
+
+  # Driver Web App
+  driver-web:
+    build:
+      context: .
+      dockerfile: ./DriverWeb/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3000/api
+    ports:
+      - "5177:80"
+    depends_on:
+      - server
+
+  # Admin Web App
+  admin-web:
+    build:
+      context: .
+      dockerfile: ./AdminWeb/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3000/api
+    ports:
+      - "5176:80"
+    depends_on:
+      - server
+
+  # Redis
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
