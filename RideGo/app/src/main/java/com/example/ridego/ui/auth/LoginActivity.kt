@@ -31,6 +31,10 @@ class LoginActivity : AppCompatActivity() {
 
     private var cooldownTimer: CountDownTimer? = null
     private val defaultCooldownMs: Long = 60_000L
+    
+    private val sharedPreferences by lazy {
+        getSharedPreferences("RideGoPrefs", MODE_PRIVATE)
+    }
 
     private val isAddPhoneMode: Boolean
         get() = intent.getStringExtra("MODE") == "ADD_PHONE"
@@ -104,6 +108,9 @@ class LoginActivity : AppCompatActivity() {
             .build()
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
+        // Load thông tin đăng nhập đã lưu
+        loadSavedCredentials()
+
         setupEvents()
         observeViewModel()
     }
@@ -141,6 +148,14 @@ class LoginActivity : AppCompatActivity() {
                 Toast.makeText(this, "Email hoặc mật khẩu không hợp lệ", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            
+            // Lưu thông tin nếu checkbox được chọn
+            if (binding.cbRememberMe.isChecked) {
+                saveCredentials(email, password)
+            } else {
+                clearCredentials()
+            }
+            
             viewModel.login(email, password)
         }
 
@@ -290,6 +305,44 @@ class LoginActivity : AppCompatActivity() {
         googleSignInClient.signOut().addOnCompleteListener(this) {
             val signInIntent = googleSignInClient.signInIntent
             googleSignInLauncher.launch(signInIntent)
+        }
+    }
+
+    private fun loadSavedCredentials() {
+        val savedEmail = sharedPreferences.getString("saved_email", "")
+        val savedPassword = sharedPreferences.getString("saved_password", "")
+        val rememberMe = sharedPreferences.getBoolean("remember_me", false)
+        
+        if (rememberMe && !savedEmail.isNullOrEmpty() && !savedPassword.isNullOrEmpty()) {
+            // Chuyển sang tab email login
+            binding.layoutEmailInput.visibility = View.VISIBLE
+            binding.layoutPhoneInput.visibility = View.GONE
+            binding.btnContinue.visibility = View.GONE
+            binding.tvEmailLogin.visibility = View.GONE
+            binding.layoutDivider.visibility = View.GONE
+            
+            // Điền thông tin đã lưu
+            binding.edtEmail.setText(savedEmail)
+            binding.edtPassword.setText(savedPassword)
+            binding.cbRememberMe.isChecked = true
+        }
+    }
+    
+    private fun saveCredentials(email: String, password: String) {
+        sharedPreferences.edit().apply {
+            putString("saved_email", email)
+            putString("saved_password", password)
+            putBoolean("remember_me", true)
+            apply()
+        }
+    }
+    
+    private fun clearCredentials() {
+        sharedPreferences.edit().apply {
+            remove("saved_email")
+            remove("saved_password")
+            putBoolean("remember_me", false)
+            apply()
         }
     }
 

@@ -39,6 +39,11 @@ class ProfileActivity : AppCompatActivity() {
         setupOption(binding.optPromo, "Ưu đãi của tôi", R.drawable.ic_gift_icon_profile, "5")
 
         setupOption(binding.optSecurity, "Bảo mật & Quyền riêng tư", R.drawable.ic_shield_icon)
+        binding.optSecurity.root.setOnClickListener {
+            val intent = Intent(this, SecurityPrivacyActivity::class.java)
+            startActivity(intent)
+        }
+        
         setupOption(binding.optHelp, "Trợ giúp & Hỗ trợ", R.drawable.ic_help_icon)
 
         setupOption(binding.optRate, "Đánh giá ứng dụng", R.drawable.ic_star_outline)

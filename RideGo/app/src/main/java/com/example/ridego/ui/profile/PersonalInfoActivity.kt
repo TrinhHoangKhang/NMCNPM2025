@@ -21,6 +21,7 @@ class PersonalInfoActivity : AppCompatActivity() {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
     private var isEditing = false
+    private var is2FAEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,6 +92,7 @@ class PersonalInfoActivity : AppCompatActivity() {
                             val email = document.getString("email") ?: user.email ?: ""
                             val birthday = document.getString("birthday") ?: ""
                             val gender = document.getString("gender") ?: ""
+                            is2FAEnabled = document.getBoolean("twoFactorEnabled") ?: false
 
                             binding.edtName.setText(name)
                             binding.edtPhone.setText(phone)
@@ -115,7 +117,12 @@ class PersonalInfoActivity : AppCompatActivity() {
         // binding.imgAvatar: cho phép chọn ảnh mới khi isEditing
         binding.btnEditInfo.text = if (isEditing) "Lưu thông tin" else "Chỉnh sửa thông tin"
         if (!isEditing) {
-            saveUserInfo()
+            // Nếu 2FA bật, yêu cầu nhập mật khẩu trước khi lưu
+            if (is2FAEnabled) {
+                showPasswordVerificationDialog()
+            } else {
+                saveUserInfo()
+            }
         }
     }
 
@@ -194,6 +201,54 @@ class PersonalInfoActivity : AppCompatActivity() {
             }
             .setNegativeButton("Hủy", null)
             .show()
+    }
+    
+    private fun showPasswordVerificationDialog() {
+        val dialogView = layoutInflater.inflate(android.R.layout.simple_list_item_1, null)
+        val editText = android.widget.EditText(this).apply {
+            hint = "Nhập mật khẩu hiện tại"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setPadding(50, 40, 50, 40)
+        }
+        
+        AlertDialog.Builder(this)
+            .setTitle("🔒 Xác thực 2 yếu tố")
+            .setMessage("Vui lòng nhập mật khẩu để xác nhận thay đổi thông tin")
+            .setView(editText)
+            .setPositiveButton("Xác nhận") { _, _ ->
+                val password = editText.text.toString()
+                if (password.isEmpty()) {
+                    Toast.makeText(this, "Vui lòng nhập mật khẩu", Toast.LENGTH_SHORT).show()
+                    isEditing = true
+                    binding.btnEditInfo.text = "Lưu thông tin"
+                    return@setPositiveButton
+                }
+                verifyPasswordAndSave(password)
+            }
+            .setNegativeButton("Hủy") { _, _ ->
+                isEditing = true
+                binding.btnEditInfo.text = "Lưu thông tin"
+            }
+            .setCancelable(false)
+            .show()
+    }
+    
+    private fun verifyPasswordAndSave(password: String) {
+        val user = auth.currentUser ?: return
+        val email = user.email ?: ""
+        
+        // Xác thực lại người dùng với mật khẩu
+        val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(email, password)
+        user.reauthenticate(credential)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Xác thực thành công!", Toast.LENGTH_SHORT).show()
+                saveUserInfo()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Mật khẩu không chính xác!", Toast.LENGTH_SHORT).show()
+                isEditing = true
+                binding.btnEditInfo.text = "Lưu thông tin"
+            }
     }
     
     private fun setNumberPickerTextColor(numberPicker: android.widget.NumberPicker) {
