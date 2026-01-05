@@ -29,6 +29,10 @@ class ProfileActivity : AppCompatActivity() {
 
         // Bây giờ gọi hàm thoải mái không còn báo lỗi đỏ nữa
         setupOption(binding.optInfo, "Thông tin cá nhân", R.drawable.ic_user_icon_profile)
+        binding.optInfo.root.setOnClickListener {
+            val intent = Intent(this, PersonalInfoActivity::class.java)
+            startActivity(intent)
+        }
         // Lưu ý: Bạn cần tạo hoặc thay thế các icon R.drawable... tương ứng nếu chưa có
         setupOption(binding.optPayment, "Phương thức thanh toán", R.drawable.ic_payment_icon, "2")
         setupOption(binding.optWallet, "Ví RideGo", R.drawable.ic_wallet_icon, "250.000đ")

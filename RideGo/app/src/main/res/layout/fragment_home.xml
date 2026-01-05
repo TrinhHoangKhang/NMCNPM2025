@@ -25,7 +25,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_marginTop="48dp"
-            android:text="Chào Toàn Nguyễn! 👋"
+            android:text="Chào Bạn! 👋"
             android:textColor="@color/white"
             android:textSize="18sp"
             android:textStyle="bold"
