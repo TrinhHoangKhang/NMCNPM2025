@@ -131,7 +131,8 @@ class AuthRepository(
             val userDoc = db.collection("users").document(customUserId).get().await()
             
             if (!userDoc.exists()) {
-                // Chưa có → Tạo mới với thông tin từ Google
+                // User chưa tồn tại với customUserId này (email mới hoàn toàn)
+                // → Tạo mới với thông tin từ Google
                 val userDocData = hashMapOf(
                     "customUserId" to customUserId,
                     "firebaseUid" to firebaseUid,
@@ -139,6 +140,7 @@ class AuthRepository(
                     "name" to userName,
                     "phone" to phoneNumber,
                     "photoUrl" to (user.photoUrl?.toString() ?: ""),
+                    "googleId" to user.uid, // Lưu Google ID để phân biệt
                     "role" to "RIDER",
                     "isVerified" to true,
                     "authMethod" to "google",
@@ -156,12 +158,41 @@ class AuthRepository(
                 )
                 db.collection("uid_mapping").document(firebaseUid).set(mapping).await()
             } else {
-                // Đã có → Chỉ update photoUrl và lastLogin
-                val updates = hashMapOf<String, Any>(
-                    "photoUrl" to (user.photoUrl?.toString() ?: ""),
-                    "lastLogin" to FieldValue.serverTimestamp()
-                )
-                db.collection("users").document(customUserId).update(updates).await()
+                // User đã tồn tại (VD: đã đăng ký bằng SĐT, sau đó link email, giờ đăng nhập Google)
+                // → Kiểm tra và link Google ID nếu chưa có
+                val existingData = userDoc.data
+                val existingGoogleId = existingData?.get("googleId") as? String
+                
+                if (existingGoogleId.isNullOrEmpty()) {
+                    // Chưa có Google ID → Link Google account vào user hiện tại
+                    val updates = hashMapOf<String, Any>(
+                        "googleId" to user.uid,
+                        "photoUrl" to (user.photoUrl?.toString() ?: ""),
+                        "lastLogin" to FieldValue.serverTimestamp(),
+                        "updatedAt" to FieldValue.serverTimestamp()
+                    )
+                    // Nếu user chưa có email (đăng ký bằng SĐT), thêm email từ Google
+                    val existingEmail = existingData?.get("email") as? String
+                    if (existingEmail.isNullOrEmpty() && emailStr.isNotEmpty()) {
+                        updates["email"] = emailStr
+                        updates["isVerified"] = true
+                    }
+                    db.collection("users").document(customUserId).update(updates).await()
+                    
+                    android.util.Log.d("AuthRepository", "✅ Linked Google account to existing user: $customUserId")
+                } else if (existingGoogleId != user.uid) {
+                    // Đã có Google ID khác → Email này đã được link với Google account khác
+                    android.util.Log.w("AuthRepository", "⚠️ Email $emailStr already linked to different Google account")
+                    throw Exception("Email này đã được liên kết với tài khoản Google khác")
+                } else {
+                    // Cùng Google ID → Chỉ update photoUrl và lastLogin
+                    val updates = hashMapOf<String, Any>(
+                        "photoUrl" to (user.photoUrl?.toString() ?: ""),
+                        "lastLogin" to FieldValue.serverTimestamp(),
+                        "updatedAt" to FieldValue.serverTimestamp()
+                    )
+                    db.collection("users").document(customUserId).update(updates).await()
+                }
             }
 
             Result.success(UserProfile(customUserId, userName, emailStr))

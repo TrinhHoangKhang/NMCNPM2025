@@ -59,9 +59,17 @@ dependencies {
     // Firebase (BOM + Auth)
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx") // optional
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.android.gms:play-services-auth:20.7.0") // optional: Google Sign-In
 
     // hỗ trợ dùng Tasks.await() với Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.1.1")
+    implementation("com.squareup.picasso:picasso:2.8")
+    
+    // Glide for image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    
+    // CardView
+    implementation("androidx.cardview:cardview:1.0.0")
 }

@@ -67,6 +67,11 @@
             android:exported="false"/>
 
         <activity
+            android:name=".ui.profile.PersonalInfoActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"/>
+
+        <activity
             android:name=".ui.booking.BookingActivity"
             android:exported="false"/>
 
