@@ -48,30 +48,51 @@ class ProfileActivity : AppCompatActivity() {
     private fun loadUserInfo() {
         val user = auth.currentUser
         if (user != null) {
-            // Lấy thông tin từ Firestore
-            db.collection("users").document(user.uid).get()
-                .addOnSuccessListener { document ->
-                    if (document.exists()) {
-                        val name = document.getString("name") ?: user.displayName ?: "User"
-                        val phone = document.getString("phone") ?: user.phoneNumber ?: ""
-                        
-                        binding.tvUserName.text = name
-                        binding.tvUserPhone.text = phone
-                        
-                        // Hiển thị chữ cái đầu làm avatar
-                        binding.tvUserAvatar.text = name.first().uppercase()
+            val firebaseUid = user.uid
+            
+            // Lấy customUserId từ uid_mapping trước
+            db.collection("uid_mapping").document(firebaseUid).get()
+                .addOnSuccessListener { mappingDoc ->
+                    val customUserId = if (mappingDoc.exists()) {
+                        mappingDoc.getString("customUserId") ?: firebaseUid
                     } else {
-                        // Fallback: Dùng displayName từ FirebaseAuth
-                        val name = user.displayName ?: "User"
-                        val phone = user.phoneNumber ?: ""
-                        
-                        binding.tvUserName.text = name
-                        binding.tvUserPhone.text = phone
-                        binding.tvUserAvatar.text = name.first().uppercase()
+                        firebaseUid // Fallback
                     }
+                    
+                    // Lấy thông tin từ Firestore với customUserId
+                    db.collection("users").document(customUserId).get()
+                        .addOnSuccessListener { document ->
+                            if (document.exists()) {
+                                val name = document.getString("name") ?: user.displayName ?: "User"
+                                val phone = document.getString("phone") ?: user.phoneNumber ?: ""
+                                
+                                binding.tvUserName.text = name
+                                binding.tvUserPhone.text = phone
+                                
+                                // Hiển thị chữ cái đầu làm avatar
+                                binding.tvUserAvatar.text = name.first().uppercase()
+                            } else {
+                                // Fallback: Dùng displayName từ FirebaseAuth
+                                val name = user.displayName ?: "User"
+                                val phone = user.phoneNumber ?: ""
+                                
+                                binding.tvUserName.text = name
+                                binding.tvUserPhone.text = phone
+                                binding.tvUserAvatar.text = name.first().uppercase()
+                            }
+                        }
+                        .addOnFailureListener {
+                            // Nếu lỗi, dùng displayName từ FirebaseAuth
+                            val name = user.displayName ?: "User"
+                            val phone = user.phoneNumber ?: ""
+                            
+                            binding.tvUserName.text = name
+                            binding.tvUserPhone.text = phone
+                            binding.tvUserAvatar.text = name.first().uppercase()
+                        }
                 }
                 .addOnFailureListener {
-                    // Nếu lỗi, dùng displayName từ FirebaseAuth
+                    // Fallback nếu không tìm được mapping
                     val name = user.displayName ?: "User"
                     val phone = user.phoneNumber ?: ""
                     

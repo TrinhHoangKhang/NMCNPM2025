@@ -48,14 +48,35 @@ class CompleteProfileActivity : AppCompatActivity() {
         user.updateProfile(profileUpdates)
             .addOnSuccessListener {
                 val db = FirebaseFirestore.getInstance()
-                db.collection("users").document(user.uid)
-                    .update("name", name)
-                    .addOnSuccessListener {
-                        Toast.makeText(this, "Hoàn tất hồ sơ!", Toast.LENGTH_SHORT).show()
-                        showAddEmailDialog()
+                val firebaseUid = user.uid
+                
+                // Lấy customUserId từ uid_mapping trước
+                db.collection("uid_mapping").document(firebaseUid)
+                    .get()
+                    .addOnSuccessListener { mappingDoc ->
+                        val customUserId = if (mappingDoc.exists()) {
+                            mappingDoc.getString("customUserId") ?: firebaseUid
+                        } else {
+                            firebaseUid // Fallback nếu chưa có mapping
+                        }
+                        
+                        // Update name vào document đúng
+                        db.collection("users").document(customUserId)
+                            .update("name", name)
+                            .addOnSuccessListener {
+                                Toast.makeText(this, "Hoàn tất hồ sơ!", Toast.LENGTH_SHORT).show()
+                                // Chuyển thẳng đến màn hình thêm email
+                                val intent = Intent(this, AddEmailActivity::class.java)
+                                startActivity(intent)
+                                finish()
+                            }
+                            .addOnFailureListener { e ->
+                                Toast.makeText(this, "Lỗi lưu tên vào dữ liệu: ${e.message}", Toast.LENGTH_SHORT).show()
+                                binding.btnContinue.isEnabled = true
+                            }
                     }
                     .addOnFailureListener { e ->
-                        Toast.makeText(this, "Lỗi lưu tên vào dữ liệu: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Lỗi tìm user: ${e.message}", Toast.LENGTH_SHORT).show()
                         binding.btnContinue.isEnabled = true
                     }
             }

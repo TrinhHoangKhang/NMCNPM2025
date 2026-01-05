@@ -126,7 +126,7 @@ class LoginActivity : AppCompatActivity() {
             binding.layoutDivider.visibility = View.GONE
         }
 
-        binding.btnBackToPhone.setOnClickListener {
+        binding.tvBackToPhone.setOnClickListener {
             binding.layoutEmailInput.visibility = View.GONE
             binding.layoutPhoneInput.visibility = View.VISIBLE
             binding.btnContinue.visibility = View.VISIBLE
@@ -141,7 +141,6 @@ class LoginActivity : AppCompatActivity() {
                 Toast.makeText(this, "Email hoặc mật khẩu không hợp lệ", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            showEmailLoading(true)
             viewModel.login(email, password)
         }
 
@@ -152,18 +151,19 @@ class LoginActivity : AppCompatActivity() {
         binding.btnGoogle.setOnClickListener {
             signInWithGoogle()
         }
+
+        binding.tvForgotPassword.setOnClickListener {
+            startActivity(Intent(this, ForgotPasswordActivity::class.java))
+        }
     }
 
     private fun observeViewModel() {
         viewModel.authState.observe(this) { state ->
             when (state) {
                 is AuthState.Loading -> {
-                    showLoading(true)
-                    showEmailLoading(true)
+                    // Có thể show progress bar
                 }
                 is AuthState.Success -> {
-                    showLoading(false)
-                    showEmailLoading(false)
                     if (isAddPhoneMode) {
                         Toast.makeText(this, "Liên kết số điện thoại thành công!", Toast.LENGTH_LONG).show()
                         navigateToHome()  // Vào app luôn vì đã có tài khoản email rồi
@@ -192,8 +192,6 @@ class LoginActivity : AppCompatActivity() {
                     viewModel.resetState()
                 }
                 is AuthState.Error -> {
-                    showLoading(false)
-                    showEmailLoading(false)
                     Toast.makeText(this, "Lỗi: ${state.message}", Toast.LENGTH_LONG).show()
                     enablePhoneInput()
                     viewModel.resetState()
@@ -293,18 +291,6 @@ class LoginActivity : AppCompatActivity() {
             val signInIntent = googleSignInClient.signInIntent
             googleSignInLauncher.launch(signInIntent)
         }
-    }
-
-    private fun showLoading(isLoading: Boolean) {
-        binding.progressBar.visibility = if (isLoading) android.view.View.VISIBLE else android.view.View.GONE
-        binding.btnContinue.isEnabled = !isLoading
-        binding.btnContinue.text = if (isLoading) "" else "Tiếp tục"
-    }
-
-    private fun showEmailLoading(isLoading: Boolean) {
-        binding.progressBarLogin.visibility = if (isLoading) android.view.View.VISIBLE else android.view.View.GONE
-        binding.btnLogin.isEnabled = !isLoading
-        binding.btnLogin.text = if (isLoading) "" else "Đăng nhập"
     }
 
     companion object {
