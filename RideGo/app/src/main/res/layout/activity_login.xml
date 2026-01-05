@@ -174,7 +174,8 @@
             android:layout_height="wrap_content"
             app:endIconMode="password_toggle"
             app:endIconTint="#757575"
-            app:boxBackgroundMode="none">
+            app:boxBackgroundMode="none"
+            app:hintEnabled="false">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/edtPassword"
@@ -184,6 +185,7 @@
                 android:hint="Mật khẩu"
                 android:inputType="textPassword"
                 android:paddingHorizontal="16dp"
+                android:paddingEnd="48dp"
                 android:textColor="@color/black"
                 android:textColorHint="#9E9E9E"
                 android:textSize="16sp" />
