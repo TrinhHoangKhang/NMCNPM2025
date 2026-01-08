@@ -43,7 +43,9 @@
         <activity android:name=".ui.auth.ForgotPasswordActivity" android:exported="false" />
 
 
-
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDhrURv0iBgiwSRrrjbVWhaBr2oMjOwrfg" />
 
         <activity
             android:name=".ui.rider.main.RiderMainActivity"
