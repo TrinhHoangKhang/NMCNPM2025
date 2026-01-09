@@ -45,7 +45,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDhrURv0iBgiwSRrrjbVWhaBr2oMjOwrfg" />
+            android:value="AIzaSyCc0x9onR90vLG-u_xj_cK_YD69GYE2Y8I" />
 
         <activity
             android:name=".ui.rider.main.RiderMainActivity"
