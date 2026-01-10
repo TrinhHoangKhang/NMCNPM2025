@@ -41,7 +41,7 @@ class BookingActivity : AppCompatActivity() {
     private var finalPrice = 0.0
 
     // --- QUAN TRỌNG: DÁN KEY MỚI (CỦA PROJECT RIDEGO CÓ BILLING) VÀO ĐÂY ---
-    private val GOOGLE_API_KEY = "AIzaSyCc0x9onR90vLG-u_xj_cK_YD69GYE2Y8I"
+    private val GOOGLE_API_KEY = "AIzaSyDm438HYBoKLDIFaS1gvsMyGplxYDEeaQQ"
 
     // Mã Request Code để nhận kết quả từ Map
     private val REQUEST_PICKUP = 100
