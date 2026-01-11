@@ -1,0 +1,13 @@
+export const TRIP_STATUS = {
+    REQUESTED: 'REQUESTED',
+    ACCEPTED: 'ACCEPTED',
+    IN_PROGRESS: 'IN_PROGRESS',
+    COMPLETED: 'COMPLETED',
+    CANCELLED: 'CANCELLED',
+};
+
+export const PAYMENT_STATUS = {
+    PENDING: 'PENDING',
+    PAID: 'PAID',
+    FAILED: 'FAILED',
+};
