@@ -45,7 +45,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBSvLkWXEj9agyzUv2bzi4AA1ihj7pnxmY" />
+            android:value="@string/google_maps_key" />
 
         <activity
             android:name=".ui.rider.main.RiderMainActivity"
@@ -76,6 +76,11 @@
         <activity
             android:name=".ui.booking.BookingActivity"
             android:exported="false"/>
+
+        <activity
+            android:name=".ui.rider.location.SearchDestinationActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
     </application>
 

@@ -41,7 +41,7 @@ class BookingActivity : AppCompatActivity() {
     private var finalPrice = 0.0
 
     // --- QUAN TRỌNG: DÁN KEY MỚI (CỦA PROJECT RIDEGO CÓ BILLING) VÀO ĐÂY ---
-    private val GOOGLE_API_KEY = "AIzaSyDm438HYBoKLDIFaS1gvsMyGplxYDEeaQQ"
+    private val DIRECTIONS_API_KEY by lazy { getString(R.string.google_directions_key) }
 
     // Mã Request Code để nhận kết quả từ Map
     private val REQUEST_PICKUP = 100
@@ -145,7 +145,7 @@ class BookingActivity : AppCompatActivity() {
 
     // --- GỌI GOOGLE DIRECTIONS API (PHIÊN BẢN CHECK LỖI) ---
     private fun calculateRouteFromGoogle(startLat: Double, startLng: Double, endLat: Double, endLng: Double) {
-        val url = "https://maps.googleapis.com/maps/api/directions/json?origin=$startLat,$startLng&destination=$endLat,$endLng&key=$GOOGLE_API_KEY"
+        val url = "https://maps.googleapis.com/maps/api/directions/json?origin=$startLat,$startLng&destination=$endLat,$endLng&key=$DIRECTIONS_API_KEY"
 
         binding.tvDistance.text = "Đang tính..."
 

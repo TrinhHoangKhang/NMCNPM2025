@@ -42,7 +42,7 @@
                 android:layout_marginEnd="8dp"
                 android:background="@drawable/bg_search_bar"
                 android:backgroundTint="#EEEEEE"
-                android:text="Nhập vị trí"
+                android:text="Bỏ qua"
                 android:textAllCaps="false"
                 android:textColor="#757575"
                 android:textSize="16sp"

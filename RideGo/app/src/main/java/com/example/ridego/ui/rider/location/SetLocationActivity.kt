@@ -20,8 +20,11 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.tasks.CancellationTokenSource
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import java.util.Locale
+import com.google.android.gms.tasks.CancellationTokenSource
 
 class SetLocationActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -76,18 +79,13 @@ class SetLocationActivity : AppCompatActivity(), OnMapReadyCallback {
 
         try {
             val geocoder = Geocoder(this, Locale.getDefault())
-            // Chỉ lấy 1 kết quả duy nhất
             val addresses = geocoder.getFromLocation(lat, lng, 1)
 
             if (!addresses.isNullOrEmpty()) {
                 val address = addresses[0]
-
-                // Logic hiển thị thông minh:
-                // Title: Tên địa điểm cụ thể (VD: Keangnam Landmark) hoặc Tên đường
-                // Sub: Địa chỉ đầy đủ
-                val featureName = address.featureName // Tên địa điểm/Số nhà
-                val thoroughfare = address.thoroughfare // Tên đường
-                val fullAddress = address.getAddressLine(0) // Địa chỉ full
+                val featureName = address.featureName
+                val thoroughfare = address.thoroughfare
+                val fullAddress = address.getAddressLine(0)
 
                 val displayTitle = if (!featureName.isNullOrEmpty() && featureName != thoroughfare) {
                     featureName
@@ -99,8 +97,7 @@ class SetLocationActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 binding.tvSelectedTitle.text = displayTitle
                 binding.tvSelectedAddress.text = fullAddress
-
-                selectedAddressName = fullAddress // Lưu địa chỉ full để trả về
+                selectedAddressName = fullAddress
             } else {
                 binding.tvSelectedTitle.text = "Vị trí không xác định"
                 binding.tvSelectedAddress.text = "$lat, $lng"
@@ -108,10 +105,79 @@ class SetLocationActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            binding.tvSelectedTitle.text = "Lỗi tải địa chỉ"
+            binding.tvSelectedTitle.text = "Vị trí đã chọn"
+            selectedAddressName = "($lat, $lng)"
         }
     }
 
+    private fun setupUI() {
+        binding.btnBack.setOnClickListener { finish() }
+        binding.btnMyLocation.setOnClickListener { checkAndTurnOnGPS() }
+
+        val type = intent.getIntExtra("LOCATION_TYPE", 0)
+        if (type == 1) {
+            binding.btnConfirmLocation.text = "Xác nhận điểm đón"
+        } else if (type == 2) {
+            binding.btnConfirmLocation.text = "Xác nhận điểm đến"
+        }
+
+        binding.btnConfirmLocation.setOnClickListener {
+            // Disable nút để tránh bấm nhiều lần
+            binding.btnConfirmLocation.isEnabled = false
+            binding.btnConfirmLocation.text = "Đang lưu..."
+
+            // Lưu Firebase trước
+            saveLocationToFirebase {
+                // Sau khi lưu xong thì trả kết quả về
+                if (isBookingFlow) {
+                    // Logic cũ (nếu có): chuyển sang màn hình tiếp theo
+                    val intent = Intent(this, SearchDestinationActivity::class.java)
+                    startActivity(intent)
+                } else {
+                    // Logic quan trọng cho BookingActivity: Trả kết quả về
+                    val returnIntent = Intent()
+                    returnIntent.putExtra("SELECTED_ADDRESS", selectedAddressName)
+                    returnIntent.putExtra("SELECTED_LAT", selectedLat)
+                    returnIntent.putExtra("SELECTED_LNG", selectedLng)
+                    setResult(Activity.RESULT_OK, returnIntent)
+                    finish()
+                }
+            }
+        }
+    }
+
+    private fun saveLocationToFirebase(onSuccess: () -> Unit) {
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        val db = FirebaseFirestore.getInstance()
+        val firebaseUid = currentUser.uid
+
+        val locationData = mapOf(
+            "currentPickupAddress" to selectedAddressName,
+            "currentPickupLat" to selectedLat,
+            "currentPickupLng" to selectedLng
+        )
+
+        db.collection("uid_mapping").document(firebaseUid).get()
+            .addOnSuccessListener { mappingDoc ->
+                val targetUserId = if (mappingDoc.exists()) {
+                    mappingDoc.getString("customUserId") ?: firebaseUid
+                } else {
+                    firebaseUid
+                }
+                db.collection("users").document(targetUserId)
+                    .set(locationData, SetOptions.merge())
+                    .addOnSuccessListener { onSuccess() }
+                    .addOnFailureListener { onSuccess() }
+            }
+            .addOnFailureListener {
+                db.collection("users").document(firebaseUid)
+                    .set(locationData, SetOptions.merge())
+                    .addOnSuccessListener { onSuccess() }
+            }
+    }
+
+    // ... Giữ nguyên các hàm checkAndTurnOnGPS, getDeviceLocation, moveCameraToLocation ...
+    // (Nếu bạn thiếu đoạn dưới thì bảo mình gửi nốt, nhưng mình nghĩ bạn chỉ thiếu file này thôi)
     private fun checkAndTurnOnGPS() {
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000).build()
         val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
@@ -164,35 +230,5 @@ class SetLocationActivity : AppCompatActivity(), OnMapReadyCallback {
         val latLng = LatLng(lat, lng)
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 17f))
         updateAddressInfo(lat, lng)
-    }
-
-    private fun setupUI() {
-        binding.btnBack.setOnClickListener { finish() }
-        binding.btnMyLocation.setOnClickListener { checkAndTurnOnGPS() }
-
-        val type = intent.getIntExtra("LOCATION_TYPE", 0)
-        if (type == 1) {
-            binding.btnConfirmLocation.text = "Xác nhận điểm đón"
-        } else if (type == 2) {
-            binding.btnConfirmLocation.text = "Xác nhận điểm đến"
-        }
-
-        binding.btnConfirmLocation.setOnClickListener {
-            // Nút "Xác nhận vị trí"
-            if (isBookingFlow) {
-                val intent = Intent(this, BookingActivity::class.java)
-                intent.putExtra("PICKUP_ADDRESS", selectedAddressName)
-                intent.putExtra("PICKUP_LAT", selectedLat)
-                intent.putExtra("PICKUP_LNG", selectedLng)
-                startActivity(intent)
-            } else {
-                val returnIntent = Intent()
-                returnIntent.putExtra("SELECTED_ADDRESS", selectedAddressName)
-                returnIntent.putExtra("SELECTED_LAT", selectedLat)
-                returnIntent.putExtra("SELECTED_LNG", selectedLng)
-                setResult(Activity.RESULT_OK, returnIntent)
-                finish()
-            }
-        }
     }
 }

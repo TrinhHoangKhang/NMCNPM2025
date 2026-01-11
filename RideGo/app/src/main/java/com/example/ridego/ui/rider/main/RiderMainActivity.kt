@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
@@ -26,7 +25,7 @@ class RiderMainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityRiderMainBinding
 
-    // --- 1. BỘ XỬ LÝ KẾT QUẢ XIN QUYỀN (HỆ THỐNG ANDROID) ---
+    // --- 1. BỘ XỬ LÝ KẾT QUẢ XIN QUYỀN ---
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -34,20 +33,19 @@ class RiderMainActivity : AppCompatActivity() {
                 permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
 
         if (isGranted) {
-            // Nếu người dùng đồng ý -> Hiện dialog hỏi điểm đón
             showPickupLocationDialog()
         } else {
             Toast.makeText(this, "Bạn cần cấp quyền vị trí để đặt xe!", Toast.LENGTH_LONG).show()
         }
     }
 
-    // --- 2. BỘ LẮNG NGHE KẾT QUẢ TỪ BẢN ĐỒ (LUỒNG TÌM KIẾM) ---
+    // --- 2. NHẬN KẾT QUẢ TỪ BẢN ĐỒ ---
     private val getContent = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data
             val address = data?.getStringExtra("SELECTED_ADDRESS")
-            Toast.makeText(this, "Đã chọn: $address", Toast.LENGTH_LONG).show()
-            // Ở đây bạn có thể cập nhật TextView hiển thị vị trí trên Home nếu muốn
+            // Cập nhật giao diện Home nếu cần
+            Toast.makeText(this, "Vị trí hiện tại: $address", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -57,72 +55,60 @@ class RiderMainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupManualBottomNav()
-
-        // --- 3. KIỂM TRA QUYỀN NGAY KHI VÀO APP ---
         checkLocationPermission()
     }
 
-    // --- HÀM KIỂM TRA & XIN QUYỀN THỰC TẾ ---
     private fun checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            // Đã có quyền -> Hiện dialog điểm đón luôn
             showPickupLocationDialog()
         } else {
-            // Chưa có -> Gọi hệ thống Android xin quyền
             requestPermissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
             )
         }
     }
 
     private fun setupManualBottomNav() {
-        binding.btnHome.setOnClickListener { Toast.makeText(this, "Đang ở Trang chủ", Toast.LENGTH_SHORT).show() }
+        binding.btnHome.setOnClickListener { }
         binding.btnActivity.setOnClickListener { startActivity(Intent(this, HistoryActivity::class.java)) }
         binding.btnPromotion.setOnClickListener { startActivity(Intent(this, PromotionActivity::class.java)) }
         binding.btnAccount.setOnClickListener { startActivity(Intent(this, ProfileActivity::class.java)) }
 
-        // Nút Đặt xe (Fab)
+        // Nút Đặt xe (FAB) - Luồng Booking: IS_BOOKING_FLOW = true
         binding.fabBooking.setOnClickListener {
-            // Kiểm tra quyền lại một lần nữa trước khi mở bản đồ
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 val intent = Intent(this, SetLocationActivity::class.java)
-                intent.putExtra("IS_BOOKING_FLOW", true)
+                intent.putExtra("IS_BOOKING_FLOW", true) // Báo hiệu đi đặt xe
                 startActivity(intent)
             } else {
-                checkLocationPermission() // Xin lại nếu chưa có
+                checkLocationPermission()
             }
         }
     }
 
-    // --- DIALOG XÁC NHẬN ĐIỂM ĐÓN (GIỮ NGUYÊN) ---
     private fun showPickupLocationDialog() {
         val dialog = Dialog(this)
+        // Đảm bảo bạn đang dùng layout dialog_confirm_pickup.xml
+        // LƯU Ý: Bạn cần vào file XML dialog_confirm_pickup.xml sửa text nút btnEnterLocation thành "Bỏ qua"
         dialog.setContentView(R.layout.dialog_confirm_pickup)
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        dialog.window?.setDimAmount(0.6f)
-        dialog.setCancelable(true) // Cho phép tắt nếu user không muốn đặt ngay
+        dialog.setCancelable(false)
 
-        val btnEnter = dialog.findViewById<TextView>(R.id.btnEnterLocation)
-        val btnConfirm = dialog.findViewById<TextView>(R.id.btnConfirmLocation)
+        val btnSkip = dialog.findViewById<TextView>(R.id.btnEnterLocation) // Nút trái
+        val btnContinue = dialog.findViewById<TextView>(R.id.btnConfirmLocation) // Nút phải
 
-        // Nút "Nhập vị trí" -> Luồng Tìm kiếm (Quay về)
-        btnEnter.setOnClickListener {
+        // Nút Bỏ qua -> Đóng dialog, ở lại Home
+        btnSkip.setOnClickListener {
             dialog.dismiss()
-            val intent = Intent(this, SetLocationActivity::class.java)
-            intent.putExtra("IS_BOOKING_FLOW", false)
-            getContent.launch(intent)
         }
 
-        // Nút "Tiếp tục" -> Luồng Đặt xe (Đi tiếp)
-        btnConfirm.setOnClickListener {
+        // Nút Tiếp tục -> Mở bản đồ để set vị trí (IS_BOOKING_FLOW = false)
+        btnContinue.setOnClickListener {
             dialog.dismiss()
             val intent = Intent(this, SetLocationActivity::class.java)
-            intent.putExtra("IS_BOOKING_FLOW", true)
-            startActivity(intent)
+            intent.putExtra("IS_BOOKING_FLOW", false) // Quan trọng: Báo hiệu chỉ set vị trí rồi về
+            getContent.launch(intent)
         }
 
         dialog.show()
