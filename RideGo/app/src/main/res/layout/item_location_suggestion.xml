@@ -5,18 +5,21 @@
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
     android:paddingVertical="12dp"
+    android:paddingHorizontal="16dp"
     android:background="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
-    android:orientation="horizontal"> <ImageView
-    android:id="@+id/imgIcon"
-    android:layout_width="36dp"
-    android:layout_height="36dp"
-    android:padding="8dp"
-    android:background="@drawable/bg_white_rounded_16dp"
-    android:backgroundTint="#F5F5F5"
-    android:src="@drawable/ic_onboarding_location"
-    app:tint="#757575" />
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/imgIcon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="10dp"
+        android:background="@drawable/bg_white_rounded_16dp"
+        android:backgroundTint="#F5F5F5"
+        android:src="@drawable/ic_location_pin"
+        app:tint="#757575" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -26,23 +29,24 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/tvTitle"
+            android:id="@+id/tvPlaceName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Công viên 23/9"
+            android:text="Tên địa điểm"
             android:textColor="@color/black"
             android:textStyle="bold"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:maxLines="1"
             android:ellipsize="end"/>
 
         <TextView
-            android:id="@+id/tvAddress"
+            android:id="@+id/tvPlaceAddress"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Phạm Ngũ Lão, Q.1, TP.HCM"
+            android:layout_marginTop="2dp"
+            android:text="Địa chỉ chi tiết..."
             android:textColor="#757575"
-            android:textSize="12sp"
+            android:textSize="14sp"
             android:maxLines="1"
             android:ellipsize="end"/>
     </LinearLayout>

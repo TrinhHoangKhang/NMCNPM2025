@@ -9,7 +9,6 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
-        android:name=".RideGoApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -44,7 +43,9 @@
         <activity android:name=".ui.auth.ForgotPasswordActivity" android:exported="false" />
 
 
-
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_key" />
 
         <activity
             android:name=".ui.rider.main.RiderMainActivity"
@@ -68,8 +69,18 @@
             android:exported="false"/>
 
         <activity
+            android:name=".ui.profile.PersonalInfoActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"/>
+
+        <activity
             android:name=".ui.booking.BookingActivity"
             android:exported="false"/>
+
+        <activity
+            android:name=".ui.rider.location.SearchDestinationActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
     </application>
 

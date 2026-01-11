@@ -2,11 +2,14 @@ package com.example.ridego.ui.auth
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.CountDownTimer
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import com.example.ridego.data.AuthRepository
 import com.example.ridego.databinding.ActivityLoginBinding
 import com.example.ridego.ui.rider.main.RiderMainActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -19,9 +22,7 @@ import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import java.util.concurrent.TimeUnit
-import dagger.hilt.android.AndroidEntryPoint
 
-@AndroidEntryPoint
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
@@ -105,14 +106,6 @@ class LoginActivity : AppCompatActivity() {
 
         setupEvents()
         observeViewModel()
-        
-        // Force show Email input for API login
-        binding.layoutEmailInput.visibility = View.VISIBLE
-        binding.layoutPhoneInput.visibility = View.GONE
-        binding.btnContinue.visibility = View.GONE // Ensure the 'Continue' button for phone is hidden if present
-        
-        // Since we are forcing Email, maybe we should hide the toggle 'tvEmailLogin' or update its text.
-        // For now, let's just make it work.
     }
 
     private fun setupEvents() {
@@ -145,7 +138,7 @@ class LoginActivity : AppCompatActivity() {
             val email = binding.edtEmail.text.toString().trim()
             val password = binding.edtPassword.text.toString().trim()
             if (email.isEmpty() || password.length < 6) {
-                Toast.makeText(this, "Email or password invalid", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Email hoặc mật khẩu không hợp lệ", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             viewModel.login(email, password)
@@ -168,8 +161,7 @@ class LoginActivity : AppCompatActivity() {
         viewModel.authState.observe(this) { state ->
             when (state) {
                 is AuthState.Loading -> {
-                    // Show progress
-                    binding.btnLogin.isEnabled = false
+                    // Có thể show progress bar
                 }
                 is AuthState.Success -> {
                     if (isAddPhoneMode) {
@@ -200,12 +192,18 @@ class LoginActivity : AppCompatActivity() {
                     viewModel.resetState()
                 }
                 is AuthState.Error -> {
-                    binding.btnLogin.isEnabled = true
-                    Toast.makeText(this, "Error: ${state.message}", Toast.LENGTH_LONG).show()
-                    viewModel.resetState() // Reset so we can try again
+                    Toast.makeText(this, "Lỗi: ${state.message}", Toast.LENGTH_LONG).show()
+                    enablePhoneInput()
+                    viewModel.resetState()
+                }
+                is AuthState.EmailVerificationNeeded -> {
+                    val i = Intent(this, EmailVerificationActivity::class.java)
+                    i.putExtra("email", state.email)
+                    startActivity(i)
+                    viewModel.resetState()
                 }
                 else -> {
-                    binding.btnLogin.isEnabled = true
+                    enablePhoneInput()
                 }
             }
         }
