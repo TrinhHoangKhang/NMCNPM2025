@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingBottom="24dp">
+
+    <!-- Timeline Line -->
+    <View
+        android:id="@+id/viewLine"
+        android:layout_width="2dp"
+        android:layout_height="0dp"
+        android:background="#E0E0E0"
+        app:layout_constraintStart_toStartOf="@id/cvIcon"
+        app:layout_constraintEnd_toEndOf="@id/cvIcon"
+        app:layout_constraintTop_toBottomOf="@id/cvIcon"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="-24dp" />
+
+    <!-- Step Icon -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cvIcon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="#F3E5F5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tvStepNumber"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            tools:text="1"
+            android:textColor="@color/purple_500"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+    </androidx.cardview.widget.CardView>
+
+    <!-- Content -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        tools:text="Bước 1: Đăng nhập"
+        android:textColor="#212121"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/cvIcon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/cvIcon"
+        app:layout_constraintBottom_toBottomOf="@id/cvIcon" />
+
+    <TextView
+        android:id="@+id/tvDescription"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        tools:text="Mở ứng dụng và nhập số điện thoại hoặc email để đăng nhập vào hệ thống."
+        android:textColor="#616161"
+        android:textSize="14sp"
+        android:lineSpacingExtra="4dp"
+        app:layout_constraintStart_toStartOf="@id/tvTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

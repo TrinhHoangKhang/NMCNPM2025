@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="#FFFFFF"
+    android:fitsSystemWindows="true">
 
     <!-- Header -->
     <LinearLayout
@@ -37,10 +38,11 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:fillViewport="true"
+        android:fitsSystemWindows="true"
         app:layout_constraintTop_toBottomOf="@id/header"
         app:layout_constraintBottom_toBottomOf="parent">
 
@@ -72,7 +74,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="RideGo cam kết bảo vệ quyền riêng tư của bạn. Chính sách bảo mật này giải thích cách chúng tôi thu thập, sử dụng, chia sẻ và bảo vệ thông tin cá nhân của bạn khi sử dụng ứng dụng RideGo."
+                android:text="RideGo là đồ án môn Nhập môn Công nghệ Phần mềm được thực hiện bởi 4 sinh viên Trường Đại học Khoa học Tự nhiên - ĐHQG TP.HCM. Chính sách này giải thích cách ứng dụng thu thập và sử dụng thông tin trong phạm vi demo và học tập."
                 android:textColor="#424242"
                 android:textSize="14sp"
                 android:lineSpacingExtra="4dp"
@@ -129,7 +131,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Chúng tôi có thể chia sẻ thông tin của bạn với:\n\n👨‍✈️ Tài xế đối tác:\n• Tên, số điện thoại, điểm đón/trả để thực hiện chuyến đi.\n\n🏢 Đối tác kinh doanh:\n• Các đơn vị xử lý thanh toán, bảo hiểm.\n\n⚖️ Cơ quan chức năng:\n• Khi có yêu cầu theo quy định pháp luật.\n\n🔒 Chúng tôi KHÔNG bán thông tin cá nhân của bạn cho bên thứ ba."
+                android:text="Trong phạm vi đồ án học tập:\n\n👨‍✈️ Người dùng khác trong ứng dụng:\n• Tên, điểm đón/trả để thực hiện chức năng demo.\n\n🏫 Giảng viên hướng dẫn:\n• Dữ liệu có thể được xem xét trong quá trình chấm điểm.\n\n🔒 Dữ liệu KHÔNG được sử dụng cho mục đích thương mại.\n\n⚠️ Lưu ý: Đây là ứng dụng demo, không nên nhập thông tin nhạy cảm thực sự."
                 android:textColor="#424242"
                 android:textSize="14sp"
                 android:lineSpacingExtra="4dp"
@@ -167,7 +169,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="• Dữ liệu được lưu trữ trên máy chủ tại Việt Nam.\n• Thông tin tài khoản được giữ trong suốt thời gian sử dụng.\n• Lịch sử chuyến đi được lưu trong 3 năm.\n• Khi xóa tài khoản, dữ liệu sẽ được xóa trong vòng 30 ngày.\n• Một số thông tin có thể được giữ lại theo yêu cầu pháp lý."
+                android:text="• Dữ liệu được lưu trữ trên Firebase (Google Cloud).\n• Thông tin tài khoản được giữ trong thời gian demo và học tập.\n• Dữ liệu có thể được xóa sau khi kết thúc môn học.\n• Bạn có thể yêu cầu xóa tài khoản bất cứ lúc nào.\n• Đây là môi trường thử nghiệm, không phải hệ thống production."
                 android:textColor="#424242"
                 android:textSize="14sp"
                 android:lineSpacingExtra="4dp"
@@ -262,7 +264,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Nếu bạn có câu hỏi về chính sách bảo mật hoặc muốn thực hiện quyền của mình, vui lòng liên hệ:\n\n📧 Email bảo mật: privacy@ridego.vn\n📧 Email hỗ trợ: hotro@ridego.vn\n📞 Hotline: 1900 1234 (8:00 - 22:00)\n🏢 Địa chỉ: Tầng 10, Tòa nhà ABC, Quận 1, TP. Hồ Chí Minh\n\nChúng tôi sẽ phản hồi trong vòng 15 ngày làm việc."
+                android:text="Nếu bạn có câu hỏi về chính sách bảo mật, vui lòng liên hệ:\n\n📧 Email: ridego.hcmus@gmail.com\n🏫 Trường Đại học Khoa học Tự nhiên - ĐHQG TP.HCM\n📍 Địa chỉ: 227 Nguyễn Văn Cừ, Phường 4, Quận 5, TP. Hồ Chí Minh\n\nNhóm phát triển sẽ phản hồi trong thời gian sớm nhất."
                 android:textColor="#424242"
                 android:textSize="14sp"
                 android:lineSpacingExtra="4dp"
@@ -272,13 +274,13 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="© 2026 RideGo. Bảo vệ quyền riêng tư của bạn là ưu tiên hàng đầu của chúng tôi."
+                android:text="© 2025 RideGo - Đồ án NMCNPM\nTrường Đại học Khoa học Tự nhiên - ĐHQG TP.HCM"
                 android:textColor="#9E9E9E"
                 android:textSize="12sp"
                 android:gravity="center"
                 android:layout_marginBottom="20dp" />
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -419,6 +419,22 @@ class SecurityPrivacyActivity : AppCompatActivity() {
     private fun confirmDeleteAccount() {
         val user = auth.currentUser ?: return
         
+        // Kiểm tra xem user có email hay không
+        val userEmail = user.email
+        val userPhone = user.phoneNumber
+        
+        if (!userEmail.isNullOrEmpty()) {
+            // Có email -> Xác thực bằng mật khẩu
+            showPasswordConfirmDialog(user, userEmail)
+        } else if (!userPhone.isNullOrEmpty()) {
+            // Chỉ có SĐT -> Xác thực bằng OTP
+            showPhoneVerificationDialog(user, userPhone)
+        } else {
+            Toast.makeText(this, "Không thể xác thực tài khoản", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    private fun showPasswordConfirmDialog(user: com.google.firebase.auth.FirebaseUser, email: String) {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(50, 40, 50, 10)
@@ -442,7 +458,7 @@ class SecurityPrivacyActivity : AppCompatActivity() {
                     return@setPositiveButton
                 }
                 
-                val credential = EmailAuthProvider.getCredential(user.email ?: "", password)
+                val credential = EmailAuthProvider.getCredential(email, password)
                 user.reauthenticate(credential)
                     .addOnSuccessListener {
                         deleteAccount()
@@ -450,6 +466,96 @@ class SecurityPrivacyActivity : AppCompatActivity() {
                     .addOnFailureListener {
                         Toast.makeText(this, "Mật khẩu không chính xác!", Toast.LENGTH_SHORT).show()
                     }
+            }
+            .setNegativeButton("Hủy", null)
+            .show()
+    }
+    
+    private var storedVerificationId: String? = null
+    private var pendingDeleteUser: com.google.firebase.auth.FirebaseUser? = null
+    
+    private fun showPhoneVerificationDialog(user: com.google.firebase.auth.FirebaseUser, phoneNumber: String) {
+        pendingDeleteUser = user
+        
+        val progressDialog = ProgressDialog(this).apply {
+            setMessage("Đang gửi mã OTP đến $phoneNumber...")
+            setCancelable(false)
+            show()
+        }
+        
+        val options = com.google.firebase.auth.PhoneAuthOptions.newBuilder(auth)
+            .setPhoneNumber(phoneNumber)
+            .setTimeout(60L, java.util.concurrent.TimeUnit.SECONDS)
+            .setActivity(this)
+            .setCallbacks(object : com.google.firebase.auth.PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+                override fun onVerificationCompleted(credential: com.google.firebase.auth.PhoneAuthCredential) {
+                    progressDialog.dismiss()
+                    // Tự động xác thực thành công
+                    user.reauthenticate(credential)
+                        .addOnSuccessListener {
+                            deleteAccount()
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(this@SecurityPrivacyActivity, "Lỗi xác thực: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                }
+                
+                override fun onVerificationFailed(e: com.google.firebase.FirebaseException) {
+                    progressDialog.dismiss()
+                    Toast.makeText(this@SecurityPrivacyActivity, "Lỗi gửi OTP: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+                
+                override fun onCodeSent(verificationId: String, token: com.google.firebase.auth.PhoneAuthProvider.ForceResendingToken) {
+                    progressDialog.dismiss()
+                    storedVerificationId = verificationId
+                    showOtpInputDialog()
+                }
+            })
+            .build()
+        
+        com.google.firebase.auth.PhoneAuthProvider.verifyPhoneNumber(options)
+    }
+    
+    private fun showOtpInputDialog() {
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(50, 40, 50, 10)
+        }
+        
+        val otpInput = EditText(this).apply {
+            hint = "Nhập mã OTP 6 số"
+            inputType = InputType.TYPE_CLASS_NUMBER
+            maxLines = 1
+        }
+        layout.addView(otpInput)
+        
+        AlertDialog.Builder(this)
+            .setTitle("Xác nhận xóa tài khoản")
+            .setMessage("Nhập mã OTP đã gửi đến số điện thoại của bạn để xác nhận xóa tài khoản vĩnh viễn")
+            .setView(layout)
+            .setPositiveButton("Xóa vĩnh viễn") { _, _ ->
+                val otp = otpInput.text.toString()
+                
+                if (otp.isEmpty() || otp.length != 6) {
+                    Toast.makeText(this, "Vui lòng nhập mã OTP 6 số", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                val verificationId = storedVerificationId
+                val user = pendingDeleteUser
+                
+                if (verificationId != null && user != null) {
+                    val credential = com.google.firebase.auth.PhoneAuthProvider.getCredential(verificationId, otp)
+                    user.reauthenticate(credential)
+                        .addOnSuccessListener {
+                            deleteAccount()
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(this, "Mã OTP không chính xác!", Toast.LENGTH_SHORT).show()
+                        }
+                } else {
+                    Toast.makeText(this, "Lỗi xác thực, vui lòng thử lại", Toast.LENGTH_SHORT).show()
+                }
             }
             .setNegativeButton("Hủy", null)
             .show()

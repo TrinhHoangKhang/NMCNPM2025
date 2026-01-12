@@ -2,9 +2,11 @@ package com.example.ridego.ui.profile
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.bumptech.glide.Glide
 import com.example.ridego.R
 import com.example.ridego.databinding.ActivityProfileBinding
 import com.example.ridego.databinding.ItemProfileOptionRowBinding
@@ -46,6 +48,10 @@ class ProfileActivity : AppCompatActivity() {
         }
         
         setupOption(binding.optHelp, "Trợ giúp & Hỗ trợ", R.drawable.ic_help_icon)
+        binding.optHelp.root.setOnClickListener {
+            val intent = Intent(this, SupportActivity::class.java)
+            startActivity(intent)
+        }
 
         setupOption(binding.optRate, "Đánh giá ứng dụng", R.drawable.ic_star_outline)
         setupOption(binding.optShare, "Giới thiệu bạn bè", R.drawable.ic_share_icon, "Nhận 50k")
@@ -56,6 +62,12 @@ class ProfileActivity : AppCompatActivity() {
         binding.btnLogout.setOnClickListener {
             showLogoutDialog()
         }
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Reload thông tin user khi quay lại (sau khi đổi ảnh đại diện)
+        loadUserInfo()
     }
 
     private fun loadUserInfo() {
@@ -84,6 +96,20 @@ class ProfileActivity : AppCompatActivity() {
                                 
                                 // Hiển thị chữ cái đầu làm avatar
                                 binding.tvUserAvatar.text = name.first().uppercase()
+                                
+                                // Load ảnh đại diện từ Supabase nếu có
+                                val avatarUrl = document.getString("avatarUrl")
+                                if (!avatarUrl.isNullOrEmpty()) {
+                                    binding.cardUserAvatar.visibility = View.VISIBLE
+                                    binding.tvUserAvatar.visibility = View.GONE
+                                    Glide.with(this@ProfileActivity)
+                                        .load(avatarUrl)
+                                        .circleCrop()
+                                        .into(binding.imgUserAvatar)
+                                } else {
+                                    binding.cardUserAvatar.visibility = View.GONE
+                                    binding.tvUserAvatar.visibility = View.VISIBLE
+                                }
                             } else {
                                 // Fallback: Dùng displayName từ FirebaseAuth
                                 val name = user.displayName ?: "User"

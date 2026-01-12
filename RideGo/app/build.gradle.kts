@@ -92,4 +92,8 @@ dependencies {
 
     // Gson (Thư viện xử lý JSON của Google)
     implementation("com.google.code.gson:gson:2.10.1")
+
+    // Supabase Storage (upload ảnh)
+    implementation("io.github.jan-tennert.supabase:storage-kt:2.0.4")
+    implementation("io.ktor:ktor-client-android:2.3.7")
 }
