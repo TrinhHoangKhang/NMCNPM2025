@@ -1,17 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFFFFF"
-    android:orientation="vertical">
+    android:fitsSystemWindows="true">
 
-    <androidx.cardview.widget.CardView
+    <RelativeLayout
+        android:id="@+id/layoutHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_centerVertical="true"
+            android:src="@drawable/abc_ic_ab_back_material"
+            app:tint="#000000" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Chọn điểm đến"
+            android:textColor="#000000"
+            android:textStyle="bold"
+            android:textSize="18sp"/>
+
+        <LinearLayout
+            android:id="@+id/btnMapSelect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_dialog_map"
+                app:tint="#2196F3"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bản đồ"
+                android:textColor="#2196F3"
+                android:textStyle="bold"
+                android:layout_marginStart="4dp"/>
+        </LinearLayout>
+    </RelativeLayout>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/layoutHeader"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
         app:cardCornerRadius="12dp"
-        app:cardElevation="4dp">
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="#FFFFFF">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -27,17 +77,18 @@
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:src="@drawable/ic_target_circle"
-                    app:tint="#4CAF50"/> <TextView
-                android:id="@+id/tvPickupLocation"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:background="@drawable/bg_input_gray"
-                android:padding="10dp"
-                android:text="Đang tải vị trí..."
-                android:textColor="#555555"
-                android:textSize="14sp"
-                android:singleLine="true"/>
+                    app:tint="#4CAF50"/>
+                <TextView
+                    android:id="@+id/tvPickupLocation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_input_gray"
+                    android:padding="10dp"
+                    android:text="Đang tải vị trí..."
+                    android:textColor="#555555"
+                    android:textSize="14sp"
+                    android:singleLine="true"/>
             </LinearLayout>
 
             <View
@@ -54,35 +105,56 @@
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:src="@drawable/ic_location_pin"
-                    app:tint="#F44336"/> <EditText
-                android:id="@+id/edtDestination"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:background="@drawable/bg_input_gray"
-                android:padding="10dp"
-                android:hint="Nhập điểm đến (ví dụ: Sân bay...)"
-                android:textColor="#000000"
-                android:textSize="14sp"
-                android:inputType="text"
-                android:maxLines="1"
-                android:imeOptions="actionDone"/>
+                    app:tint="#F44336"/>
+                <EditText
+                    android:id="@+id/edtDestination"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_input_gray"
+                    android:padding="10dp"
+                    android:hint="Nhập điểm đến..."
+                    android:textColorHint="#999999"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:imeOptions="actionDone"/>
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
+    <Button
+        android:id="@+id/btnConfirmSelection"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        android:text="Xác nhận điểm đến"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:enabled="false"
+
+        android:background="@drawable/bg_button_gradient"
+        app:backgroundTint="@null" />
     <TextView
+        android:id="@+id/tvLabelSuggestion"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/cardInput"
         android:paddingHorizontal="16dp"
         android:text="Gợi ý gần bạn"
         android:textStyle="bold"
-        android:textColor="#757575"/>
+        android:textColor="#757575"
+        />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerSearchResults"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="8dp"/>
+        android:layout_below="@id/tvLabelSuggestion"
+        android:layout_above="@id/btnConfirmSelection"
+        android:layout_marginTop="8dp"
+        />
 
-</LinearLayout>
+</RelativeLayout>

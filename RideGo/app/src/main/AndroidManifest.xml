@@ -82,6 +82,9 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity android:name=".ui.booking.FindingDriverActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

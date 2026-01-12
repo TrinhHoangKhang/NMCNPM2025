@@ -14,7 +14,7 @@ interface RideGoApiService {
     @POST("api/maps/calculate-route")
     fun calculateRoute(@Body request: RouteRequest): Call<RouteResponse>
 
-    @POST("api/trips")
+    @POST("api/trips/request")
     fun createTrip(@Body request: TripRequest): Call<TripResponse>
 }
 

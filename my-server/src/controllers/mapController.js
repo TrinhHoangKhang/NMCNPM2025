@@ -2,7 +2,7 @@ import mapsService from '../services/mapsService.js';
 
 export const calculateRoute = async (req, res) => {
     try {
-        const { origin, destination } = req.body;
+        const { origin, destination, vehicleType } = req.body;
 
         if (!origin || !destination) {
             return res.status(400).json({
@@ -11,7 +11,7 @@ export const calculateRoute = async (req, res) => {
             });
         }
 
-        const routeData = await mapsService.calculateRoute(origin, destination);
+        const routeData = await mapsService.calculateRoute(origin, destination, vehicleType);
 
         res.status(200).json({
             success: true,
@@ -19,6 +19,7 @@ export const calculateRoute = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("Controller Error:", error);
         res.status(500).json({
             success: false,
             error: error.message

@@ -1,32 +1,15 @@
 package com.example.ridego.data.model
 
-data class RouteRequest(
-    val origin: String,
-    val destination: String
-)
+import com.google.gson.annotations.SerializedName
 
-data class RouteResponse(
-    val success: Boolean,
-    val data: RouteData?
-)
-
-data class RouteData(
-    val distance: ValueText,
-    val duration: ValueText
-)
-
-data class ValueText(
-    val text: String,
-    val value: Int
-)
-
+// --- REQUEST (Gửi đi) ---
 data class TripRequest(
-    val riderId: String,      // ID của người đặt (Lấy từ Firebase Auth)
-    val pickup: LocationData, // Điểm đón
-    val dropoff: LocationData,// Điểm đến
-    val vehicleType: String,  // Loại xe: "RideGo Bike", "RideGo Car"...
-    val distance: Double,     // Khoảng cách (km)
-    val fare: Double          // Giá tiền (đ)
+    @SerializedName("pickupLocation") val pickupLocation: LocationData,
+    @SerializedName("dropoffLocation") val dropoffLocation: LocationData,
+    @SerializedName("vehicleType") val vehicleType: String,
+    @SerializedName("paymentMethod") val paymentMethod: String,
+    val distance: Double,
+    val fare: Double
 )
 
 data class LocationData(
@@ -35,9 +18,47 @@ data class LocationData(
     val lng: Double
 )
 
-// Server trả về kết quả tạo chuyến thành công
+// --- RESPONSE (Nhận về - ĐÃ SỬA ĐỂ BẮT MỌI TRƯỜNG HỢP) ---
 data class TripResponse(
+    val success: Boolean?,
+    val message: String?,
+
+    // Trường hợp 1: ID nằm ngay ngoài (Root)
+    @SerializedName("tripId") val rootTripId: String?,
+    @SerializedName("_id") val rootMongoId: String?,
+    @SerializedName("id") val rootSimpleId: String?,
+
+    // Trường hợp 2: ID nằm trong object "data" (Khả năng cao là cái này)
+    val data: TripDataContainer?
+)
+
+data class TripDataContainer(
+    @SerializedName("tripId") val tripId: String?,
+    @SerializedName("_id") val mongoId: String?,
+    @SerializedName("id") val simpleId: String?,
+    val status: String?
+)
+
+// ... (Các class RouteRequest, RouteResponse... giữ nguyên như cũ)
+data class RouteRequest(
+    val origin: String,
+    val destination: String,
+    val vehicleType: String
+)
+data class RouteResponse(
     val success: Boolean,
-    val tripId: String?,
-    val message: String?
+    val data: RouteData?
+)
+data class RouteData(
+    val distance: ValueText,
+    val duration: ValueText,
+    val geometry: GeometryData?
+)
+data class GeometryData(
+    val type: String,
+    val coordinates: String
+)
+data class ValueText(
+    val text: String,
+    val value: Int
 )

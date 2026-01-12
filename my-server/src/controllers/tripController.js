@@ -99,7 +99,7 @@ class TripController {
                     } catch (err) {
                         console.error("Timeout check failed:", err.message);
                     }
-                }, 60000); // 1 minute
+                }, 100000); // 1 minute
             }
         } catch (error) {
             console.error("Trip request error:", error);
