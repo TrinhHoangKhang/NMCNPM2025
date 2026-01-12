@@ -48,6 +48,10 @@ class ProfileActivity : AppCompatActivity() {
         }
         
         setupOption(binding.optHelp, "Trợ giúp & Hỗ trợ", R.drawable.ic_help_icon)
+        binding.optHelp.root.setOnClickListener {
+            val intent = Intent(this, SupportActivity::class.java)
+            startActivity(intent)
+        }
 
         setupOption(binding.optRate, "Đánh giá ứng dụng", R.drawable.ic_star_outline)
         setupOption(binding.optShare, "Giới thiệu bạn bè", R.drawable.ic_share_icon, "Nhận 50k")
