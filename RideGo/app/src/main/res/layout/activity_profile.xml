@@ -292,6 +292,8 @@
                         android:layout_height="56dp"
                         android:gravity="center_vertical"
                         android:paddingHorizontal="16dp"
+                        android:clickable="true"
+                        android:focusable="true"
                         android:background="?attr/selectableItemBackground">
 
                         <ImageView
@@ -358,6 +360,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginTop="24dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="@color/white">

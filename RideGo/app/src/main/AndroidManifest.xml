@@ -7,6 +7,9 @@
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
     <application
         android:allowBackup="true"
@@ -74,10 +77,32 @@
             android:windowSoftInputMode="adjustResize"/>
 
         <activity
+            android:name=".ui.profile.SecurityPrivacyActivity"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ui.profile.DeviceManagementActivity"
+            android:exported="false"/>
+
+        <activity
             android:name=".ui.booking.BookingActivity"
             android:exported="false"/>
 
         <activity
+            android:name=".ui.common.WebViewActivity"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ui.legal.TermsActivity"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ui.legal.PrivacyPolicyActivity"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ui.profile.ReferralActivity"
+            android:exported="false"/>
             android:name=".ui.rider.location.SearchDestinationActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
