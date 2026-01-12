@@ -9,6 +9,7 @@ import com.example.ridego.R
 import com.example.ridego.databinding.ActivityProfileBinding
 import com.example.ridego.databinding.ItemProfileOptionRowBinding
 import com.example.ridego.ui.auth.LoginActivity
+import com.example.ridego.utils.DeviceSessionManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -48,6 +49,9 @@ class ProfileActivity : AppCompatActivity() {
 
         setupOption(binding.optRate, "Đánh giá ứng dụng", R.drawable.ic_star_outline)
         setupOption(binding.optShare, "Giới thiệu bạn bè", R.drawable.ic_share_icon, "Nhận 50k")
+        binding.optShare.root.setOnClickListener {
+            startActivity(Intent(this, ReferralActivity::class.java))
+        }
 
         binding.btnLogout.setOnClickListener {
             showLogoutDialog()
@@ -124,14 +128,17 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun logout() {
-        auth.signOut()
-        Toast.makeText(this, "Đã đăng xuất", Toast.LENGTH_SHORT).show()
-        
-        // Chuyển về màn hình login và xóa stack
-        val intent = Intent(this, LoginActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-        finish()
+        // Xóa session của thiết bị hiện tại trước khi đăng xuất
+        DeviceSessionManager.removeCurrentDevice(this) {
+            auth.signOut()
+            Toast.makeText(this, "Đã đăng xuất", Toast.LENGTH_SHORT).show()
+            
+            // Chuyển về màn hình login và xóa stack
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        }
     }
 
     // --- ĐÃ SỬA HÀM NÀY ---
