@@ -1,6 +1,6 @@
 # Server Status Report
 
-This document lists the current features, known issues, and test coverage for the Backend Server (`my-server`).
+This document lists the current features, known issues, and test coverage for the Backend Server (`server`).
 
 ## 1. Features
 

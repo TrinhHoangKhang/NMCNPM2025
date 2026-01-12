@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     id("com.google.gms.google-services")
+    id("kotlin-kapt")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -67,10 +69,27 @@ dependencies {
     // hỗ trợ dùng Tasks.await() với Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.1.1")
     implementation("com.squareup.picasso:picasso:2.8")
-    
+
     // Glide for image loading
     implementation("com.github.bumptech.glide:glide:4.16.0")
-    
+
     // CardView
     implementation("androidx.cardview:cardview:1.0.0")
+
+    // Map
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.android.libraries.places:places:3.3.0")
+
+    implementation("com.google.dagger:hilt-android:2.48")
+    kapt("com.google.dagger:hilt-compiler:2.48")
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Để tự đổi JSON sang Object
+
+    // 2. SOCKET.IO (Để nhận thông báo Real-time)
+    implementation("io.socket:socket.io-client:2.1.0")
+
+    // Gson (Thư viện xử lý JSON của Google)
+    implementation("com.google.code.gson:gson:2.10.1")
 }
