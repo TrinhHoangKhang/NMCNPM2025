@@ -10,40 +10,31 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.ridego.R
 import com.example.ridego.databinding.ActivityBookingBinding
 import com.example.ridego.ui.rider.location.SetLocationActivity
+import com.example.ridego.data.api.RetrofitClient
+import com.example.ridego.data.model.*
+import com.example.ridego.data.socket.SocketManager
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import java.net.URL
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.text.DecimalFormat
 
 class BookingActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityBookingBinding
-    private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    // 1. Biến lưu dữ liệu chuyến đi
+    // Biến lưu dữ liệu chuyến đi
     private var pickupLat = 0.0
     private var pickupLng = 0.0
     private var dropoffLat = 0.0
     private var dropoffLng = 0.0
     private var pickupAddress = ""
     private var dropoffAddress = ""
-
-    // 2. Biến tính toán
     private var currentDistanceKm = 0.0
-    private var selectedVehicleType = "RideGo Bike" // Mặc định là xe máy
+    private var selectedVehicleType = "RideGo Bike"
     private var finalPrice = 0.0
 
-    // --- QUAN TRỌNG: DÁN KEY MỚI (CỦA PROJECT RIDEGO CÓ BILLING) VÀO ĐÂY ---
-    private val DIRECTIONS_API_KEY by lazy { getString(R.string.google_directions_key) }
-
-    // Mã Request Code để nhận kết quả từ Map
     private val REQUEST_PICKUP = 100
     private val REQUEST_DROPOFF = 101
 
@@ -52,71 +43,201 @@ class BookingActivity : AppCompatActivity() {
         binding = ActivityBookingBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Hứng dữ liệu từ màn hình Home gửi sang
+        // 1. KẾT NỐI SOCKET NGAY KHI VÀO MÀN HÌNH
+        SocketManager.connect()
+        setupSocketListeners()
+
+        // Nhận dữ liệu từ màn hình tìm kiếm (nếu có)
         val initialAddress = intent.getStringExtra("PICKUP_ADDRESS")
         val initialLat = intent.getDoubleExtra("PICKUP_LAT", 0.0)
         val initialLng = intent.getDoubleExtra("PICKUP_LNG", 0.0)
 
+        // Nhận điểm đến (nếu từ màn hình SearchDestination chuyển qua)
+        val dropName = intent.getStringExtra("DROPOFF_NAME")
+        val dropAddr = intent.getStringExtra("DROPOFF_ADDRESS")
+        val dropLat = intent.getDoubleExtra("DROPOFF_LAT", 0.0)
+        val dropLng = intent.getDoubleExtra("DROPOFF_LNG", 0.0)
+
         if (initialAddress != null && initialLat != 0.0) {
-            // Lưu vào biến logic
             pickupAddress = initialAddress
             pickupLat = initialLat
             pickupLng = initialLng
-
-            // Cập nhật lên giao diện ngay lập tức
             binding.tvPickupAddress.text = pickupAddress
-            binding.tvPickupAddress.setTextColor(Color.BLACK)
+        }
+
+        if (dropLat != 0.0 && dropLng != 0.0) {
+            dropoffLat = dropLat
+            dropoffLng = dropLng
+            dropoffAddress = dropName ?: dropAddr ?: "Điểm đến đã chọn"
+            binding.tvDropoffAddress.text = dropoffAddress
+
+            // Nếu có đủ 2 điểm -> Gọi Server tính tiền ngay
+            calculateRouteViaServer()
         }
 
         setupUI()
-        updateVehicleSelectionUI() // Cập nhật giao diện chọn xe ban đầu
+        updateVehicleSelectionUI()
+    }
+
+    private fun setupSocketListeners() {
+        // Lắng nghe sự kiện: Tài xế nhận chuyến
+        SocketManager.onTripAccepted { data ->
+            runOnUiThread {
+                // Server báo về: { "driverId": "...", "tripId": "..." }
+                val driverId = data.optString("driverId")
+                Toast.makeText(this, "Tài xế đã nhận chuyến! ID: $driverId", Toast.LENGTH_LONG).show()
+
+                // TODO: Chuyển sang màn hình "Đang đón" (TripStatusActivity)
+                // val intent = Intent(this, TripStatusActivity::class.java)
+                // startActivity(intent)
+                finish()
+            }
+        }
     }
 
     private fun setupUI() {
         binding.btnBack.setOnClickListener { finish() }
 
-        // --- BẤM VÀO ĐIỂM ĐÓN -> MỞ MAP (Mode 1) ---
+        // Chọn điểm đón
         binding.layoutPickup.setOnClickListener {
-            val intent = Intent(this, SetLocationActivity::class.java)
-            // SỬA QUAN TRỌNG: Để false để nó biết trả kết quả về
-            intent.putExtra("IS_BOOKING_FLOW", false)
-            intent.putExtra("LOCATION_TYPE", 1) // 1 = Điểm đón
-            startActivityForResult(intent, REQUEST_PICKUP)
+            openMap(REQUEST_PICKUP, 1)
         }
 
-        // --- BẤM VÀO ĐIỂM ĐẾN -> MỞ MAP (Mode 2) ---
+        // Chọn điểm đến
         binding.layoutDropoff.setOnClickListener {
-            val intent = Intent(this, SetLocationActivity::class.java)
-            // SỬA QUAN TRỌNG: Để false
-            intent.putExtra("IS_BOOKING_FLOW", false)
-            intent.putExtra("LOCATION_TYPE", 2) // 2 = Điểm đến
-            startActivityForResult(intent, REQUEST_DROPOFF)
+            openMap(REQUEST_DROPOFF, 2)
         }
 
-        // --- CHỌN LOẠI XE ---
-        binding.layoutBike.setOnClickListener {
-            selectedVehicleType = "RideGo Bike"
+        // Chọn loại xe
+        val vehicleListener = { type: String ->
+            selectedVehicleType = type
             updateVehicleSelectionUI()
-            calculatePrice()
+            // Tính lại giá nếu đã có khoảng cách
+            if (currentDistanceKm > 0) calculatePriceLocally()
         }
-        binding.layoutCar.setOnClickListener {
-            selectedVehicleType = "RideGo Car"
-            updateVehicleSelectionUI()
-            calculatePrice()
-        }
-        binding.layoutPremium.setOnClickListener {
-            selectedVehicleType = "RideGo Premium"
-            updateVehicleSelectionUI()
-            calculatePrice()
-        }
+        binding.layoutBike.setOnClickListener { vehicleListener("RideGo Bike") }
+        binding.layoutCar.setOnClickListener { vehicleListener("RideGo Car") }
+        binding.layoutPremium.setOnClickListener { vehicleListener("RideGo Premium") }
 
-        // --- NÚT ĐẶT XE ---
+        // Nút ĐẶT XE -> Gọi Server
         binding.btnConfirmBooking.setOnClickListener {
-            createBookingInFirebase()
+            createBookingViaServer()
         }
     }
 
-    // --- NHẬN KẾT QUẢ TỪ BẢN ĐỒ ---
+    private fun openMap(requestCode: Int, type: Int) {
+        val intent = Intent(this, SetLocationActivity::class.java)
+        intent.putExtra("IS_BOOKING_FLOW", false)
+        intent.putExtra("LOCATION_TYPE", type)
+        startActivityForResult(intent, requestCode)
+    }
+
+    // --- GỌI API TÍNH ĐƯỜNG (Thay thế Google API cũ) ---
+    private fun calculateRouteViaServer() {
+        if (pickupLat == 0.0 || dropoffLat == 0.0) return
+
+        binding.tvDistance.text = "Đang tính toán..."
+
+        // Chuẩn bị dữ liệu: "lat,lng"
+        val request = RouteRequest(
+            origin = "$pickupLat,$pickupLng",
+            destination = "$dropoffLat,$dropoffLng"
+        )
+
+        // Gọi Retrofit
+        RetrofitClient.instance.calculateRoute(request).enqueue(object : Callback<RouteResponse> {
+            override fun onResponse(call: Call<RouteResponse>, response: Response<RouteResponse>) {
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val data = response.body()!!.data
+                    if (data != null) {
+                        // Server trả về: { distance: { text: "15 km", value: 15000 } }
+                        currentDistanceKm = data.distance.value / 1000.0
+                        val duration = data.duration.text
+
+                        binding.tvDistance.text = "${data.distance.text} • $duration"
+                        calculatePriceLocally() // Tính giá hiển thị
+                    }
+                } else {
+                    binding.tvDistance.text = "Không tìm thấy đường"
+                }
+            }
+
+            override fun onFailure(call: Call<RouteResponse>, t: Throwable) {
+                binding.tvDistance.text = "Lỗi kết nối Server"
+                Log.e("API_ERROR", t.message.toString())
+            }
+        })
+    }
+
+    // Tính giá tạm thời trên App (để hiển thị nhanh)
+    // Giá chính thức sẽ do Server chốt khi tạo Booking
+    private fun calculatePriceLocally() {
+        var baseFare = 0.0
+        var pricePerKm = 0.0
+        when (selectedVehicleType) {
+            "RideGo Bike" -> { baseFare = 12000.0; pricePerKm = 5000.0 }
+            "RideGo Car" -> { baseFare = 25000.0; pricePerKm = 12000.0 }
+            "RideGo Premium" -> { baseFare = 50000.0; pricePerKm = 20000.0 }
+        }
+        finalPrice = baseFare + (currentDistanceKm * pricePerKm)
+
+        val formatter = DecimalFormat("#,###")
+        binding.tvTotalPrice.text = "${formatter.format(finalPrice)}đ"
+        binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(finalPrice)}đ"
+
+        // Update các dòng xe khác
+        binding.tvPriceBike.text = "${formatter.format(12000 + currentDistanceKm * 5000)}đ"
+        binding.tvPriceCar.text = "${formatter.format(25000 + currentDistanceKm * 12000)}đ"
+        binding.tvPricePremium.text = "${formatter.format(50000 + currentDistanceKm * 20000)}đ"
+    }
+
+    // --- GỌI API ĐẶT XE (Thay thế Firebase Direct Write) ---
+    private fun createBookingViaServer() {
+        val user = auth.currentUser
+        if (user == null) {
+            Toast.makeText(this, "Vui lòng đăng nhập lại!", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (pickupLat == 0.0 || dropoffLat == 0.0) {
+            Toast.makeText(this, "Chưa chọn đủ địa điểm!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        binding.btnConfirmBooking.text = "Đang tìm tài xế..."
+        binding.btnConfirmBooking.isEnabled = false
+
+        // Đóng gói dữ liệu gửi lên Server
+        val bookingRequest = TripRequest(
+            riderId = user.uid,
+            pickup = LocationData(pickupAddress, pickupLat, pickupLng),
+            dropoff = LocationData(dropoffAddress, dropoffLat, dropoffLng),
+            vehicleType = selectedVehicleType,
+            distance = currentDistanceKm,
+            fare = finalPrice
+        )
+
+        // Gọi API
+        RetrofitClient.instance.createTrip(bookingRequest).enqueue(object : Callback<TripResponse> {
+            override fun onResponse(call: Call<TripResponse>, response: Response<TripResponse>) {
+                if (response.isSuccessful) {
+                    // Đặt thành công -> Chờ Socket báo tin
+                    Toast.makeText(this@BookingActivity, "Đang tìm tài xế gần bạn...", Toast.LENGTH_LONG).show()
+                    // Không finish() ngay, đợi Socket hoặc timeout
+                } else {
+                    binding.btnConfirmBooking.isEnabled = true
+                    binding.btnConfirmBooking.text = "Thử lại"
+                    Toast.makeText(this@BookingActivity, "Lỗi đặt xe: ${response.code()}", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<TripResponse>, t: Throwable) {
+                binding.btnConfirmBooking.isEnabled = true
+                binding.btnConfirmBooking.text = "Thử lại"
+                Toast.makeText(this@BookingActivity, "Lỗi mạng: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK && data != null) {
@@ -125,167 +246,31 @@ class BookingActivity : AppCompatActivity() {
             val lng = data.getDoubleExtra("SELECTED_LNG", 0.0)
 
             if (requestCode == REQUEST_PICKUP) {
-                binding.tvPickupAddress.text = address
                 pickupAddress = address
                 pickupLat = lat
                 pickupLng = lng
+                binding.tvPickupAddress.text = address
             } else if (requestCode == REQUEST_DROPOFF) {
-                binding.tvDropoffAddress.text = address
                 dropoffAddress = address
                 dropoffLat = lat
                 dropoffLng = lng
+                binding.tvDropoffAddress.text = address
             }
-
-            // Nếu đã có cả 2 điểm -> Gọi Google API tính đường
-            if (pickupLat != 0.0 && dropoffLat != 0.0) {
-                calculateRouteFromGoogle(pickupLat, pickupLng, dropoffLat, dropoffLng)
-            }
+            // Gọi lại Server tính đường nếu đủ 2 điểm
+            calculateRouteViaServer()
         }
     }
 
-    // --- GỌI GOOGLE DIRECTIONS API (PHIÊN BẢN CHECK LỖI) ---
-    private fun calculateRouteFromGoogle(startLat: Double, startLng: Double, endLat: Double, endLng: Double) {
-        val url = "https://maps.googleapis.com/maps/api/directions/json?origin=$startLat,$startLng&destination=$endLat,$endLng&key=$DIRECTIONS_API_KEY"
-
-        binding.tvDistance.text = "Đang tính..."
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val jsonStr = URL(url).readText()
-                val json = JSONObject(jsonStr)
-
-                // Kiểm tra trạng thái trả về
-                val status = json.getString("status")
-
-                if (status == "OK") {
-                    // --- THÀNH CÔNG ---
-                    val routes = json.getJSONArray("routes")
-                    if (routes.length() > 0) {
-                        val legs = routes.getJSONObject(0).getJSONArray("legs").getJSONObject(0)
-                        val distanceMeters = legs.getJSONObject("distance").getInt("value")
-                        val durationText = legs.getJSONObject("duration").getString("text")
-
-                        currentDistanceKm = distanceMeters / 1000.0
-
-                        withContext(Dispatchers.Main) {
-                            binding.tvDistance.text = "${String.format("%.1f", currentDistanceKm)} km • $durationText"
-                            calculatePrice() // Tính tiền
-                        }
-                    }
-                } else {
-                    // --- CÓ LỖI TỪ GOOGLE (VÍ DỤ: BILLING, KEY SAI) ---
-                    val errorMsg = if (json.has("error_message")) json.getString("error_message") else ""
-                    withContext(Dispatchers.Main) {
-                        binding.tvDistance.text = "Lỗi: $status"
-                        Toast.makeText(this@BookingActivity, "Google Error: $status\n$errorMsg", Toast.LENGTH_LONG).show()
-                        Log.e("RIDEGO_API", "Error: $status - $errorMsg")
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                withContext(Dispatchers.Main) {
-                    binding.tvDistance.text = "Lỗi mạng"
-                    Toast.makeText(this@BookingActivity, "Lỗi kết nối: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+        SocketManager.disconnect() // Ngắt kết nối khi thoát
     }
 
-    // --- THUẬT TOÁN TÍNH TIỀN ---
-    private fun calculatePrice() {
-        if (currentDistanceKm == 0.0) return
-
-        var baseFare = 0.0
-        var pricePerKm = 0.0
-
-        // Bảng giá
-        when (selectedVehicleType) {
-            "RideGo Bike" -> {
-                baseFare = 12000.0
-                pricePerKm = 5000.0
-            }
-            "RideGo Car" -> {
-                baseFare = 25000.0
-                pricePerKm = 12000.0
-            }
-            "RideGo Premium" -> {
-                baseFare = 50000.0
-                pricePerKm = 20000.0
-            }
-        }
-
-        // Công thức: Giá gốc + (Số Km * Giá mỗi km)
-        finalPrice = baseFare + (currentDistanceKm * pricePerKm)
-
-        // Cập nhật UI
-        val formatter = DecimalFormat("#,###")
-        binding.tvTotalPrice.text = "${formatter.format(finalPrice)}đ"
-        binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(finalPrice)}đ"
-
-        // Cập nhật giá ước tính cho từng loại xe
-        binding.tvPriceBike.text = "${formatter.format(12000 + currentDistanceKm * 5000)}đ"
-        binding.tvPriceCar.text = "${formatter.format(25000 + currentDistanceKm * 12000)}đ"
-        binding.tvPricePremium.text = "${formatter.format(50000 + currentDistanceKm * 20000)}đ"
-    }
-
-    // --- ĐẨY LÊN FIREBASE ---
-    private fun createBookingInFirebase() {
-        val user = auth.currentUser
-        if (user == null) return
-
-        if (pickupLat == 0.0 || dropoffLat == 0.0) {
-            Toast.makeText(this, "Vui lòng chọn đủ điểm đón và điểm đến!", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        binding.btnConfirmBooking.isEnabled = false
-        binding.btnConfirmBooking.text = "Đang tìm tài xế..."
-
-        val tripData = hashMapOf(
-            "riderId" to user.uid,
-            "driverId" to "", // Chưa có tài xế
-            "status" to "SEARCHING", // Trạng thái tìm xe
-            "createdAt" to FieldValue.serverTimestamp(),
-            "pickup" to hashMapOf(
-                "address" to pickupAddress,
-                "lat" to pickupLat,
-                "lng" to pickupLng
-            ),
-            "dropoff" to hashMapOf(
-                "address" to dropoffAddress,
-                "lat" to dropoffLat,
-                "lng" to dropoffLng
-            ),
-            "vehicleType" to selectedVehicleType,
-            "distance" to currentDistanceKm,
-            "fare" to finalPrice,
-            "paymentMethod" to "CASH",
-            "note" to binding.edtNote.text.toString()
-        )
-
-        db.collection("trips").add(tripData)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Đã gửi yêu cầu!", Toast.LENGTH_SHORT).show()
-                // Chuyển màn hình ở đây
-                // val intent = Intent(this, FindingDriverActivity::class.java)
-                // intent.putExtra("TRIP_ID", it.id)
-                // startActivity(intent)
-            }
-            .addOnFailureListener {
-                binding.btnConfirmBooking.isEnabled = true
-                binding.btnConfirmBooking.text = "Thử lại"
-                Toast.makeText(this, "Lỗi: ${it.message}", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    // Hàm phụ: Đổi màu nền
     private fun updateVehicleSelectionUI() {
-        // Reset về mặc định
         binding.layoutBike.setBackgroundResource(R.drawable.bg_booking_card)
         binding.layoutCar.setBackgroundResource(R.drawable.bg_booking_card)
         binding.layoutPremium.setBackgroundResource(R.drawable.bg_booking_card)
 
-        // Highlight
         when (selectedVehicleType) {
             "RideGo Bike" -> binding.layoutBike.setBackgroundColor(Color.parseColor("#E3F2FD"))
             "RideGo Car" -> binding.layoutCar.setBackgroundColor(Color.parseColor("#E3F2FD"))

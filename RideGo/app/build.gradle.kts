@@ -82,4 +82,13 @@ dependencies {
 
     implementation("com.google.dagger:hilt-android:2.48")
     kapt("com.google.dagger:hilt-compiler:2.48")
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Để tự đổi JSON sang Object
+
+    // 2. SOCKET.IO (Để nhận thông báo Real-time)
+    implementation("io.socket:socket.io-client:2.1.0")
+
+    // Gson (Thư viện xử lý JSON của Google)
+    implementation("com.google.code.gson:gson:2.10.1")
 }
