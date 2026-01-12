@@ -126,6 +126,12 @@ class LoginActivity : AppCompatActivity() {
             }
         }
     }
+    
+    override fun onResume() {
+        super.onResume()
+        // Enable lại input khi quay về từ màn hình OTP hoặc màn hình khác
+        enablePhoneInput()
+    }
 
     private fun setupEvents() {
         binding.btnContinue.setOnClickListener {

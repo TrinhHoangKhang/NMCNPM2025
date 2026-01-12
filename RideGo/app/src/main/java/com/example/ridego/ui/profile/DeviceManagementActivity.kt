@@ -187,7 +187,15 @@ class DeviceManagementActivity : AppCompatActivity() {
                     }
                     .addOnFailureListener { e ->
                         showLoading(false)
-                        Toast.makeText(this, "Lỗi: ${e.message}", Toast.LENGTH_SHORT).show()
+                        // Xử lý lỗi permission denied
+                        if (e.message?.contains("PERMISSION_DENIED") == true || 
+                            e.message?.contains("Missing or insufficient permissions") == true) {
+                            Toast.makeText(this, "Không có quyền truy cập. Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show()
+                            // Vẫn hiển thị thiết bị hiện tại
+                            updateDeviceList(emptyList())
+                        } else {
+                            Toast.makeText(this, "Lỗi: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
                     }
             }
     }

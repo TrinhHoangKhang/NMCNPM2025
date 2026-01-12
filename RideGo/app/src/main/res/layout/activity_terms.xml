@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="#FFFFFF"
+    android:fitsSystemWindows="true">
 
     <!-- Header -->
     <LinearLayout
@@ -37,10 +38,11 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:fillViewport="true"
+        android:fitsSystemWindows="true"
         app:layout_constraintTop_toBottomOf="@id/header"
         app:layout_constraintBottom_toBottomOf="parent">
 
@@ -72,7 +74,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Chào mừng bạn đến với RideGo - ứng dụng đặt xe công nghệ hàng đầu Việt Nam. Bằng việc sử dụng ứng dụng RideGo, bạn đồng ý tuân thủ các điều khoản và điều kiện được nêu dưới đây. Vui lòng đọc kỹ trước khi sử dụng dịch vụ của chúng tôi."
+                android:text="Chào mừng bạn đến với RideGo - ứng dụng đặt xe được phát triển như một đồ án môn học Nhập môn Công nghệ Phần mềm bởi nhóm 4 sinh viên Trường Đại học Khoa học Tự nhiên - ĐHQG TP.HCM. Bằng việc sử dụng ứng dụng, bạn đồng ý tuân thủ các điều khoản dưới đây."
                 android:textColor="#424242"
                 android:textSize="14sp"
                 android:lineSpacingExtra="4dp"
@@ -91,7 +93,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="• RideGo hoặc Chúng tôi: Công ty TNHH RideGo Việt Nam.\n• Người dùng hoặc Bạn: Cá nhân đăng ký và sử dụng ứng dụng RideGo.\n• Tài xế: Đối tác cung cấp dịch vụ vận chuyển thông qua nền tảng RideGo.\n• Dịch vụ: Tất cả các dịch vụ được cung cấp thông qua ứng dụng RideGo.\n• Chuyến đi: Một lượt sử dụng dịch vụ vận chuyển từ điểm đón đến điểm trả."
+                android:text="• RideGo hoặc Chúng tôi: Nhóm phát triển gồm 4 sinh viên Trường ĐHKHTN - ĐHQG TP.HCM.\n• Người dùng hoặc Bạn: Cá nhân đăng ký và sử dụng ứng dụng RideGo.\n• Tài xế: Người dùng có vai trò cung cấp dịch vụ vận chuyển trong ứng dụng.\n• Dịch vụ: Các tính năng được cung cấp thông qua ứng dụng RideGo.\n• Chuyến đi: Một lượt sử dụng dịch vụ vận chuyển từ điểm đón đến điểm trả."
                 android:textColor="#424242"
                 android:textSize="14sp"
                 android:lineSpacingExtra="4dp"
@@ -205,7 +207,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="• RideGo là nền tảng công nghệ kết nối người dùng với tài xế.\n• Chúng tôi không trực tiếp cung cấp dịch vụ vận chuyển.\n• RideGo không chịu trách nhiệm về hành vi của tài xế ngoài phạm vi dịch vụ.\n• Mọi tranh chấp sẽ được giải quyết theo pháp luật Việt Nam.\n• Bồi thường (nếu có) sẽ không vượt quá giá trị chuyến đi."
+                android:text="• RideGo là đồ án học tập, được phát triển với mục đích nghiên cứu và thực hành.\n• Ứng dụng không hoạt động như dịch vụ vận chuyển thương mại thực tế.\n• Nhóm phát triển không chịu trách nhiệm về bất kỳ thiệt hại nào phát sinh từ việc sử dụng ứng dụng.\n• Dữ liệu trong ứng dụng chỉ phục vụ mục đích demo và học tập."
                 android:textColor="#424242"
                 android:textSize="14sp"
                 android:lineSpacingExtra="4dp"
@@ -224,7 +226,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="• Thương hiệu, logo, giao diện ứng dụng thuộc sở hữu của RideGo.\n• Bạn không được sao chép, phân phối hoặc sử dụng cho mục đích thương mại.\n• Nội dung do người dùng tạo ra vẫn thuộc quyền sở hữu của người dùng.\n• RideGo có quyền sử dụng phản hồi để cải thiện dịch vụ."
+                android:text="• RideGo là sản phẩm đồ án thuộc môn Nhập môn Công nghệ Phần mềm.\n• Mã nguồn và thiết kế thuộc quyền sở hữu của nhóm phát triển và Trường ĐHKHTN.\n• Ứng dụng chỉ được sử dụng cho mục đích học tập và nghiên cứu.\n• Mọi hình thức sao chép để thương mại hóa đều không được phép."
                 android:textColor="#424242"
                 android:textSize="14sp"
                 android:lineSpacingExtra="4dp"
@@ -262,7 +264,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Nếu bạn có bất kỳ câu hỏi nào về Điều khoản sử dụng, vui lòng liên hệ:\n\n📧 Email: hotro@ridego.vn\n📞 Hotline: 1900 1234 (8:00 - 22:00)\n🏢 Địa chỉ: Tầng 10, Tòa nhà ABC, Quận 1, TP. Hồ Chí Minh"
+                android:text="Nếu bạn có bất kỳ câu hỏi nào về ứng dụng, vui lòng liên hệ:\n\n📧 Email: ridego.hcmus@gmail.com\n🏫 Trường Đại học Khoa học Tự nhiên - ĐHQG TP.HCM\n📍 Địa chỉ: 227 Nguyễn Văn Cừ, Phường 4, Quận 5, TP. Hồ Chí Minh"
                 android:textColor="#424242"
                 android:textSize="14sp"
                 android:lineSpacingExtra="4dp"
@@ -272,13 +274,13 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="© 2026 RideGo. Tất cả quyền được bảo lưu."
+                android:text="© 2025 RideGo - Đồ án NMCNPM\nTrường Đại học Khoa học Tự nhiên - ĐHQG TP.HCM"
                 android:textColor="#9E9E9E"
                 android:textSize="12sp"
                 android:gravity="center"
                 android:layout_marginBottom="20dp" />
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

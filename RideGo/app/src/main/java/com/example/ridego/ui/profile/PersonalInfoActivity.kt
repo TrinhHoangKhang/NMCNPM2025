@@ -7,13 +7,21 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Patterns
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
 import com.example.ridego.R
 import com.example.ridego.databinding.ActivityPersonalInfoBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Calendar
 
 class PersonalInfoActivity : AppCompatActivity() {
@@ -22,6 +30,13 @@ class PersonalInfoActivity : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
     private var isEditing = false
     private var is2FAEnabled = false
+    
+    // Supabase config - thay bằng thông tin project của bạn
+    companion object {
+        private const val SUPABASE_URL = "https://idgzqsqkdxvbopelvlon.supabase.co"
+        private const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkZ3pxc3FrZHh2Ym9wZWx2bG9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMjQzODQsImV4cCI6MjA4MzgwMDM4NH0.QJ5zUJNzs5bLe9aFwpnUemdVaSWSWeQP1cq69hbJ9g0"
+        private const val BUCKET_NAME = "RiderAvartar"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,7 +85,15 @@ class PersonalInfoActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK) {
             avatarUri = data?.data
-            // Avatar giờ là TextView hiển thị chữ cái, không cần preview ảnh
+            // Hiển thị preview ảnh đã chọn
+            if (avatarUri != null) {
+                binding.imgAvatar.visibility = View.VISIBLE
+                binding.tvAvatarLetter.visibility = View.GONE
+                Glide.with(this)
+                    .load(avatarUri)
+                    .circleCrop()
+                    .into(binding.imgAvatar)
+            }
         }
     }
 
@@ -102,7 +125,21 @@ class PersonalInfoActivity : AppCompatActivity() {
                             binding.edtPhone.isEnabled = false
                             
                             // Hiển thị chữ cái đầu làm avatar
-                            binding.imgAvatar.text = name.first().uppercase()
+                            binding.tvAvatarLetter.text = name.first().uppercase()
+                            
+                            // Load ảnh đại diện từ Firebase nếu có
+                            val avatarUrl = document.getString("avatarUrl")
+                            if (!avatarUrl.isNullOrEmpty()) {
+                                binding.imgAvatar.visibility = View.VISIBLE
+                                binding.tvAvatarLetter.visibility = View.GONE
+                                Glide.with(this@PersonalInfoActivity)
+                                    .load(avatarUrl)
+                                    .circleCrop()
+                                    .into(binding.imgAvatar)
+                            } else {
+                                binding.imgAvatar.visibility = View.GONE
+                                binding.tvAvatarLetter.visibility = View.VISIBLE
+                            }
                         }
                 }
         }
@@ -305,26 +342,10 @@ class PersonalInfoActivity : AppCompatActivity() {
                     "birthday" to birthday,
                     "gender" to gender
                 )
-                // Nếu có chọn ảnh mới, upload lên Firebase Storage
+                // Nếu có chọn ảnh mới, upload lên Supabase Storage
                 if (avatarUri != null) {
-                    val storageRef = FirebaseStorage.getInstance().reference
-                        .child("avatars/$customUserId.jpg")
-                    storageRef.putFile(avatarUri!!)
-                        .addOnSuccessListener {
-                            storageRef.downloadUrl.addOnSuccessListener { uri ->
-                                updates["avatarUrl"] = uri.toString()
-                                db.collection("users").document(customUserId).update(updates)
-                                    .addOnSuccessListener {
-                                        Toast.makeText(this, "Cập nhật thành công!", Toast.LENGTH_SHORT).show()
-                                    }
-                                    .addOnFailureListener { e ->
-                                        Toast.makeText(this, "Lỗi lưu dữ liệu: ${e.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                            }
-                        }
-                        .addOnFailureListener { e ->
-                            Toast.makeText(this, "Lỗi upload ảnh: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
+                    Toast.makeText(this, "Đang upload ảnh...", Toast.LENGTH_SHORT).show()
+                    uploadToSupabase(customUserId, updates)
                 } else {
                     db.collection("users").document(customUserId).update(updates)
                         .addOnSuccessListener {
@@ -335,5 +356,86 @@ class PersonalInfoActivity : AppCompatActivity() {
                         }
                 }
             }
+    }
+    
+    private fun uploadToSupabase(customUserId: String, updates: HashMap<String, Any>) {
+        lifecycleScope.launch {
+            try {
+                val inputStream = contentResolver.openInputStream(avatarUri!!)
+                val bytes = inputStream?.readBytes()
+                inputStream?.close()
+                
+                if (bytes == null) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@PersonalInfoActivity, "Không thể đọc file ảnh", Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+                
+                val fileName = "$customUserId.jpg"
+                
+                // Upload qua Supabase REST API - dùng upsert endpoint
+                val uploadUrl = "$SUPABASE_URL/storage/v1/object/$BUCKET_NAME/$fileName"
+                
+                withContext(Dispatchers.IO) {
+                    try {
+                        val url = URL(uploadUrl)
+                        val connection = url.openConnection() as HttpURLConnection
+                        connection.requestMethod = "PUT"  // Dùng PUT thay vì POST để upsert
+                        connection.setRequestProperty("Authorization", "Bearer $SUPABASE_ANON_KEY")
+                        connection.setRequestProperty("apikey", SUPABASE_ANON_KEY)
+                        connection.setRequestProperty("Content-Type", "image/jpeg")
+                        connection.setRequestProperty("Cache-Control", "max-age=3600")
+                        connection.doOutput = true
+                        connection.connectTimeout = 30000
+                        connection.readTimeout = 30000
+                        
+                        connection.outputStream.use { outputStream ->
+                            outputStream.write(bytes)
+                            outputStream.flush()
+                        }
+                        
+                        val responseCode = connection.responseCode
+                        val responseMessage = connection.responseMessage
+                        
+                        android.util.Log.d("PersonalInfo", "Response: $responseCode - $responseMessage")
+                        
+                        if (responseCode in 200..299) {
+                            // Tạo public URL
+                            val publicUrl = "$SUPABASE_URL/storage/v1/object/public/$BUCKET_NAME/$fileName"
+                            
+                            withContext(Dispatchers.Main) {
+                                updates["avatarUrl"] = publicUrl
+                                db.collection("users").document(customUserId).update(updates)
+                                    .addOnSuccessListener {
+                                        Toast.makeText(this@PersonalInfoActivity, "Cập nhật thành công!", Toast.LENGTH_SHORT).show()
+                                        avatarUri = null
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Toast.makeText(this@PersonalInfoActivity, "Lỗi lưu dữ liệu: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                        } else {
+                            val errorStream = connection.errorStream?.bufferedReader()?.readText() ?: "Unknown error"
+                            android.util.Log.e("PersonalInfo", "Upload failed: $responseCode - $errorStream")
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(this@PersonalInfoActivity, "Lỗi upload: $errorStream", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                        connection.disconnect()
+                    } catch (e: Exception) {
+                        android.util.Log.e("PersonalInfo", "Connection error", e)
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(this@PersonalInfoActivity, "Lỗi kết nối: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PersonalInfo", "Upload error", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@PersonalInfoActivity, "Lỗi: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 }

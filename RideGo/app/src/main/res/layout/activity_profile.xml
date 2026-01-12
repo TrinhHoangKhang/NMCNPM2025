@@ -56,20 +56,41 @@
             android:padding="16dp"
             app:layout_constraintTop_toBottomOf="@+id/btnBack">
 
-            <TextView
-                android:id="@+id/tvUserAvatar"
+            <FrameLayout
+                android:id="@+id/avatarContainer"
                 android:layout_width="60dp"
                 android:layout_height="60dp"
-                android:background="@drawable/bg_circle_app_color"
-                android:backgroundTint="#FF80AB"
-                android:gravity="center"
-                android:text="U"
-                android:textColor="@color/white"
-                android:textSize="20sp"
-                android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent">
+
+                <TextView
+                    android:id="@+id/tvUserAvatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_circle_app_color"
+                    android:backgroundTint="#FF80AB"
+                    android:gravity="center"
+                    android:text="U"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:cardCornerRadius="30dp"
+                    app:cardElevation="0dp"
+                    android:visibility="gone"
+                    android:id="@+id/cardUserAvatar">
+
+                    <ImageView
+                        android:id="@+id/imgUserAvatar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop" />
+                </androidx.cardview.widget.CardView>
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -78,7 +99,7 @@
                 android:orientation="vertical"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/tvUserAvatar"
+                app:layout_constraintStart_toEndOf="@+id/avatarContainer"
                 app:layout_constraintTop_toTopOf="parent">
 
                 <TextView
