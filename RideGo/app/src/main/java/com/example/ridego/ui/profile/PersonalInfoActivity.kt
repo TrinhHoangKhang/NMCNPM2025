@@ -30,11 +30,13 @@ class PersonalInfoActivity : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
     private var isEditing = false
     private var is2FAEnabled = false
-    
+    private var originalEmail = "" // Email gốc để so sánh khi lưu
+
     // Supabase config - thay bằng thông tin project của bạn
     companion object {
         private const val SUPABASE_URL = "https://idgzqsqkdxvbopelvlon.supabase.co"
-        private const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkZ3pxc3FrZHh2Ym9wZWx2bG9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMjQzODQsImV4cCI6MjA4MzgwMDM4NH0.QJ5zUJNzs5bLe9aFwpnUemdVaSWSWeQP1cq69hbJ9g0"
+        private const val SUPABASE_ANON_KEY =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkZ3pxc3FrZHh2Ym9wZWx2bG9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMjQzODQsImV4cCI6MjA4MzgwMDM4NH0.QJ5zUJNzs5bLe9aFwpnUemdVaSWSWeQP1cq69hbJ9g0"
         private const val BUCKET_NAME = "RiderAvartar"
     }
 
@@ -42,28 +44,32 @@ class PersonalInfoActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityPersonalInfoBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        
+
         binding.btnBack.setOnClickListener { finish() }
-        
+
         loadUserInfo()
         binding.btnEditInfo.setOnClickListener { toggleEditMode() }
-        
+
         // Nút camera chuyên nghiệp để chọn ảnh
         binding.btnCamera.setOnClickListener {
             if (isEditing) {
                 pickImageFromGallery()
             } else {
-                Toast.makeText(this, "Vui lòng bấm \"Chỉnh sửa thông tin\" trước", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Vui lòng bấm \"Chỉnh sửa thông tin\" trước",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
-        
+
         // DatePicker cho ngày sinh với format dd-MM-yyyy
         binding.edtBirthday.setOnClickListener {
             if (isEditing) {
                 showDatePicker()
             }
         }
-        
+
         // Dialog chọn giới tính
         binding.edtGender.setOnClickListener {
             if (isEditing) {
@@ -117,16 +123,41 @@ class PersonalInfoActivity : AppCompatActivity() {
                             val gender = document.getString("gender") ?: ""
                             is2FAEnabled = document.getBoolean("twoFactorEnabled") ?: false
 
+                            // Lưu email gốc để so sánh
+                            originalEmail = email
+
                             binding.edtName.setText(name)
                             binding.edtPhone.setText(phone)
                             binding.edtEmail.setText(email)
                             binding.edtBirthday.setText(birthday)
                             binding.edtGender.setText(gender)
                             binding.edtPhone.isEnabled = false
-                            
+
+                            // Kiểm tra trạng thái email
+                            val firebaseEmail = user.email
+                            val isEmailVerified = user.isEmailVerified
+
+                            if (!firebaseEmail.isNullOrEmpty()) {
+                                if (isEmailVerified) {
+                                    // Email đã xác thực -> disable giống SĐT
+                                    binding.edtEmail.isEnabled = false
+                                    binding.edtEmail.hint = "Email đã xác thực"
+                                } else {
+                                    // Email chưa xác thực -> hiển thị thông báo
+                                    binding.edtEmail.isEnabled = false
+                                    binding.edtEmail.hint = "Chưa xác thực - Bấm để gửi lại"
+                                    binding.edtEmail.setOnClickListener {
+                                        showResendVerificationDialog()
+                                    }
+                                }
+                            } else if (email.isNotEmpty()) {
+                                // Có email trong Firestore nhưng chưa link vào Auth
+                                binding.edtEmail.isEnabled = false
+                            }
+
                             // Hiển thị chữ cái đầu làm avatar
                             binding.tvAvatarLetter.text = name.first().uppercase()
-                            
+
                             // Load ảnh đại diện từ Firebase nếu có
                             val avatarUrl = document.getString("avatarUrl")
                             if (!avatarUrl.isNullOrEmpty()) {
@@ -146,22 +177,243 @@ class PersonalInfoActivity : AppCompatActivity() {
     }
 
     private fun toggleEditMode() {
-        isEditing = !isEditing
-        binding.edtName.isEnabled = isEditing
-        binding.edtEmail.isEnabled = isEditing
-        binding.edtBirthday.isEnabled = isEditing
-        binding.edtGender.isEnabled = isEditing
-        // binding.imgAvatar: cho phép chọn ảnh mới khi isEditing
-        binding.btnEditInfo.text = if (isEditing) "Lưu thông tin" else "Chỉnh sửa thông tin"
-        if (!isEditing) {
+        val user = auth.currentUser
+        val hasLinkedEmail = user?.email != null
+
+        // Nếu đang ở chế độ editing và bấm Lưu
+        if (isEditing) {
+            // Kiểm tra nếu có email đã link nhưng chưa verified -> KHÔNG cho lưu
+            if (user?.email != null && !user.isEmailVerified) {
+                AlertDialog.Builder(this)
+                    .setTitle("⚠️ Chưa xác thực email")
+                    .setMessage("Bạn cần xác thực email trước khi lưu thông tin.\n\nVui lòng kiểm tra hộp thư và bấm vào link xác thực.")
+                    .setPositiveButton("Gửi lại email") { _, _ ->
+                        user.sendEmailVerification()
+                            .addOnSuccessListener {
+                                Toast.makeText(
+                                    this,
+                                    "Đã gửi lại email xác thực!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                    }
+                    .setNegativeButton("Đã xác thực") { _, _ ->
+                        // Reload user để kiểm tra
+                        user.reload().addOnSuccessListener {
+                            if (user.isEmailVerified) {
+                                Toast.makeText(this, "✅ Xác thực thành công!", Toast.LENGTH_SHORT)
+                                    .show()
+                                // Đã verified -> tiến hành lưu và đổi trạng thái
+                                proceedToSave()
+                            } else {
+                                Toast.makeText(
+                                    this,
+                                    "Email chưa được xác thực!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    }
+                    .setCancelable(false)
+                    .show()
+                // Giữ nguyên trạng thái editing, KHÔNG đổi button
+                return
+            }
+
+            // Kiểm tra nếu user đang thêm email mới
+            val newEmail = binding.edtEmail.text.toString().trim()
+            if (newEmail.isNotEmpty() && newEmail != originalEmail && originalEmail.isEmpty() && !hasLinkedEmail) {
+                // Yêu cầu nhập mật khẩu để link email
+                showAddEmailPasswordDialog(newEmail)
+                return
+            }
+
             // Nếu 2FA bật, yêu cầu nhập mật khẩu trước khi lưu
             if (is2FAEnabled) {
                 showPasswordVerificationDialog()
             } else {
-                saveUserInfo()
+                proceedToSave()
+            }
+        } else {
+            // Đang ở chế độ view -> chuyển sang edit
+            isEditing = true
+            binding.edtName.isEnabled = true
+            binding.edtEmail.isEnabled = originalEmail.isEmpty() && !hasLinkedEmail
+            binding.edtBirthday.isEnabled = true
+            binding.edtGender.isEnabled = true
+            binding.btnEditInfo.text = "Lưu thông tin"
+        }
+    }
+
+    // Hàm thực hiện lưu và đổi trạng thái
+    private fun proceedToSave() {
+        isEditing = false
+        binding.edtName.isEnabled = false
+        binding.edtEmail.isEnabled = false
+        binding.edtBirthday.isEnabled = false
+        binding.edtGender.isEnabled = false
+        binding.btnEditInfo.text = "Chỉnh sửa thông tin"
+        saveUserInfo()
+    }
+
+    private fun showAddEmailPasswordDialog(newEmail: String) {
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(50, 40, 50, 20)
+        }
+
+        val passwordInput = android.widget.EditText(this).apply {
+            hint = "Nhập mật khẩu (tối thiểu 6 ký tự)"
+            inputType =
+                android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        val confirmPasswordInput = android.widget.EditText(this).apply {
+            hint = "Xác nhận mật khẩu"
+            inputType =
+                android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 24
+            }
+        }
+
+        container.addView(passwordInput)
+        container.addView(confirmPasswordInput)
+
+        AlertDialog.Builder(this)
+            .setTitle("📧 Thêm Email")
+            .setMessage("Để liên kết email $newEmail vào tài khoản, vui lòng tạo mật khẩu.\n\nMật khẩu này sẽ dùng để đăng nhập bằng email sau này.")
+            .setView(container)
+            .setPositiveButton("Liên kết") { _, _ ->
+                val password = passwordInput.text.toString()
+                val confirmPassword = confirmPasswordInput.text.toString()
+
+                if (password.length < 6) {
+                    Toast.makeText(this, "Mật khẩu phải có ít nhất 6 ký tự", Toast.LENGTH_SHORT)
+                        .show()
+                    isEditing = true
+                    binding.btnEditInfo.text = "Lưu thông tin"
+                    return@setPositiveButton
+                }
+
+                if (password != confirmPassword) {
+                    Toast.makeText(this, "Mật khẩu xác nhận không khớp", Toast.LENGTH_SHORT).show()
+                    isEditing = true
+                    binding.btnEditInfo.text = "Lưu thông tin"
+                    return@setPositiveButton
+                }
+
+                linkEmailToAccount(newEmail, password)
+            }
+            .setNegativeButton("Hủy") { _, _ ->
+                // Reset lại email cũ
+                binding.edtEmail.setText(originalEmail)
+                isEditing = true
+                binding.btnEditInfo.text = "Lưu thông tin"
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun linkEmailToAccount(email: String, password: String) {
+        val user = auth.currentUser ?: return
+
+        Toast.makeText(this, "Đang liên kết email...", Toast.LENGTH_SHORT).show()
+
+        val credential = com.google.firebase.auth.EmailAuthProvider.getCredential(email, password)
+        user.linkWithCredential(credential)
+            .addOnSuccessListener {
+                // Gửi email xác thực
+                user.sendEmailVerification()
+                    .addOnSuccessListener {
+                        AlertDialog.Builder(this)
+                            .setTitle("📧 Vui lòng xác thực email!")
+                            .setMessage("Đã gửi email xác thực đến:\n$email\n\n❗ Bạn cần xác thực email trước khi lưu thông tin.\n\nSau khi xác thực, quay lại đây và bấm Lưu lại.")
+                            .setPositiveButton("Đã hiểu") { _, _ ->
+                                // Không lưu, chờ user xác thực
+                                originalEmail = email
+                                binding.edtEmail.setText(email)
+                                binding.edtEmail.isEnabled = false
+                                binding.edtEmail.hint = "Chưa xác thực - Bấm để gửi lại"
+                                binding.edtEmail.setOnClickListener {
+                                    showResendVerificationDialog()
+                                }
+                                isEditing = true
+                                binding.btnEditInfo.text = "Lưu thông tin"
+                            }
+                            .setCancelable(false)
+                            .show()
+                    }
+                    .addOnFailureListener { e ->
+                        Toast.makeText(
+                            this,
+                            "Không gửi được email xác thực: ${e.localizedMessage}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        isEditing = true
+                        binding.btnEditInfo.text = "Lưu thông tin"
+                    }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(
+                    this,
+                    "Không thể liên kết email: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+                binding.edtEmail.setText(originalEmail)
+                isEditing = true
+                binding.btnEditInfo.text = "Lưu thông tin"
+            }
+    }
+
+    private fun showResendVerificationDialog() {
+        val user = auth.currentUser ?: return
+
+        // Reload user để kiểm tra trạng thái mới nhất
+        user.reload().addOnSuccessListener {
+            if (user.isEmailVerified) {
+                AlertDialog.Builder(this)
+                    .setTitle("✅ Email đã xác thực!")
+                    .setMessage("Email của bạn đã được xác thực thành công.\n\nBấm Lưu thông tin để hoàn tất.")
+                    .setPositiveButton("Đã hiểu") { _, _ ->
+                        binding.edtEmail.hint = "Email đã xác thực"
+                        binding.edtEmail.setOnClickListener(null)
+                    }
+                    .show()
+            } else {
+                AlertDialog.Builder(this)
+                    .setTitle("📧 Gửi lại email xác thực?")
+                    .setMessage("Email chưa được xác thực.\n\nBạn có muốn gửi lại email xác thực không?")
+                    .setPositiveButton("Gửi lại") { _, _ ->
+                        user.sendEmailVerification()
+                            .addOnSuccessListener {
+                                Toast.makeText(
+                                    this,
+                                    "Đã gửi lại email xác thực!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            .addOnFailureListener { e ->
+                                Toast.makeText(
+                                    this,
+                                    "Lỗi: ${e.localizedMessage}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                    }
+                    .setNegativeButton("Hủy", null)
+                    .show()
             }
         }
     }
+
 
     private fun showDatePicker() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_date_picker, null)
@@ -433,6 +685,7 @@ class PersonalInfoActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 android.util.Log.e("PersonalInfo", "Upload error", e)
                 withContext(Dispatchers.Main) {
+
                     Toast.makeText(this@PersonalInfoActivity, "Lỗi: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
