@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.example.ridego.R
+import com.example.ridego.data.generateCustomUserId
 import com.example.ridego.databinding.ActivityPersonalInfoBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -583,29 +584,44 @@ class PersonalInfoActivity : AppCompatActivity() {
 
         db.collection("uid_mapping").document(firebaseUid).get()
             .addOnSuccessListener { mappingDoc ->
-                val customUserId = if (mappingDoc.exists()) {
+                val oldCustomUserId = if (mappingDoc.exists()) {
                     mappingDoc.getString("customUserId") ?: firebaseUid
                 } else {
                     firebaseUid
                 }
+                val newCustomUserId = generateCustomUserId(user.phoneNumber ?: "", email)
                 val updates = hashMapOf<String, Any>(
                     "name" to name,
                     "email" to email,
                     "birthday" to birthday,
                     "gender" to gender
                 )
-                // Nếu có chọn ảnh mới, upload lên Supabase Storage
-                if (avatarUri != null) {
-                    Toast.makeText(this, "Đang upload ảnh...", Toast.LENGTH_SHORT).show()
-                    uploadToSupabase(customUserId, updates)
+                if (newCustomUserId != oldCustomUserId && email.isNotEmpty() && user.isEmailVerified) {
+                    // Đã xác thực email mới, cần chuyển sang customUserId mới
+                    db.collection("users").document(oldCustomUserId).get().addOnSuccessListener { oldDoc ->
+                        val oldData = oldDoc.data ?: hashMapOf<String, Any>()
+                        val mergedData = HashMap(oldData)
+                        mergedData.putAll(updates)
+                        db.collection("users").document(newCustomUserId).set(mergedData).addOnSuccessListener {
+                            db.collection("users").document(oldCustomUserId).delete()
+                            db.collection("uid_mapping").document(firebaseUid).set(hashMapOf("customUserId" to newCustomUserId))
+                            Toast.makeText(this, "Đã chuyển sang tài khoản email mới!", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 } else {
-                    db.collection("users").document(customUserId).update(updates)
-                        .addOnSuccessListener {
-                            Toast.makeText(this, "Cập nhật thành công!", Toast.LENGTH_SHORT).show()
-                        }
-                        .addOnFailureListener { e ->
-                            Toast.makeText(this, "Lỗi lưu dữ liệu: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
+                    // Nếu có chọn ảnh mới, upload lên Supabase Storage
+                    if (avatarUri != null) {
+                        Toast.makeText(this, "Đang upload ảnh...", Toast.LENGTH_SHORT).show()
+                        uploadToSupabase(oldCustomUserId, updates)
+                    } else {
+                        db.collection("users").document(oldCustomUserId).update(updates)
+                            .addOnSuccessListener {
+                                Toast.makeText(this, "Cập nhật thành công!", Toast.LENGTH_SHORT).show()
+                            }
+                            .addOnFailureListener { e ->
+                                Toast.makeText(this, "Lỗi lưu dữ liệu: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                    }
                 }
             }
     }
@@ -656,6 +672,7 @@ class PersonalInfoActivity : AppCompatActivity() {
                             // Tạo public URL
                             val publicUrl = "$SUPABASE_URL/storage/v1/object/public/$BUCKET_NAME/$fileName"
                             
+
                             withContext(Dispatchers.Main) {
                                 updates["avatarUrl"] = publicUrl
                                 db.collection("users").document(customUserId).update(updates)
@@ -664,6 +681,7 @@ class PersonalInfoActivity : AppCompatActivity() {
                                         avatarUri = null
                                     }
                                     .addOnFailureListener { e ->
+
                                         Toast.makeText(this@PersonalInfoActivity, "Lỗi lưu dữ liệu: ${e.message}", Toast.LENGTH_SHORT).show()
                                     }
                             }
