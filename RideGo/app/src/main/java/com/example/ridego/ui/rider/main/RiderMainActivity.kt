@@ -60,7 +60,7 @@ class RiderMainActivity : AppCompatActivity() {
 
     private fun checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            showPickupLocationDialog()
+            // Quyền đã được cấp, không cần làm gì thêm ở đây hoặc có thể load dữ liệu
         } else {
             requestPermissionLauncher.launch(
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -78,7 +78,8 @@ class RiderMainActivity : AppCompatActivity() {
         binding.fabBooking.setOnClickListener {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 val intent = Intent(this, SetLocationActivity::class.java)
-                intent.putExtra("IS_BOOKING_FLOW", true) // Báo hiệu đi đặt xe
+                intent.putExtra("IS_BOOKING_FLOW", true) 
+                intent.putExtra("LOCATION_TYPE", 1) // 1: Pickup (Điểm đón)
                 startActivity(intent)
             } else {
                 checkLocationPermission()
@@ -88,8 +89,6 @@ class RiderMainActivity : AppCompatActivity() {
 
     private fun showPickupLocationDialog() {
         val dialog = Dialog(this)
-        // Đảm bảo bạn đang dùng layout dialog_confirm_pickup.xml
-        // LƯU Ý: Bạn cần vào file XML dialog_confirm_pickup.xml sửa text nút btnEnterLocation thành "Bỏ qua"
         dialog.setContentView(R.layout.dialog_confirm_pickup)
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -107,7 +106,8 @@ class RiderMainActivity : AppCompatActivity() {
         btnContinue.setOnClickListener {
             dialog.dismiss()
             val intent = Intent(this, SetLocationActivity::class.java)
-            intent.putExtra("IS_BOOKING_FLOW", false) // Quan trọng: Báo hiệu chỉ set vị trí rồi về
+            intent.putExtra("IS_BOOKING_FLOW", false)
+            intent.putExtra("LOCATION_TYPE", 1) // Mặc định là điểm đón
             getContent.launch(intent)
         }
 

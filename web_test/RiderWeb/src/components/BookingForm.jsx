@@ -518,30 +518,18 @@ export default function BookingForm({
                                     {estimate.discountApplied && <span className="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded text-[10px]">DISCOUNT APPLIED</span>}
                                 </div>
 
-                                {estimate.fareBreakdown ? (
-                                    <div className="space-y-1.5 pt-1 text-slate-600 font-medium">
-                                        <div className="flex justify-between">
-                                            <span>Base Fare</span>
-                                            <span>{estimate.fareBreakdown.base.toLocaleString()} đ</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>Distance & Time</span>
-                                            <span>{estimate.fareBreakdown.distanceFare.toLocaleString()} đ</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm text-slate-600">
-                                            <span>Platform Fee</span>
-                                            <span className="font-medium text-slate-900">{estimate.fareBreakdown.platformFee.toLocaleString()} đ</span>
-                                        </div>
-                                        {estimate.fareBreakdown.discountAmount > 0 && (
-                                            <div className="flex justify-between text-sm text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">
-                                                <span>Discount Applied</span>
-                                                <span>-{estimate.fareBreakdown.discountAmount.toLocaleString()} đ</span>
-                                            </div>
-                                        )}
+                                <div className="space-y-1.5 pt-1 text-slate-600 font-medium">
+                                    <div className="flex justify-between">
+                                        <span>Price before discount</span>
+                                        <span>{(estimate.originalFare || estimate.fare).toLocaleString()} đ</span>
                                     </div>
-                                ) : (
-                                    <div className="text-xs text-slate-400 italic">Breakdown unavailable</div>
-                                )}
+                                    {estimate.discountAmount > 0 && (
+                                        <div className="flex justify-between text-sm text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">
+                                            <span>Discount Applied</span>
+                                            <span>-{estimate.discountAmount.toLocaleString()} đ</span>
+                                        </div>
+                                    )}
+                                </div>
 
                                 <div className="pt-2 border-t border-indigo-100 flex justify-between items-baseline">
                                     <span className="text-slate-900 font-black text-base uppercase">Total Est.</span>

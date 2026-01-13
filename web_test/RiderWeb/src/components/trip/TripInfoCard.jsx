@@ -32,49 +32,18 @@ export default function TripInfoCard({ trip }) {
                 {/* FARE BREAKDOWN */}
                 <div className="bg-slate-50 p-4 rounded-lg space-y-2 mt-4">
                     <h4 className="text-xs font-semibold text-slate-500 mb-2 font-black tracking-tighter uppercase underline decoration-indigo-200">Fare Breakdown</h4>
-                    {trip.fareBreakdown ? (
-                        <div className="space-y-1.5">
-                            <div className="flex justify-between text-sm text-slate-600">
-                                <span>Base Fare</span>
-                                <span className="font-medium text-slate-900">{trip.fareBreakdown.base.toLocaleString()} VND</span>
-                            </div>
-                            <div className="flex justify-between text-sm text-slate-600">
-                                <span>Distance & Time</span>
-                                <span className="font-medium text-slate-900">{trip.fareBreakdown.distanceFare.toLocaleString()} VND</span>
-                            </div>
-                            <div className="flex justify-between text-sm text-slate-600">
-                                <span>Platform Fee</span>
-                                <span className="font-medium text-slate-900">{trip.fareBreakdown.platformFee.toLocaleString()} VND</span>
-                            </div>
-                            {trip.fareBreakdown.discountAmount > 0 && (
-                                <div className="flex justify-between text-sm text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">
-                                    <span>Discount Applied</span>
-                                    <span>-{trip.fareBreakdown.discountAmount.toLocaleString()} VND</span>
-                                </div>
-                            )}
+                    <div className="space-y-1.5">
+                        <div className="flex justify-between text-sm text-slate-600">
+                            <span>Price before discount</span>
+                            <span className="font-medium text-slate-900">{(trip.originalFare || trip.fare || 0).toLocaleString()} VND</span>
                         </div>
-                    ) : (
-                        <div className="space-y-1.5">
-                            <div className="flex justify-between text-sm text-slate-600">
-                                <span>Base Fare</span>
-                                <span>{(trip.fare ? trip.fare * 0.3 : 0).toLocaleString()} VND</span>
+                        {trip.discountAmount > 0 && (
+                            <div className="flex justify-between text-sm text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">
+                                <span>Discount Applied</span>
+                                <span>-{trip.discountAmount.toLocaleString()} VND</span>
                             </div>
-                            <div className="flex justify-between text-sm text-slate-600">
-                                <span>Distance & Time</span>
-                                <span>{(trip.fare ? trip.fare * 0.6 : 0).toLocaleString()} VND</span>
-                            </div>
-                            <div className="flex justify-between text-sm text-slate-600">
-                                <span>Platform Fee</span>
-                                <span>{(trip.fare ? trip.fare * 0.1 : 0).toLocaleString()} VND</span>
-                            </div>
-                            {trip.discountAmount > 0 && (
-                                <div className="flex justify-between text-sm text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">
-                                    <span>Discount Applied</span>
-                                    <span>-{trip.discountAmount.toLocaleString()} VND</span>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                        )}
+                    </div>
                     <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-slate-900 font-bold mt-2">
                         <span className="uppercase text-xs font-black">Total Paid</span>
                         <span className="text-indigo-700 text-lg">{(trip.fare || 0).toLocaleString()} VND</span>

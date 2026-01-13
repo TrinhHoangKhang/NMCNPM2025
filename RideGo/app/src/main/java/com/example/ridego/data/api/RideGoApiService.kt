@@ -1,20 +1,17 @@
 package com.example.ridego.data.api
 
-import com.example.ridego.data.model.RouteRequest
-import com.example.ridego.data.model.RouteResponse
-import com.example.ridego.data.model.TripRequest
-import com.example.ridego.data.model.TripResponse
-import com.example.ridego.data.model.ChatRequest
-import com.example.ridego.data.model.ChatResponse
-import com.example.ridego.data.model.ChatCommandResponse
-import com.example.ridego.data.model.CancelTripRequest
+import com.example.ridego.data.model.*
 import retrofit2.Call
-import retrofit2.http.Body
-import retrofit2.http.POST
-import retrofit2.http.PATCH
+import retrofit2.http.*
 
 // CHỈ GIỮ LẠI INTERFACE NÀY
 interface RideGoApiService {
+
+    @GET("api/discounts")
+    fun getDiscounts(): Call<List<Promotion>> // SỬA: Chấp nhận Array [] thay vì Object {}
+
+    @POST("api/discounts/claim")
+    fun claimDiscount(@Body request: ClaimDiscountRequest): Call<ClaimDiscountResponse>
 
     @POST("api/maps/calculate-route")
     fun calculateRoute(@Body request: RouteRequest): Call<RouteResponse>

@@ -62,3 +62,18 @@ data class ValueText(
     val text: String,
     val value: Int
 )
+
+// --- DISCOUNT MODELS (Moved back here to avoid duplicate files) ---
+data class ClaimDiscountRequest(
+    val code: String
+)
+
+data class DiscountsResponse(
+    val success: Boolean,
+    val discounts: List<Promotion>
+)
+
+data class ClaimDiscountResponse(
+    val message: String,
+    val discount: Promotion?
+)

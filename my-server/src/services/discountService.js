@@ -20,7 +20,7 @@ class DiscountService {
 
             discounts.push(new Discount(doc.id, { ...data, isActive }));
         }
-        return discounts;
+        return discounts.map(d => d.toJSON());
     }
 
     // List discounts a user ALREADY HAS (only active ones)
@@ -35,7 +35,10 @@ class DiscountService {
         // Only return if still active globally
         return userDiscounts
             .filter(ud => activeGlobalIds.has(ud.id))
-            .map(ud => new Discount(ud.id, ud));
+            .map(ud => {
+                const discount = new Discount(ud.id, ud);
+                return discount.toJSON();
+            });
     }
 
     async getDiscountByCode(code) {
@@ -128,27 +131,20 @@ class DiscountService {
 
     // New: Seed 12 default discount types
     async seedDefaults() {
-        const snapshot = await db.collection('discounts').limit(1).get();
-        if (snapshot.empty) {
-            console.log("Seeding 12 default discounts...");
-            const expiryDate = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString();
+        console.log("Checking and seeding default discounts...");
+        const expiryDate = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString();
 
-            const defaults = [
-                { code: "WELCOME", description: "Giảm 10% cho bạn mới", type: "PERCENT", value: 10, maxDiscount: 20000, minOrderValue: 0, isActive: true, count: 100 },
-                { code: "FREESHIP", description: "Giảm 15k phí vận chuyển", type: "FIXED", value: 15000, maxDiscount: 0, minOrderValue: 50000, isActive: true, count: 50 },
-                { code: "GIAM30K", description: "Giảm 30k đơn từ 100k", type: "FIXED", value: 30000, maxDiscount: 0, minOrderValue: 100000, isActive: true, count: 200 },
-                { code: "RIDEGO50", description: "Giảm 50% tối đa 50k", type: "PERCENT", value: 50, maxDiscount: 50000, minOrderValue: 0, isActive: true, count: 30 },
-                { code: "WEEKEND", description: "Cuối tuần vui vẻ -20%", type: "PERCENT", value: 20, maxDiscount: 30000, minOrderValue: 0, isActive: true, count: 500 },
-                { code: "NIGHTOWL", description: "Ưu đãi đêm khuya -25k", type: "FIXED", value: 25000, maxDiscount: 0, minOrderValue: 60000, isActive: true, count: 150 },
-                { code: "STUDENT", description: "Giảm 15% cho sinh viên", type: "PERCENT", value: 15, maxDiscount: 25000, minOrderValue: 0, isActive: true, count: 1000 },
-                { code: "BIRTHDAY", description: "Mừng sinh nhật -50k", type: "FIXED", value: 50000, maxDiscount: 0, minOrderValue: 0, isActive: true, count: 10 },
-                { code: "RAINYDAY", description: "Ngày mưa không lo giá -10k", type: "FIXED", value: 10000, maxDiscount: 0, minOrderValue: 30000, isActive: true, count: 300 },
-                { code: "LOYALTY", description: "Khách hàng thân thiết -15%", type: "PERCENT", value: 15, maxDiscount: 40000, minOrderValue: 0, isActive: true, count: 100 },
-                { code: "FIRSTAPP", description: "Chuyến đầu tiên qua app -20k", type: "FIXED", value: 20000, maxDiscount: 0, minOrderValue: 0, isActive: true, count: 50 },
-                { code: "VIPPEOPLE", description: "Đặc quyền VIP -30%", type: "PERCENT", value: 30, maxDiscount: 100000, minOrderValue: 200000, isActive: true, count: 20 }
-            ];
+        const defaults = [
+            { code: "WELCOME", description: "Giảm 10% cho bạn mới", type: "PERCENT", value: 10, maxDiscount: 20000, minOrderValue: 0, isActive: true, count: 100 },
+            { code: "HOLIDAY101", description: "Mừng đại lễ - Giảm 10%", type: "PERCENT", value: 10, maxDiscount: 100000, minOrderValue: 0, isActive: true, count: 500 },
+            { code: "WEEKEND300", description: "Cuối tuần bùng nổ -30%", type: "PERCENT", value: 30, maxDiscount: 30000, minOrderValue: 0, isActive: true, count: 500 },
+            { code: "GIAM30K", description: "Giảm 30k đơn từ 100k", type: "FIXED", value: 30000, maxDiscount: 0, minOrderValue: 100000, isActive: true, count: 200 }
+        ];
 
-            for (const d of defaults) {
+        for (const d of defaults) {
+            const existing = await this.getDiscountByCode(d.code);
+            if (!existing) {
+                console.log(`Seeding missing discount: ${d.code}`);
                 await db.collection('discounts').add({
                     ...d,
                     expiryDate,

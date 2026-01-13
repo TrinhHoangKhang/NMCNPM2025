@@ -14,6 +14,7 @@ class DiscountController {
                 const discounts = await discountService.getAllDiscounts();
                 res.status(200).json(discounts);
             } else {
+                // For riders, show only their CLAIMED discounts
                 const discounts = await discountService.getUserDiscounts(userId);
                 res.status(200).json(discounts);
             }
@@ -40,7 +41,8 @@ class DiscountController {
             const userId = req.user.uid;
             const { code } = req.body;
             const result = await discountService.claimDiscount(userId, code);
-            res.status(200).json({ message: "Nhận mã thành công", discount: result });
+            const discountJson = result.toJSON ? result.toJSON() : result;
+            res.status(200).json({ message: "Nhận mã thành công", discount: discountJson });
         } catch (error) {
             res.status(400).json({ error: error.message });
         }
@@ -61,7 +63,8 @@ class DiscountController {
             }
 
             const result = await discountService.updateDiscount(id, updates);
-            res.status(200).json({ message: "Cập nhật thành công", discount: result });
+            const discountJson = result.toJSON ? result.toJSON() : result;
+            res.status(200).json({ message: "Cập nhật thành công", discount: discountJson });
         } catch (error) {
             console.error("Update Discount Error:", error);
             res.status(500).json({ error: error.message });
@@ -80,7 +83,8 @@ class DiscountController {
             }
 
             const result = await discountService.createDiscount(discountData);
-            res.status(201).json({ message: "Tạo mã thành công", discount: result });
+            const discountJson = result.toJSON ? result.toJSON() : result;
+            res.status(201).json({ message: "Tạo mã thành công", discount: discountJson });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }

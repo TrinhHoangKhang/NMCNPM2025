@@ -34,6 +34,21 @@ class Discount {
 
         return Math.min(discountAmount, fare); // Cannot discount more than fare
     }
+
+    toJSON() {
+        return {
+            id: this.id,
+            code: this.code,
+            description: this.description,
+            type: this.type,
+            value: this.value,
+            maxDiscount: this.maxDiscount,
+            minOrderValue: this.minOrderValue,
+            expiryDate: this.expiryDate,
+            isActive: this.isActive,
+            count: this.count
+        };
+    }
 }
 
 export default Discount;
