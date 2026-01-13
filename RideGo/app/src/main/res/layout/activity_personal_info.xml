@@ -71,8 +71,9 @@
                         android:background="@drawable/bg_circle_app_color"
                         android:backgroundTint="#FF80AB">
 
+                        <!-- TextView hiển thị chữ cái đầu (khi chưa có ảnh) -->
                         <TextView
-                            android:id="@+id/imgAvatar"
+                            android:id="@+id/tvAvatarLetter"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:gravity="center"
@@ -80,6 +81,14 @@
                             android:textColor="@color/white"
                             android:textSize="48sp"
                             android:textStyle="bold" />
+                        
+                        <!-- ImageView hiển thị ảnh đại diện thực -->
+                        <ImageView
+                            android:id="@+id/imgAvatar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:visibility="gone" />
                     </FrameLayout>
                 </androidx.cardview.widget.CardView>
 

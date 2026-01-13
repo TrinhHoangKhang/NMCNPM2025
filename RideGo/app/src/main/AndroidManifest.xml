@@ -99,6 +99,18 @@
             android:exported="false"/>
 
         <activity
+            android:name=".ui.profile.SupportActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.legal.FaqActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.legal.GuideActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.rider.location.SearchDestinationActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />

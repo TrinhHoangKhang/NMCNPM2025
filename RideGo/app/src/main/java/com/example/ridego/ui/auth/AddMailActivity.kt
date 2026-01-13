@@ -26,6 +26,11 @@ class AddEmailActivity : AppCompatActivity() {
     }
 
     private fun setupEvents() {
+        // Nút quay lại
+        binding.btnBack.setOnClickListener {
+            navigateToHome()
+        }
+        
         binding.btnAddEmail.setOnClickListener {
             val email = binding.edtEmail.text.toString().trim()
             val password = binding.edtPassword.text.toString().trim()
