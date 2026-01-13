@@ -74,6 +74,33 @@ class SearchDestinationActivity : AppCompatActivity() {
         loadCurrentPickupLocation()
         setupUI()
         setupSearchLogic()
+
+        // Check for passed destination (from Chatbot via SetLocationActivity)
+        // Check for passed destination (from Chatbot via SetLocationActivity)
+        if (intent.hasExtra("DESTINATION_NAME")) {
+            val destName = intent.getStringExtra("DESTINATION_NAME") ?: ""
+            val destLat = intent.getDoubleExtra("DESTINATION_LAT", 0.0)
+            val destLng = intent.getDoubleExtra("DESTINATION_LNG", 0.0)
+
+            if (destName.isNotEmpty()) {
+                if (destLat != 0.0 && destLng != 0.0) {
+                    // Case 1: Có tọa độ đầy đủ (Server Geocode thành công)
+                    selectedName = destName
+                    selectedAddress = destName
+                    selectedLat = destLat
+                    selectedLng = destLng
+
+                    binding.edtDestination.setText(destName)
+                    enableConfirmButton()
+                } else {
+                    // Case 2: Chỉ có tên, thiếu tọa độ (Server Geocode thất bại)
+                    // -> Điền tên vào ô tìm kiếm và tự động search để User chọn
+                    binding.edtDestination.setText(destName)
+                    searchPlaces(destName)
+                    Toast.makeText(this, "Vui lòng chọn địa điểm chính xác", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     private fun setupUI() {

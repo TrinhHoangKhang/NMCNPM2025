@@ -4,9 +4,10 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import ChatBot from '@/components/ChatBot';
 
 const ProfilePage = () => {
-  const {user} = useAuth()
+  const { user } = useAuth()
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md p-6 shadow-lg">
@@ -29,10 +30,10 @@ const ProfilePage = () => {
           ) : (
             <p className="text-red-500 text-center">Please log in to view your profile.</p>
           )}
-        <div className="flex justify-between mt-4">
-          <Button variant="outline">Change Username</Button>
-          <Button variant="outline">Change Password</Button>
-        </div>
+          <div className="flex justify-between mt-4">
+            <Button variant="outline">Change Username</Button>
+            <Button variant="outline">Change Password</Button>
+          </div>
         </CardContent>
         <CardFooter className="flex justify-center">
           <Link to="/dashboard" className="text-blue-600 hover:underline">
@@ -40,6 +41,7 @@ const ProfilePage = () => {
           </Link>
         </CardFooter>
       </Card>
+      <ChatBot />
     </div>
   );
 };

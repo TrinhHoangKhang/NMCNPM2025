@@ -74,6 +74,12 @@ class WebViewActivity : AppCompatActivity() {
                 builtInZoomControls = true
                 displayZoomControls = false
                 setSupportZoom(true)
+                allowFileAccess = true
+                allowContentAccess = true
+                // Cho phép truy cập file assets
+                mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                allowUniversalAccessFromFileURLs = true
+                allowFileAccessFromFileURLs = true
             }
 
             webViewClient = object : WebViewClient() {
