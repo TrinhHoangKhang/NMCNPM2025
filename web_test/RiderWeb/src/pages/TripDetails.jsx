@@ -31,7 +31,7 @@ export default function TripDetails() {
 
     const fetchTrip = async () => {
         try {
-            const data = await tripService.getTrip(id);
+            const data = await tripService.getTripDetails(id);
             setTrip(data);
             if (data.ratingDriver) setRatingDriver(data.ratingDriver);
             if (data.ratingTrip) setRatingTrip(data.ratingTrip);

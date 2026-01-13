@@ -10,6 +10,10 @@ class Trip {
         this.destination = data.destination || data.dropoffLocation || null;
         this.vehicleType = data.vehicleType;
         this.fare = data.fare || 0;
+        this.originalFare = data.originalFare || this.fare;
+        this.fareBreakdown = data.fareBreakdown || null;
+        this.discountId = data.discountId || null;
+        this.discountAmount = data.discountAmount || 0;
         this.distance = data.distance || 0; // in meters
         this.duration = data.duration || 0; // in seconds
         this.path = data.path || null; // GeoJSON-like LineString with {lat,lng} coordinates
@@ -52,6 +56,10 @@ class Trip {
             destination: this.destination,
             vehicleType: this.vehicleType,
             fare: this.fare,
+            originalFare: this.originalFare,
+            fareBreakdown: this.fareBreakdown,
+            discountId: this.discountId,
+            discountAmount: this.discountAmount,
             distance: this.distance,
             duration: this.duration,
             path: this.path,

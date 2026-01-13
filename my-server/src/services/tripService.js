@@ -4,6 +4,7 @@ import mapsService from './mapsService.js';
 import rankingService from './rankingService.js';
 import driverService from './driverService.js';
 import friendService from './friendService.js';
+import discountService from './discountService.js';
 //const { v4: uuidv4 } = require('uuid'); // Need to install uuid, or just use Firestore auto-ID
 
 import fs from 'fs';
@@ -19,20 +20,17 @@ class TripService {
     // Helper: Calculate Fare with Dynamic Pricing
     _calculateFare(vehicleType, distanceKm) {
         const rates = pricingConfig.rates[vehicleType] || pricingConfig.rates['Car 4-Seat'];
-        let baseFare = rates.base + (distanceKm * rates.perKm);
+        const base = rates.base;
+        let distanceFare = distanceKm * rates.perKm;
 
-        // Check Peak Hours
+        // Check Traffic/Peak Multipliers
         const now = new Date();
         const currentHour = now.getHours();
-
-        // Simple check: user said 6-8am or pm. usually means 6:00 to 8:59? Or 08:00?
-        // JSON says "06:00" to "08:00".
-        // Let's parse JSON rules.
-        let multiplier = 1.0;
-
-        // Convert HH:mm to minutes from midnight for easier comparison
         const currentMinutes = currentHour * 60 + now.getMinutes();
 
+        let multiplier = 1.0;
+
+        // More granular traffic check
         for (const window of pricingConfig.peakHours) {
             const [startH, startM] = window.start.split(':').map(Number);
             const [endH, endM] = window.end.split(':').map(Number);
@@ -44,8 +42,22 @@ class TripService {
             }
         }
 
-        let totalFare = baseFare * multiplier;
-        return Math.round(totalFare / 1000) * 1000; // Round to nearest 1000 VND
+        // Additional traffic overhead for cars in city center during daytime
+        if (vehicleType.includes('Car') && currentHour >= 8 && currentHour <= 20) {
+            multiplier *= 1.2; // Extra 20% for car traffic
+        }
+
+        distanceFare *= multiplier;
+
+        const platformFee = (base + distanceFare) * (pricingConfig.platformFeePercent || 0.1);
+        const totalFare = base + distanceFare + platformFee;
+
+        return {
+            base: Math.round(base / 1000) * 1000,
+            distanceFare: Math.round(distanceFare / 1000) * 1000,
+            platformFee: Math.round(platformFee / 1000) * 1000,
+            total: Math.round(totalFare / 1000) * 1000
+        };
     }
 
     // Helper: Fetch driver details and merge into trip
@@ -140,12 +152,12 @@ class TripService {
         // Calculate the distance in KM
         const distanceKm = routeData.distance.value / 1000;
 
-        // B. Calculate Fare based on vehicle type (Dynamic Pricing)
-        let fare = this._calculateFare(vehicleType, distanceKm);
-
-        // C. Apply Discount
+        // C. Calculate Price
+        const fareInfo = this._calculateFare(vehicleType, routeData.distance.value / 1000);
+        const fare = fareInfo.total;
         let discountAmount = 0;
         let finalFare = fare;
+
         if (discountId) {
             const discount = await discountService.getDiscountById(discountId);
             if (discount) {
@@ -157,6 +169,10 @@ class TripService {
             }
         }
 
+        // Include discount in breakdown for reporting
+        fareInfo.discountAmount = discountAmount;
+        fareInfo.finalTotal = finalFare;
+
         // D. Save to DB
         const tripRef = db.collection('trips').doc();
         const tripData = {
@@ -167,6 +183,7 @@ class TripService {
             paymentMethod,
             paymentStatus: 'PENDING',
             originalFare: fare,
+            fareBreakdown: fareInfo,
             discountId: discountId,
             discountAmount: discountAmount,
             fare: finalFare,
@@ -187,18 +204,33 @@ class TripService {
     async estimateTrip(pickup, dropoff, vehicleType, distanceOverride = null, discountId = null) {
         let distanceKm = 0;
         let durationMin = 0;
+        let routeData = null;
+
+        const rates = pricingConfig.rates[vehicleType] || pricingConfig.rates['Car 4-Seat'];
+        const avgSpeed = rates.avgSpeedKmH || 30;
 
         if (distanceOverride) {
             distanceKm = parseFloat(distanceOverride);
-            durationMin = Math.round((distanceKm / 30) * 60);
         } else {
-            const routeData = await mapsService.calculateRoute(pickup, dropoff);
+            routeData = await mapsService.calculateRoute(pickup, dropoff, vehicleType);
             distanceKm = routeData.distance.value / 1000;
-            durationMin = Math.round(routeData.duration.value / 60);
+        }
+
+        // Calculate Duration based on vehicle average speed (as requested)
+        // distance / speed = hours. * 60 = minutes.
+        durationMin = Math.round((distanceKm / avgSpeed) * 60);
+
+        // Adjust duration for traffic if in peak hours
+        const now = new Date();
+        const currentHour = now.getHours();
+        if ((currentHour >= 7 && currentHour <= 9) || (currentHour >= 17 && currentHour <= 19)) {
+            const trafficFactor = vehicleType === 'Motorbike' ? 1.2 : 1.5;
+            durationMin = Math.round(durationMin * trafficFactor);
         }
 
         // Calculate Fare (Dynamic Pricing)
-        const fare = this._calculateFare(vehicleType, distanceKm);
+        const fareInfo = this._calculateFare(vehicleType, distanceKm);
+        const fare = fareInfo.total;
 
         // Calculate Discount
         let discountAmount = 0;
@@ -211,15 +243,21 @@ class TripService {
             }
         }
 
+        // Include discount in breakdown for reporting
+        fareInfo.discountAmount = discountAmount;
+        fareInfo.finalTotal = finalPrice;
+
         return {
             distance: distanceKm.toFixed(1), // km string
             duration: durationMin, // min
-            originalPrice: fare,
-            price: finalPrice,
+            originalFare: fare,
+            fare: finalPrice,
+            fareBreakdown: fareInfo,
+            vehicleType: vehicleType,
             discountAmount: discountAmount,
+            discountApplied: discountAmount > 0,
             currency: 'VND',
-            path: distanceOverride ? null : (await mapsService.calculateRoute(pickup, dropoff)).geometry // Slight inefficiency calling calculate twice if not locally cached, but ok for now. 
-            // Better: Re-use routeData if available.
+            path: distanceOverride ? null : (routeData?.geometry || null)
         };
     }
 

@@ -25,29 +25,30 @@ class AIController {
      */
     async getCommandInstruction(req, res) {
         try {
-            const { text } = req.body;
+            const { text, query } = req.body;
+            const userText = text || query;
 
             // Validate input
-            if (!text || typeof text !== 'string' || text.trim().length === 0) {
+            if (!userText || typeof userText !== 'string' || userText.trim().length === 0) {
                 return res.status(400).json({
                     success: false,
                     response_type: "ERROR",
                     message: "Vui lòng cung cấp câu lệnh hợp lệ.",
-                    error: "Missing or invalid 'text' field"
+                    error: "Missing or invalid 'text' or 'query' field"
                 });
             }
 
             // Process the command using AI service
-            const result = await aiService.processCommand(text.trim());
+            const result = await aiService.processCommand(userText.trim());
 
             // Return appropriate status code based on success
             const statusCode = result.success ? 200 : 400;
-            
+
             return res.status(statusCode).json(result);
 
         } catch (error) {
             console.error('AI Controller Error:', error);
-            
+
             return res.status(500).json({
                 success: false,
                 response_type: "ERROR",
@@ -63,7 +64,8 @@ class AIController {
      */
     async getQueryResponse(req, res) {
         try {
-            const { text } = req.body;
+            const { text, query } = req.body;
+            const userText = text || query;
             const userId = req.user?.uid;
 
             if (!userId) {
@@ -75,16 +77,16 @@ class AIController {
                 });
             }
 
-            if (!text || typeof text !== 'string' || text.trim().length === 0) {
+            if (!userText || typeof userText !== 'string' || userText.trim().length === 0) {
                 return res.status(400).json({
                     success: false,
                     response_type: "ERROR",
                     message: "Vui lòng cung cấp câu hỏi hợp lệ.",
-                    error: "Missing or invalid 'text' field"
+                    error: "Missing or invalid 'text' or 'query' field"
                 });
             }
 
-            const answer = await aiService.answerTripHistoryQuery(userId, text.trim());
+            const answer = await aiService.answerTripHistoryQuery(userId, userText.trim());
 
             return res.status(200).json({
                 success: true,
@@ -103,7 +105,7 @@ class AIController {
         }
     }
 
-    
+
 }
 
 export default new AIController();

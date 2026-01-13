@@ -66,7 +66,7 @@ export const tripService = {
 
             return {
                 path: coords,
-                distance: (route.distance / 1000).toFixed(1), // km
+                distance: route.distance, // meters (number)
                 duration: Math.round(route.duration / 60) // min
             };
         } catch (error) {

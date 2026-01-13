@@ -82,8 +82,12 @@ Nhiệm vụ của bạn là phân tích câu lệnh của người dùng và ch
 3. Intent "OPEN_TRIP_HISTORY" (Mở lịch sử chuyến đi):
    - Không có lệnh đi kèm trong "steps".
 
+4. Intent "GENERAL" (Trò chuyện hoặc yêu cầu khác):
+   - Sử dụng khi người dùng chào hỏi hoặc hỏi những câu không thuộc các intent trên.
+   - Không có lệnh đi kèm trong "steps".
+
 ### QUY TẮC ĐẦU RA (CHỈ TRẢ VỀ JSON):
-- KHÔNG giải thích, KHÔNG chào hỏi. Luôn trả về JSON hợp lệ.
+- KHÔNG giải thích, KHÔNG chào hỏi bên ngoài JSON. Luôn trả về JSON hợp lệ.
 - Trường "message" là câu phản hồi ngắn gọn cho người dùng.
 - Đối với các lệnh SET_DESTINATION hoặc SET_LOCATION: Phải cung cấp tên địa điểm ("value"). KHÔNG thêm trường lat, lng vào đây.
 
@@ -97,6 +101,19 @@ Nhiệm vụ của bạn là phân tích câu lệnh của người dùng và ch
     "steps": [
       { "cmd": "TÊN_LỆNH", "value": "Giá trị"}
     ]
+  }
+}
+
+### VÍ DỤ:
+User: "Chào bạn"
+Output:
+{
+  "success": true,
+  "response_type": "ACTION",
+  "message": "Xin chào! Tôi có thể giúp gì cho bạn?",
+  "data": {
+    "intent": "GENERAL",
+    "steps": []
   }
 }
 
@@ -155,19 +172,31 @@ Output:
             });
 
             const responseText = completion.choices?.[0]?.message?.content || '';
+            console.log('--- RAW AI RESPONSE ---');
+            console.log(responseText);
+            console.log('-----------------------');
 
-            // Clean the response (remove markdown code blocks if present)
+            // Robust JSON extraction: Find the first '{' and the last '}'
             let cleanedText = responseText.trim();
-            if (cleanedText.startsWith('```json')) {
-                cleanedText = cleanedText.replace(/```json\s*/, '').replace(/```\s*$/, '');
-            } else if (cleanedText.startsWith('```')) {
-                cleanedText = cleanedText.replace(/```\s*/, '').replace(/```\s*$/, '');
+            const firstBrace = cleanedText.indexOf('{');
+            const lastBrace = cleanedText.lastIndexOf('}');
+
+            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
             }
 
-            const parsed = JSON.parse(cleanedText);
-            
+            let parsed;
+            try {
+                parsed = JSON.parse(cleanedText);
+            } catch (e) {
+                console.error('JSON Parse Error:', e.message);
+                console.error('Text that failed to parse:', cleanedText);
+                throw new Error('Could not parse AI response as JSON');
+            }
+
             // Validate the response structure
-            if (!parsed.success || !parsed.data || !parsed.data.intent) {
+            if (!parsed || parsed.success === undefined || !parsed.data || !parsed.data.intent) {
+                console.error('Validation Error: Missing fields in parsed JSON', parsed);
                 throw new Error('Invalid AI response structure');
             }
 
@@ -393,13 +422,13 @@ ${userQuestion}`;
 
         // Check if SET_VEHICLE exists
         const hasVehicle = steps.some(step => step.cmd === 'SET_VEHICLE');
-        
+
         // Check if SET_PAYMENT_METHOD exists
         const hasPayment = steps.some(step => step.cmd === 'SET_PAYMENT_METHOD');
 
         // Add defaults if missing
         const enhancedSteps = [...steps];
-        
+
         if (!hasVehicle) {
             enhancedSteps.push({
                 cmd: 'SET_VEHICLE',
@@ -440,8 +469,8 @@ ${userQuestion}`;
         // Find location-based commands and add coordinates
         const enhancedSteps = await Promise.all(
             steps.map(async (step) => {
-                const needsGeocoding = 
-                    step.cmd === 'SET_DESTINATION' || 
+                const needsGeocoding =
+                    step.cmd === 'SET_DESTINATION' ||
                     step.cmd === 'SET_LOCATION';
 
                 if (needsGeocoding && step.value) {
@@ -481,17 +510,17 @@ ${userQuestion}`;
         try {
             // Step 1: Parse user intent
             const aiResponse = await this.parseUserCommand(userText);
-            
+
             // Step 2: Apply default values (MOTORBIKE and WALLET for BOOK_TRIP)
             const responseWithDefaults = this.applyDefaultValues(aiResponse);
-            
+
             // Step 3: Add coordinates for location-based commands
             const enhancedResponse = await this.enhanceWithCoordinates(responseWithDefaults);
-            
+
             return enhancedResponse;
         } catch (error) {
             console.error('Command processing error:', error.message);
-            
+
             // Return error response
             return {
                 success: false,
