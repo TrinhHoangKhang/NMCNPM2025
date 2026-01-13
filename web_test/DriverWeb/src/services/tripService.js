@@ -32,6 +32,12 @@ export const tripService = {
         });
     },
 
+    finishPhase: async (id) => {
+        return apiClient(`/trips/${id}/finish_phase`, {
+            method: 'PATCH'
+        });
+    },
+
     markComplete: async (id, data = {}) => {
         return apiClient(`/trips/${id}/complete`, {
             method: 'PATCH',

@@ -47,6 +47,44 @@ class RankingService {
             return [];
         }
     }
+
+    /**
+     * Get the rank and score of a specific user/driver.
+     * @param {string} userId 
+     * @returns {Promise<{rank: number, score: number} | null>}
+     */
+    async getUserRank(userId) {
+        try {
+            // ZREVRANK returns 0-based index (0 is 1st place)
+            const rank = await redis.zrevrank(this.LEADERBOARD_KEY, userId);
+            const score = await redis.zscore(this.LEADERBOARD_KEY, userId);
+
+            if (rank === null || score === null) {
+                return null;
+            }
+
+            return {
+                rank: rank + 1, // Convert to 1-based rank
+                score: parseInt(score, 10)
+            };
+        } catch (err) {
+            console.error("RankingService GetUserRank Error:", err.message);
+            return null;
+        }
+    }
+
+    /**
+     * Update (Set) the user's score directly.
+     * @param {string} userId 
+     * @param {number} score 
+     */
+    async updateUserScore(userId, score) {
+        try {
+            await redis.zadd(this.LEADERBOARD_KEY, score, userId);
+        } catch (err) {
+            console.error("RankingService UpdateUserScore Error:", err.message);
+        }
+    }
 }
 
 export default new RankingService();

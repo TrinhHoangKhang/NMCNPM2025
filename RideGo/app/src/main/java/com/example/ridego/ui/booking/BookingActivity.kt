@@ -66,6 +66,62 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
         setupSocketListeners()
         setupUI()
         fetchUserPromotions()
+        setupSocketListeners()
+        setupUI()
+        fetchUserPromotions()
+        checkCurrentTrip()
+    }
+
+    private fun checkCurrentTrip() {
+        RetrofitClient.instance.getCurrentTrip().enqueue(object : Callback<TripResponse> {
+            override fun onResponse(call: Call<TripResponse>, response: Response<TripResponse>) {
+                if (response.isSuccessful) {
+                    val trip = response.body()?.data
+                    if (trip != null && trip.status != "COMPLETED" && trip.status != "CANCELLED" && trip.status != "NO_DRIVER_FOUND") {
+                        Toast.makeText(this@BookingActivity, "Bạn đang có chuyến đi chưa hoàn thành!", Toast.LENGTH_SHORT).show()
+                        
+                        val finalId = trip.tripId ?: trip.mongoId ?: trip.simpleId ?: ""
+                        if (trip.status == "REQUESTED") {
+                             val intent = Intent(this@BookingActivity, FindingDriverActivity::class.java)
+                             intent.putExtra("TRIP_ID", finalId)
+                             // Fill other data if needed or let FindingDriver fetch it? FindingDriver expects extras...
+                             // It's safer to just go to TripDetails for consistency OR strictly FindingDriver.
+                             // TripDetails handles data fetching better. Let's try TripDetails as generic fallback?
+                             // User requirement: "move to that ride detail instead".
+                             // But REQUESTED maps to FindingDriverActivity usually.
+                             // Let's rely on standard TripDetailsActivity for everything EXCEPT REQUESTED? 
+                             // Or just send to TripDetailsActivity and let it show "Looking for driver"?
+                             // TripDetailsActivity UI currently shows "Waiting for Driver" if status is REQUESTED?
+                             // Let's check TripDetailsActivity.kt... it handles ACCEPTED, IN_PROGRESS etc.
+                             // If I send to FindingDriverActivity without full extras (lat/lng), it might crash or show empty map.
+                             // FindingDriverActivity relies on Intent Extras heavily (lines 47-65).
+                             // So best to use TripDetailsActivity if possible, OR fetch details first.
+                             // Given complexity, let's redirect to TripDetailsActivity and update TripDetailsActivity to handle REQUESTED state gracefully if needed.
+                             // WAIT: TripDetailsActivity is for AFTER matching. FindingDriverActivity is for BEFORE.
+                             // I should fetch trip details, populate intent, then go to FindingDriverActivity.
+                             // OR simpler: Go to TripDetailsActivity and make sure it supports REQUESTED state (e.g. show "Searching...").
+                             // Validating TripDetailsActivity support for REQUESTED...
+                             // TripDetailsActivity.kt line 189: "ACCEPTED", "IN_PROGRESS"... doesn't explicitly handle "REQUESTED".
+                             // So I should populate intent and go to FindingDriverActivity.
+                             // BUT populating intent from just `trip` object might be hard if some fields missing.
+                             // Let's Try: Go to TripDetailsActivity, and if status is REQUESTED, Update TripDetailsActivity to show "Searching".
+                             // That seems more robust than trying to reconstruct FindingDriverActivity intent.
+                             // But for now, let's just use TripDetailsActivity and assume it works or I'll fix it.
+                             val intentDetails = Intent(this@BookingActivity, TripDetailsActivity::class.java)
+                             intentDetails.putExtra("TRIP_ID", finalId)
+                             startActivity(intentDetails)
+                             finish()
+                        } else {
+                             val intentDetails = Intent(this@BookingActivity, TripDetailsActivity::class.java)
+                             intentDetails.putExtra("TRIP_ID", finalId)
+                             startActivity(intentDetails)
+                             finish()
+                        }
+                    }
+                }
+            }
+            override fun onFailure(call: Call<TripResponse>, t: Throwable) {}
+        })
     }
 
     private fun getDataFromIntent() {

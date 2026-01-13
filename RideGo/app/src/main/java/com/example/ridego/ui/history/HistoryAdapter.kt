@@ -7,11 +7,19 @@ import com.example.ridego.databinding.ItemTripHistoryBinding
 import com.example.ridego.data.model.RideHistory
 import java.text.DecimalFormat
 
-class HistoryAdapter(private val list: List<RideHistory>) :
-    RecyclerView.Adapter<HistoryAdapter.HistoryViewHolder>() {
+class HistoryAdapter(
+    private val list: List<RideHistory>,
+    private val onItemClick: (RideHistory) -> Unit
+) : RecyclerView.Adapter<HistoryAdapter.HistoryViewHolder>() {
 
     inner class HistoryViewHolder(val binding: ItemTripHistoryBinding) :
-        RecyclerView.ViewHolder(binding.root)
+        RecyclerView.ViewHolder(binding.root) {
+        init {
+            binding.root.setOnClickListener {
+                onItemClick(list[adapterPosition])
+            }
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryViewHolder {
         val binding = ItemTripHistoryBinding.inflate(LayoutInflater.from(parent.context), parent, false)

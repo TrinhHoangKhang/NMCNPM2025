@@ -101,3 +101,7 @@ data class ClaimDiscountResponse(
     val message: String,
     val discount: Promotion?
 )
+
+data class PaymentRequest(
+    val method: String // "CASH" or "WALLET"
+)

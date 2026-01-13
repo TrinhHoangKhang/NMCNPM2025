@@ -360,6 +360,62 @@ class TripController {
         }
     }
 
+    // PATCH /api/trips/:id/finish_phase
+    async finishPhase(req, res) {
+        try {
+            const driverId = req.user.uid;
+            const { id } = req.params;
+            const trip = await tripService.finishPhase(id, driverId);
+
+            // SOCKET: Notify Rider to Pay
+            const io = req.app.get('socketio');
+            if (io) {
+                const riderSocketIds = await presenceService.getUserSocketIds(trip.riderId);
+                riderSocketIds.forEach(socketId => {
+                    io.to(socketId).emit('payment_required', {
+                        tripId: trip.id,
+                        amount: trip.fare,
+                        status: 'ARRIVED'
+                    });
+                });
+                console.log(`Socket emitted payment_required for trip ${id}`);
+            }
+
+            res.status(200).json({ id: trip.id, ...trip.toJSON() });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    // POST /api/trips/:id/pay
+    async payTrip(req, res) {
+        try {
+            const userId = req.user.uid;
+            const { id } = req.params;
+            const { method } = req.body; // CASH or WALLET
+
+            const trip = await tripService.processPayment(id, userId, method);
+
+            // SOCKET: Notify Driver to Confirm
+            const io = req.app.get('socketio');
+            if (io && trip.driverId) {
+                const driverSocketIds = await presenceService.getUserSocketIds(trip.driverId);
+                driverSocketIds.forEach(socketId => {
+                    io.to(socketId).emit('driver_confirm_payment', {
+                        tripId: trip.id,
+                        method: method,
+                        amount: trip.fare,
+                        status: 'PAYMENT_PROCESSING'
+                    });
+                });
+            }
+
+            res.status(200).json({ id: trip.id, ...trip.toJSON() });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
     // PATCH /api/trips/:id/complete
     async markTripComplete(req, res) {
         try {

@@ -39,6 +39,9 @@ interface RideGoApiService {
 
     @GET("api/trips/current")
     fun getCurrentTrip(): Call<TripResponse>
+
+    @POST("api/trips/{id}/pay")
+    fun submitPayment(@Path("id") id: String, @Body request: PaymentRequest): Call<TripResponse>
 }
 
 // --- NẾU THẤY object RetrofitClient Ở ĐÂY THÌ XÓA NÓ ĐI NHÉ! ---

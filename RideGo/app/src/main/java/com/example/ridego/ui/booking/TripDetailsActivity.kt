@@ -55,9 +55,45 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
         binding.btnBack.setOnClickListener { finish() } // Or navigate to Home
         
         binding.btnCancelTrip.setOnClickListener {
-            // TODO: Implement cancel logic or reuse from FindingDriverActivity
-            Toast.makeText(this, "Tính năng hủy đang phát triển", Toast.LENGTH_SHORT).show()
+             // Abort Trip Logic
+             androidx.appcompat.app.AlertDialog.Builder(this)
+                 .setTitle("Hủy chuyến đi?")
+                 .setMessage("Bạn có chắc chắn muốn hủy chuyến đi này không?")
+                 .setPositiveButton("Hủy chuyến") { _, _ ->
+                     performCancelTrip()
+                 }
+                 .setNegativeButton("Quay lại", null)
+                 .show()
         }
+    }
+
+    private fun performCancelTrip() {
+        // Use default reason or let user type? Keeping it simple "Rider aborted"
+        val request = com.example.ridego.data.model.CancelTripRequest(tripId, "Rider aborted trip")
+        
+        binding.btnCancelTrip.isEnabled = false
+        binding.btnCancelTrip.text = "Đang hủy..."
+
+        RetrofitClient.instance.cancelTrip(request).enqueue(object : Callback<TripResponse> {
+            override fun onResponse(call: Call<TripResponse>, response: Response<TripResponse>) {
+                if (response.isSuccessful) {
+                    Toast.makeText(this@TripDetailsActivity, "Đã hủy chuyến đi", Toast.LENGTH_SHORT).show()
+                    updateStatusUI("CANCELLED")
+                    finish() // Close details or stay? User said "abort trip right away", likely wants to exit or see cancelled state.
+                    // finish() is safer to return to home.
+                } else {
+                    binding.btnCancelTrip.isEnabled = true
+                    binding.btnCancelTrip.text = "Hủy chuyến"
+                    Toast.makeText(this@TripDetailsActivity, "Hủy thất bại: ${response.code()}", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<TripResponse>, t: Throwable) {
+                binding.btnCancelTrip.isEnabled = true
+                binding.btnCancelTrip.text = "Hủy chuyến"
+                Toast.makeText(this@TripDetailsActivity, "Lỗi mạng: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     private fun fetchTripDetails() {
@@ -124,27 +160,104 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
                  updateStatusUI(status)
              }
         }
+
+        // NEW: Listen for Payment Requirement
+        SocketManager.on("payment_required") { data ->
+            // data: { tripId, amount, status: 'ARRIVED' }
+            runOnUiThread {
+                val amount = data.optDouble("amount")
+                showPaymentDialog(amount)
+                updateStatusUI("ARRIVED")
+            }
+        }
+
+        // NEW: Listen for Payment Confirmation from Driver (redundant with trip_status_update but good for feedback)
+        SocketManager.on("trip_completed") { data ->
+            runOnUiThread {
+                updateStatusUI("COMPLETED")
+            }
+        }
     }
     
+    private fun showPaymentDialog(amount: Double) {
+        val formatter = DecimalFormat("#,###")
+        val amountStr = formatter.format(amount) + "đ"
+
+        val options = arrayOf("Tiền mặt (Cash)", "Ví điện tử (Wallet)")
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Thanh toán: $amountStr")
+            .setCancelable(false)
+            .setSingleChoiceItems(options, 0, null)
+            .setPositiveButton("Thanh toán") { dialog, which ->
+                val listView = (dialog as androidx.appcompat.app.AlertDialog).listView
+                val selectedPosition = listView.checkedItemPosition
+                val method = if (selectedPosition == 1) "WALLET" else "CASH"
+                submitPayment(method)
+            }
+            .setNegativeButton("Hỗ trợ") { _, _ -> 
+                Toast.makeText(this, "Vui lòng liên hệ tổng đài", Toast.LENGTH_SHORT).show()
+                // Keep dialog open/reopen logic if strict
+            }
+            .show()
+    }
+
+    private fun submitPayment(method: String) {
+        val request = com.example.ridego.data.model.PaymentRequest(method)
+        RetrofitClient.instance.submitPayment(tripId, request).enqueue(object : Callback<TripResponse> {
+            override fun onResponse(call: Call<TripResponse>, response: Response<TripResponse>) {
+                if (response.isSuccessful) {
+                    val status = if (method == "CASH") "Chờ tài xế xác nhận tiền mặt..." else "Đang xử lý ví..."
+                    binding.tvTripStatus.text = status
+                    binding.tvTripStatus.setTextColor(Color.YELLOW)
+                    Toast.makeText(this@TripDetailsActivity, "Đã gửi thanh toán: $method", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@TripDetailsActivity, "Lỗi thanh toán: ${response.message()}", Toast.LENGTH_SHORT).show()
+                }
+            }
+            override fun onFailure(call: Call<TripResponse>, t: Throwable) {
+                Toast.makeText(this@TripDetailsActivity, "Lỗi mạng: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
     private fun updateStatusUI(status: String) {
         when(status) {
+            "REQUESTED" -> {
+                binding.tvTripStatus.text = "Đang tìm tài xế..."
+                binding.tvTripStatus.setTextColor(Color.parseColor("#FF9800"))
+                binding.btnCancelTrip.visibility = android.view.View.VISIBLE
+            }
             "ACCEPTED" -> {
                 binding.tvTripStatus.text = "Tài xế đang đến"
                 binding.tvTripStatus.setTextColor(Color.parseColor("#4CAF50")) // Green
+                binding.btnCancelTrip.visibility = android.view.View.VISIBLE
             }
             "IN_PROGRESS" -> {
                  binding.tvTripStatus.text = "Đang trong chuyến đi"
                  binding.tvTripStatus.setTextColor(Color.parseColor("#2196F3")) // Blue
+                 binding.btnCancelTrip.visibility = android.view.View.VISIBLE
+            }
+            "ARRIVED" -> {
+                 binding.tvTripStatus.text = "Đã đến nơi - Vui lòng thanh toán"
+                 binding.tvTripStatus.setTextColor(Color.parseColor("#FF9800")) // Orange
+                 binding.btnCancelTrip.visibility = android.view.View.GONE
+                 // Optionally re-trigger dialog if missed
+            }
+            "PAYMENT_PROCESSING" -> {
+                 binding.tvTripStatus.text = "Đang xử lý thanh toán..."
+                 binding.tvTripStatus.setTextColor(Color.parseColor("#FF9800"))
+                 binding.btnCancelTrip.visibility = android.view.View.GONE
             }
             "COMPLETED" -> {
                  binding.tvTripStatus.text = "Chuyến đi hoàn tất"
                  binding.tvTripStatus.setTextColor(Color.parseColor("#4CAF50"))
-                 Toast.makeText(this, "Chuyến đi đã hoàn thành!", Toast.LENGTH_LONG).show()
-                 // Show rating dialog or finish
+                 binding.btnCancelTrip.visibility = android.view.View.GONE
             }
             "CANCELLED" -> {
                  binding.tvTripStatus.text = "Đã hủy"
                  binding.tvTripStatus.setTextColor(Color.RED)
+                 binding.btnCancelTrip.visibility = android.view.View.GONE
             }
         }
     }

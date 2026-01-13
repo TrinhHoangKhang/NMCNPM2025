@@ -28,7 +28,7 @@ class HistoryActivity : AppCompatActivity() {
 
     private fun setupRecyclerView() {
         binding.rvHistory.layoutManager = LinearLayoutManager(this)
-        binding.rvHistory.adapter = HistoryAdapter(emptyList())
+        binding.rvHistory.adapter = HistoryAdapter(emptyList()) {}
     }
 
     private fun fetchHistory() {
@@ -37,7 +37,11 @@ class HistoryActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     val list = response.body() ?: emptyList()
                     val sortedList = list.sortedByDescending { it.createdAt }
-                    binding.rvHistory.adapter = HistoryAdapter(sortedList)
+                    binding.rvHistory.adapter = HistoryAdapter(sortedList) { trip ->
+                         val intent = android.content.Intent(this@HistoryActivity, com.example.ridego.ui.booking.TripDetailsActivity::class.java)
+                         intent.putExtra("TRIP_ID", trip.id)
+                         startActivity(intent)
+                    }
                 } else {
                     Toast.makeText(this@HistoryActivity, "Lỗi tải lịch sử: ${response.code()}", Toast.LENGTH_SHORT).show()
                 }

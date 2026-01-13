@@ -312,7 +312,7 @@ class TripService {
         // 1. Check if user is a DRIVER
         const driverQuery = db.collection('trips')
             .where('driverId', '==', userId)
-            .where('status', 'in', ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS'])
+            .where('status', 'in', ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS', 'ARRIVED', 'PAYMENT_PROCESSING'])
             .limit(1);
 
         const driverSnap = await driverQuery.get();
@@ -324,7 +324,7 @@ class TripService {
         // 2. Check if user is a RIDER
         const riderQuery = db.collection('trips')
             .where('riderId', '==', userId)
-            .where('status', 'in', ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS'])
+            .where('status', 'in', ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS', 'ARRIVED', 'PAYMENT_PROCESSING'])
             .limit(1);
 
         const riderSnap = await riderQuery.get();
@@ -468,6 +468,68 @@ class TripService {
         await tripRef.update({
             status: 'IN_PROGRESS',
             pickupAt: new Date().toISOString()
+        });
+
+        const updated = await tripRef.get();
+        const trip = new Trip(tripId, updated.data());
+        return await this._populateAll(trip);
+    }
+
+    // NEW: Phase 1 of Completion - Driver arrives at destination
+    async finishPhase(tripId, driverId) {
+        const tripRef = db.collection('trips').doc(tripId);
+        const doc = await tripRef.get();
+        if (!doc.exists) throw new Error('Trip not found');
+        const data = doc.data();
+
+        if (data.driverId !== driverId) throw new Error('Unauthorized');
+        if (data.status !== 'IN_PROGRESS') throw new Error(`Invalid status transition from ${data.status}`);
+
+        await tripRef.update({
+            status: 'ARRIVED',
+            arrivedAt: new Date().toISOString()
+        });
+
+        const updated = await tripRef.get();
+        const trip = new Trip(tripId, updated.data());
+        return await this._populateAll(trip);
+    }
+
+    // NEW: Phase 2 - Rider pays
+    async processPayment(tripId, userId, method) {
+        const tripRef = db.collection('trips').doc(tripId);
+        const doc = await tripRef.get();
+        if (!doc.exists) throw new Error('Trip not found');
+        const data = doc.data();
+
+        // Validate Rider
+        // if (data.riderId !== userId) throw new Error('Unauthorized'); // Optional strict check
+
+        if (data.status !== 'ARRIVED' && data.status !== 'PAYMENT_PENDING') {
+            // Allow retry if already pending?
+            throw new Error(`Invalid status for payment: ${data.status}`);
+        }
+
+        let newStatus = 'PAYMENT_PROCESSING';
+        let paymentStatus = 'PENDING';
+
+        if (method === 'WALLET') {
+            // TODO: Implement Wallet Deduction
+            // For now, mock success
+            paymentStatus = 'PAID'; // Assume wallet is instant
+            // newStatus = 'PAYMENT_VERIFIED'; // Or keep processing until driver confirms?
+            // Requirement says "server will verify... with driver confirm again".
+            // So state -> PAYMENT_PROCESSING -> Driver Confirms
+        } else {
+            // Cash
+            paymentStatus = 'PENDING_CASH';
+        }
+
+        await tripRef.update({
+            status: newStatus,
+            paymentMethod: method,
+            paymentStatus: paymentStatus,
+            paymentUpdatedAt: new Date().toISOString()
         });
 
         const updated = await tripRef.get();

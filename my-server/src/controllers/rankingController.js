@@ -79,6 +79,53 @@ class RankingController {
             res.status(500).json({ success: false, error: error.message });
         }
     }
+
+
+    // POST /api/ranks/update
+    async updateScore(req, res) {
+        try {
+            const { userId, score, points } = req.body;
+            if (!userId) {
+                return res.status(400).json({ success: false, error: "userId is required" });
+            }
+
+            if (score !== undefined) {
+                await rankingService.updateUserScore(userId, score);
+            } else if (points !== undefined) {
+                await rankingService.updateScore(userId, points);
+            } else {
+                return res.status(400).json({ success: false, error: "Provide 'score' (set) or 'points' (add)" });
+            }
+
+            // Return new rank
+            const rankData = await rankingService.getUserRank(userId);
+            res.status(200).json({ success: true, data: { userId, ...rankData } });
+
+        } catch (error) {
+            console.error("Ranking Update Error:", error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // GET /api/ranks/:userId
+    async getUserRank(req, res) {
+        try {
+            const { userId } = req.params;
+            const rankData = await rankingService.getUserRank(userId);
+
+            if (!rankData) {
+                return res.status(404).json({ success: false, error: "User not found in ranking" });
+            }
+
+            // Optionally fetch user details if needed by valid DB check
+            // For now, return pure rank data from Redis
+            res.status(200).json({ success: true, data: { userId, ...rankData } });
+
+        } catch (error) {
+            console.error("Get Rank Error:", error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
 }
 
 export default new RankingController();
