@@ -78,7 +78,7 @@ class FindingDriverActivity : AppCompatActivity(), OnMapReadyCallback {
             binding.btnReport.isEnabled = false
             binding.btnReport.text = "Đang hủy..."
 
-            val request = CancelTripRequest(tripId)
+            val request = CancelTripRequest(tripId, "User requested cancellation")
             com.example.ridego.data.api.RetrofitClient.instance.cancelTrip(request).enqueue(object : retrofit2.Callback<com.example.ridego.data.model.TripResponse> {
                 override fun onResponse(call: retrofit2.Call<com.example.ridego.data.model.TripResponse>, response: retrofit2.Response<com.example.ridego.data.model.TripResponse>) {
                     if (response.isSuccessful) {

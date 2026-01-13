@@ -7,7 +7,7 @@ import redis from './src/config/redisConfig.js';
 // Load environment variables
 dotenv.config();
 
-import { admin } from './src/config/firebaseConfig.js';
+import { admin, db } from './src/config/firebaseConfig.js';
 import jwt from 'jsonwebtoken';
 import driverService from './src/services/driverService.js';
 import presenceService from './src/services/presenceService.js';
@@ -65,7 +65,27 @@ io.use(async (socket, next) => {
         }
 
         const decoded = await verifySocketToken(token);
-        socket.user = decoded; // Attach user data to socket
+
+        // FETCH USER FROM DB TO GET ROLE
+        let role = 'USER';
+        let name = decoded.name;
+        try {
+            const userDoc = await db.collection('users').doc(decoded.uid).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                role = userData.role || 'USER';
+                name = userData.name || name || "User";
+            }
+        } catch (dbError) {
+            console.error("Socket DB Fetch Error:", dbError.message);
+        }
+
+        socket.user = {
+            uid: decoded.uid,
+            email: decoded.email,
+            name: name,
+            role: role
+        };
         next();
     } catch (err) {
         console.error("Socket Auth Error:", err.message);
@@ -101,7 +121,7 @@ io.on('connection', async (socket) => {
                 }
 
                 if (driverProfile && driverProfile.vehicle && driverProfile.vehicle.type) {
-                    const vehicleRoom = `drivers_${driverProfile.vehicle.type}`;
+                    const vehicleRoom = `drivers_${driverProfile.vehicle.type.toUpperCase()}`;
                     socket.join(vehicleRoom);
                     console.log(`DEBUG: Driver ${socket.user.email} auto-joined room '${vehicleRoom}'`);
                 }
@@ -168,7 +188,7 @@ io.on('connection', async (socket) => {
                 });
 
                 // Join new vehicle room
-                const newRoom = `drivers_${vehicleType}`;
+                const newRoom = `drivers_${vehicleType.toUpperCase()}`;
                 socket.join(newRoom);
                 console.log(`Driver ${socket.user.email} switched to '${newRoom}'`);
 
