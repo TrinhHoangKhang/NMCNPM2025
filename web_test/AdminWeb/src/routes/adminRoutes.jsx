@@ -6,6 +6,7 @@ import DriversManagement from '../pages/DriversManagement';
 import AdminsManagement from '../pages/AdminsManagement';
 import Dashboard from '../pages/Dashboard';
 import Settings from '../pages/Settings';
+import DiscountsManagement from '../pages/DiscountsManagement';
 import Achievement from '../pages/Achievement';
 import { Navigate } from 'react-router-dom';
 
@@ -22,6 +23,7 @@ export const adminRoutes = [
           { path: "riders", element: <RidersManagement /> },
           { path: "drivers", element: <DriversManagement /> },
           { path: "admins", element: <AdminsManagement /> },
+          { path: "discounts", element: <DiscountsManagement /> },
           { path: "trips", element: <TripsManagement /> },
           { path: "settings", element: <Settings /> },
           { path: "achievements", element: <Achievement /> }

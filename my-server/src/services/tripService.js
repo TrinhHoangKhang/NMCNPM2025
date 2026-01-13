@@ -127,13 +127,12 @@ class TripService {
     }
 
     // 1. Create a Trip Request
-    async createTripRequest(riderId, pickup, dropoff, vehicleType, paymentMethod) {
+    async createTripRequest(riderId, pickup, dropoff, vehicleType, paymentMethod, discountId = null) {
         // ... (existing code omitted for brevity, assuming it's unchanged unless I am rewriting the whole file)
         // Check if user already has an active trip
         const existingTrip = await this.getCurrentTripForUser(riderId);
         if (existingTrip) {
             // throw new Error("Cant create new trip: existing active trip found");
-            // Allow for dev/testing ease or check status rigorously
         }
 
         const routeData = await mapsService.calculateRoute(pickup, dropoff);
@@ -144,7 +143,21 @@ class TripService {
         // B. Calculate Fare based on vehicle type (Dynamic Pricing)
         let fare = this._calculateFare(vehicleType, distanceKm);
 
-        // C. Save to DB
+        // C. Apply Discount
+        let discountAmount = 0;
+        let finalFare = fare;
+        if (discountId) {
+            const discount = await discountService.getDiscountById(discountId);
+            if (discount) {
+                if (!discount.isActive) {
+                    throw new Error("Mã giảm giá này hiện đã bị khóa và không thể sử dụng");
+                }
+                discountAmount = discount.calculateDiscount(fare);
+                finalFare = fare - discountAmount;
+            }
+        }
+
+        // D. Save to DB
         const tripRef = db.collection('trips').doc();
         const tripData = {
             riderId,
@@ -153,7 +166,10 @@ class TripService {
             vehicleType,
             paymentMethod,
             paymentStatus: 'PENDING',
-            fare,
+            originalFare: fare,
+            discountId: discountId,
+            discountAmount: discountAmount,
+            fare: finalFare,
             distance: routeData.distance.value,
             duration: routeData.duration.value,
             path: routeData.geometry,
@@ -168,19 +184,15 @@ class TripService {
     }
 
     // 1b. Estimate Trip Price & Distance
-    async estimateTrip(pickup, dropoff, vehicleType, distanceOverride = null) {
+    async estimateTrip(pickup, dropoff, vehicleType, distanceOverride = null, discountId = null) {
         let distanceKm = 0;
         let durationMin = 0;
 
         if (distanceOverride) {
-            // Use client-provided distance if verified/trusted logic allows
             distanceKm = parseFloat(distanceOverride);
-            // Estimate duration roughly if not provided (e.g. 30km/h avg)
             durationMin = Math.round((distanceKm / 30) * 60);
         } else {
-            // Calculate route
             const routeData = await mapsService.calculateRoute(pickup, dropoff);
-            // Distance in KM
             distanceKm = routeData.distance.value / 1000;
             durationMin = Math.round(routeData.duration.value / 60);
         }
@@ -188,11 +200,26 @@ class TripService {
         // Calculate Fare (Dynamic Pricing)
         const fare = this._calculateFare(vehicleType, distanceKm);
 
+        // Calculate Discount
+        let discountAmount = 0;
+        let finalPrice = fare;
+        if (discountId) {
+            const discount = await discountService.getDiscountById(discountId);
+            if (discount && discount.isActive) {
+                discountAmount = discount.calculateDiscount(fare);
+                finalPrice = fare - discountAmount;
+            }
+        }
+
         return {
             distance: distanceKm.toFixed(1), // km string
             duration: durationMin, // min
-            price: fare,
-            currency: 'VND'
+            originalPrice: fare,
+            price: finalPrice,
+            discountAmount: discountAmount,
+            currency: 'VND',
+            path: distanceOverride ? null : (await mapsService.calculateRoute(pickup, dropoff)).geometry // Slight inefficiency calling calculate twice if not locally cached, but ok for now. 
+            // Better: Re-use routeData if available.
         };
     }
 

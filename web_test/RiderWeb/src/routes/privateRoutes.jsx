@@ -10,6 +10,7 @@ import TripDetails from '../pages/TripDetails';
 import Friends from '../pages/Friends';
 import Chat from '../pages/Chat';
 import Chatbot from '../pages/Chatbot';
+import Discounts from '../pages/Discounts';
 import DriverProfile from '../pages/DriverProfile';
 
 export const privateRoutes = [
@@ -29,7 +30,8 @@ export const privateRoutes = [
           { path: "/trip/:id", element: <TripDetails /> },
           { path: "/friends", element: <Friends /> },
           { path: "/chat", element: <Chat /> },
-          { path: "/chatbot", element: <Chatbot /> }
+          { path: "/chatbot", element: <Chatbot /> },
+          { path: "/discounts", element: <Discounts /> }
         ]
       }
     ]

@@ -22,6 +22,7 @@ import userRoutes from './routes/userRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import rankingRoutes from './routes/rankingRoutes.js';
 import friendRoutes from './routes/friendRoutes.js';
+import discountRoutes from './routes/discountRoutes.js';
 
 import paymentRoutes from './routes/paymentRoutes.js';
 // ==========================================
@@ -74,6 +75,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/ranks', rankingRoutes);
 app.use('/api/friends', friendRoutes);
+app.use('/api/discounts', discountRoutes);
 app.use('/api/payments', paymentRoutes);
 
 // Health Check

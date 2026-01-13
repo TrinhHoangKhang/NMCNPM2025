@@ -9,7 +9,7 @@ export const userService = {
         // userData: { name, phone, etc. }
         return apiClient(`/users/${id}`, {
             method: 'PATCH',
-            body: JSON.stringify(userData)
+            body: userData
         });
     }
 };

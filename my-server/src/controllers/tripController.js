@@ -72,7 +72,8 @@ class TripController {
                 pickupLocation,
                 dropoffLocation,
                 vehicleType,
-                paymentMethod
+                paymentMethod,
+                req.body.discountId // Pass discountId if present
             );
 
             // Return the trip ID so the client can reference/cancel later
@@ -139,7 +140,8 @@ class TripController {
                 pickupLocation,
                 dropoffLocation,
                 vehicleType,
-                distance
+                distance,
+                req.body.discountId // Pass discountId if present
             );
             res.status(200).json(estimate);
         } catch (error) {
