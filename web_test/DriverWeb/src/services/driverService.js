@@ -5,6 +5,11 @@ export const driverService = {
         return apiClient(`/drivers/${id}`);
     },
 
+    getDriverById: async (id) => {
+        const response = await apiClient.get(`/drivers/${id}`);
+        return response.data;
+    },
+
     updateDriver: async (id, driverData) => {
         // driverData: { vehicleType, licensePlate, etc. }
         return apiClient(`/drivers/${id}`, {

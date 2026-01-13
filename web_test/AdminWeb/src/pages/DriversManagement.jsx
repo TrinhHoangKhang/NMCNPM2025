@@ -12,7 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { Trash2, Search } from 'lucide-react';
+import { Trash2, Search, Eye } from 'lucide-react';
+
+import { useSocket } from '../context/SocketContext';
 
 const DriversManagement = () => {
     const [users, setUsers] = useState([]);
@@ -20,9 +22,32 @@ const DriversManagement = () => {
     const [error, setError] = useState(null);
     const [search, setSearch] = useState("");
 
+    const socket = useSocket();
+
     useEffect(() => {
         fetchUsers();
     }, []);
+
+    // REAL-TIME STATUS UPDATES
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on('driver_status_update', (data) => {
+            console.log("Driver Status Update:", data);
+            setUsers(prevUsers => prevUsers.map(user => {
+                // Check match by ID (mongo _id or firebase uid)
+                const userId = user.id || user._id;
+                if (userId === data.driverId) {
+                    return { ...user, status: data.status };
+                }
+                return user;
+            }));
+        });
+
+        return () => {
+            socket.off('driver_status_update');
+        };
+    }, [socket]);
 
     const fetchUsers = async (searchTerm = "") => {
         setLoading(true);
@@ -119,7 +144,14 @@ const DriversManagement = () => {
                                             {user.status || 'OFFLINE'}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right flex justify-end gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => window.location.href = `/drivers/${user.id || user._id}`}
+                                        >
+                                            <Eye className="h-4 w-4 text-blue-500" />
+                                        </Button>
                                         <Button
                                             variant="ghost"
                                             size="icon"

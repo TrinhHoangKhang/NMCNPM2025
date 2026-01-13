@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { Trash2, Search } from 'lucide-react';
+import { Trash2, Search, Eye } from 'lucide-react';
 
 const RidersManagement = () => {
     const [users, setUsers] = useState([]);
@@ -119,7 +119,14 @@ const RidersManagement = () => {
                                             {user.status || 'OFFLINE'}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right flex justify-end gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => window.location.href = `/riders/${user.id || user._id}`}
+                                        >
+                                            <Eye className="h-4 w-4 text-blue-500" />
+                                        </Button>
                                         <Button
                                             variant="ghost"
                                             size="icon"

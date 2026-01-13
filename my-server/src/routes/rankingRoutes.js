@@ -3,8 +3,7 @@ import rankingController from '../controllers/rankingController.js';
 
 const router = express.Router();
 
-// GET /api/ranks/ranking
-router.get('/ranking', rankingController.getRanking);
+
 
 // GET /api/ranks
 router.get('/', rankingController.getLeaderboard);

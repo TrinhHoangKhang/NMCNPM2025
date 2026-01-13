@@ -9,35 +9,44 @@ class RankingService {
     }
 
     /**
-     * Increment the driver's score (trip count) in the leaderboard.
-     * @param {string} driverId 
-     * @param {number} points - Usually 1 for a completed trip
+     * Helper to get key based on role
      */
-    async updateScore(driverId, points = 1) {
-        if (!driverId) return;
+    getKey(role = 'DRIVER') {
+        return (role.toUpperCase() === 'RIDER') ? 'rider_leaderboard' : 'driver_leaderboard';
+    }
+
+    /**
+     * Increment the user's score in the leaderboard.
+     * @param {string} userId 
+     * @param {number} points 
+     * @param {string} role - 'DRIVER' or 'RIDER'
+     */
+    async updateScore(userId, points = 1, role = 'DRIVER') {
+        if (!userId) return;
         try {
-            await redis.zincrby(this.LEADERBOARD_KEY, points, driverId);
-            // console.log(`RankingService: Incremented score for ${driverId} by ${points}`);
+            const key = this.getKey(role);
+            await redis.zincrby(key, points, userId);
         } catch (err) {
             console.error("RankingService Update Error:", err.message);
         }
     }
 
     /**
-     * Get the top N drivers from the leaderboard.
+     * Get the top N users from the leaderboard.
      * @param {number} limit 
-     * @returns {Promise<Array<{driverId: string, score: number}>>}
+     * @param {string} role 
+     * @returns {Promise<Array<{id: string, score: number}>>}
      */
-    async getTopDrivers(limit = 10) {
+    async getTopUsers(limit = 10, role = 'DRIVER') {
         try {
+            const key = this.getKey(role);
             // ZREVRANGE key 0 limit-1 WITHSCORES
-            // Returns array like [driverId1, score1, driverId2, score2, ...]
-            const result = await redis.zrevrange(this.LEADERBOARD_KEY, 0, limit - 1, 'WITHSCORES');
+            const result = await redis.zrevrange(key, 0, limit - 1, 'WITHSCORES');
 
             const leaderboard = [];
             for (let i = 0; i < result.length; i += 2) {
                 leaderboard.push({
-                    driverId: result[i],
+                    id: result[i],
                     score: parseInt(result[i + 1], 10)
                 });
             }
@@ -49,22 +58,24 @@ class RankingService {
     }
 
     /**
-     * Get the rank and score of a specific user/driver.
+     * Get the rank and score of a specific user.
      * @param {string} userId 
+     * @param {string} role
      * @returns {Promise<{rank: number, score: number} | null>}
      */
-    async getUserRank(userId) {
+    async getUserRank(userId, role = 'DRIVER') {
         try {
-            // ZREVRANK returns 0-based index (0 is 1st place)
-            const rank = await redis.zrevrank(this.LEADERBOARD_KEY, userId);
-            const score = await redis.zscore(this.LEADERBOARD_KEY, userId);
+            const key = this.getKey(role);
+            // ZREVRANK returns 0-based index
+            const rank = await redis.zrevrank(key, userId);
+            const score = await redis.zscore(key, userId);
 
             if (rank === null || score === null) {
                 return null;
             }
 
             return {
-                rank: rank + 1, // Convert to 1-based rank
+                rank: rank + 1,
                 score: parseInt(score, 10)
             };
         } catch (err) {
@@ -77,10 +88,12 @@ class RankingService {
      * Update (Set) the user's score directly.
      * @param {string} userId 
      * @param {number} score 
+     * @param {string} role
      */
-    async updateUserScore(userId, score) {
+    async updateUserScore(userId, score, role = 'DRIVER') {
         try {
-            await redis.zadd(this.LEADERBOARD_KEY, score, userId);
+            const key = this.getKey(role);
+            await redis.zadd(key, score, userId);
         } catch (err) {
             console.error("RankingService UpdateUserScore Error:", err.message);
         }

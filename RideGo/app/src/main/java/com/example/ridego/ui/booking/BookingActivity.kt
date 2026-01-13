@@ -250,6 +250,11 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
                         fetchPathAndDetails()
 
                         finalPrice = result.fare
+                        
+                        // NEW: Update Distance Display
+                        val distanceStr = String.format("%.2f km", currentDistanceKm)
+                        binding.tvDistance.text = distanceStr
+
                         updatePriceUI(result)
                     }
                 } else {

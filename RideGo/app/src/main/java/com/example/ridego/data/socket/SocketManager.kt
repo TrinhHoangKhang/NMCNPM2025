@@ -6,6 +6,7 @@ import io.socket.client.Socket
 import org.json.JSONObject
 import java.net.URISyntaxException
 import com.example.ridego.data.Config
+import io.socket.emitter.Emitter
 
 object SocketManager {
     private var mSocket: Socket? = null
@@ -15,14 +16,43 @@ object SocketManager {
     fun connect() {
         if (mSocket?.connected() == true) return
 
+        val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        if (user != null) {
+            user.getIdToken(false).addOnSuccessListener { result ->
+                val token = result.token
+                connectWithToken(token)
+            }.addOnFailureListener {
+                Log.e("SocketManager", "Failed to get token: ${it.message}")
+                connectWithToken(null) // Try connecting anyway, though server might reject
+            }
+        } else {
+             Log.w("SocketManager", "User not logged in.")
+             connectWithToken(null)
+        }
+    }
+
+    private fun connectWithToken(token: String?) {
         try {
-            mSocket = IO.socket(SOCKET_URL)
+            val opts = IO.Options()
+            if (token != null) {
+                // Construct Auth Map
+                val authMap = java.util.HashMap<String, String>()
+                authMap["token"] = token
+                opts.auth = authMap
+            }
+            
+            mSocket = IO.socket(SOCKET_URL, opts)
             mSocket?.connect()
-            Log.d("SocketManager", "Đang kết nối tới $SOCKET_URL")
+            Log.d("SocketManager", "Connecting to $SOCKET_URL with token? ${token != null}")
 
             // Lắng nghe sự kiện kết nối thành công
             mSocket?.on(Socket.EVENT_CONNECT) {
                 Log.d("SocketManager", "Đã kết nối thành công!")
+            }
+            
+            // Listen for errors
+             mSocket?.on(Socket.EVENT_CONNECT_ERROR) { args ->
+                Log.e("SocketManager", "Connect Error: ${args.getOrElse(0) { "Unknown" }}")
             }
         } catch (e: URISyntaxException) {
             Log.e("SocketManager", "Lỗi URL Socket: ${e.message}")
@@ -44,6 +74,14 @@ object SocketManager {
                 listener(data)
             }
         }
+    }
+    
+    fun onEvent(event: String, listener: Emitter.Listener) {
+        mSocket?.on(event, listener)
+    }
+    
+    fun offEvent(event: String, listener: Emitter.Listener) {
+        mSocket?.off(event, listener)
     }
 
     // 4. Lắng nghe tin báo "Tài xế đã nhận chuyến"

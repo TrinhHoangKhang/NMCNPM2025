@@ -26,6 +26,33 @@ export const io = new Server(server, {
     }
 });
 
+// LISTEN FOR DRIVER STATUS UPDATES
+// LISTEN FOR DRIVER STATUS UPDATES
+driverService.on('statusUpdate', (data) => {
+    // data = { driverId, status, lastActive }
+    console.log(`Broadcasting Driver Status: ${data.driverId} -> ${data.status}`);
+    io.to('admin').emit('driver_status_update', data);
+});
+
+// LISTEN FOR CHAT MESSAGES
+import chatService from './src/services/chatService.js';
+chatService.on('messageSent', async (msg) => {
+    // msg = { id, text, senderId, recipientId, createdAt, ... }
+    try {
+        const socketIds = await presenceService.getUserSocketIds(msg.recipientId);
+        if (socketIds && socketIds.length > 0) {
+            console.log(`Broadcasting Chat to ${msg.recipientId} (Sockets: ${socketIds.length})`);
+            socketIds.forEach(socketId => {
+                io.to(socketId).emit('receive_message', msg);
+            });
+        } else {
+            console.log(`Chat Recipient ${msg.recipientId} is OFFLINE. Message stored.`);
+        }
+    } catch (err) {
+        console.error("Chat Broadcast Error:", err.message);
+    }
+});
+
 redis.on('error', (err) => {
     console.error('Redis connection error:', err);
 });
@@ -95,7 +122,19 @@ io.use(async (socket, next) => {
 
 // Socket.io Events
 io.on('connection', async (socket) => {
+    console.log('--------------------------------------------------');
     console.log('New client connected:', socket.id);
+    if (socket.user) {
+        console.log(`User Details: 
+        - Name: ${socket.user.name}
+        - Email: ${socket.user.email}
+        - Role: ${socket.user.role}
+        - UID: ${socket.user.uid}`);
+    } else {
+        console.log('User Details: Unauthenticated / No Token');
+    }
+    console.log('--------------------------------------------------');
+
 
     if (socket.user) {
         console.log(`User Online: ${socket.user.email} (${socket.user.uid})`);
@@ -156,6 +195,12 @@ io.on('connection', async (socket) => {
 
 
 
+
+        // Admin Joining 'admin' room
+        if (socket.user.role === 'ADMIN') {
+            socket.join('admin');
+            console.log(`Admin ${socket.user.email} joined 'admin' room`);
+        }
 
         socket.on('join_room', (room) => {
             socket.join(room);

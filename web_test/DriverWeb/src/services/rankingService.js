@@ -3,11 +3,12 @@ import { apiClient } from './apiService';
 export const rankingService = {
     /**
      * Get the global leaderboard.
-     * @returns {Promise<Array>} List of top drivers
+     * @param {string} role - 'DRIVER' or 'RIDER'
+     * @returns {Promise<Array>} List of top users
      */
-    getLeaderboard: async () => {
+    getLeaderboard: async (role = 'DRIVER') => {
         try {
-            const res = await apiClient('/ranks');
+            const res = await apiClient(`/ranks?role=${role}`);
             return (res && res.success) ? res.data : [];
         } catch (e) {
             console.error("Failed to fetch leaderboard", e);
@@ -18,11 +19,12 @@ export const rankingService = {
     /**
      * Get the ranking of a specific user.
      * @param {string} userId 
+     * @param {string} role
      * @returns {Promise<Object>} { rank, score }
      */
-    getUserRank: async (userId) => {
+    getUserRank: async (userId, role = 'DRIVER') => {
         try {
-            const res = await apiClient(`/ranks/${userId}`);
+            const res = await apiClient(`/ranks/${userId}?role=${role}`);
             return (res && res.success) ? res.data : null;
         } catch (e) {
             console.error("Failed to fetch user rank", e);

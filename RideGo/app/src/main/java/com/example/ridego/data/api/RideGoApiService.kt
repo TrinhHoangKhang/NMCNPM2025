@@ -42,6 +42,16 @@ interface RideGoApiService {
 
     @POST("api/trips/{id}/pay")
     fun submitPayment(@Path("id") id: String, @Body request: PaymentRequest): Call<TripResponse>
+
+    // --- NEW: Driver Profile & Chat ---
+    @GET("api/drivers/{id}")
+    fun getDriver(@Path("id") id: String): Call<DriverProfileResponse>
+
+    @GET("api/chat/history/{partnerId}")
+    fun getChatHistory(@Path("partnerId") partnerId: String): Call<List<ChatHistoryItem>>
+
+    @POST("api/chat/send")
+    fun sendChatMessage(@Body request: SendMessageRequest): Call<ChatHistoryItem>
 }
 
 // --- NẾU THẤY object RetrofitClient Ở ĐÂY THÌ XÓA NÓ ĐI NHÉ! ---

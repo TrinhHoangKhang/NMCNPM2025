@@ -55,6 +55,15 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
+        <TextView
+            android:id="@+id/tvDistance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="0.00 km"
+            android:textColor="#757575"
+            android:textSize="14sp" />
+
         <LinearLayout
             android:id="@+id/layoutBike"
             android:layout_width="match_parent"

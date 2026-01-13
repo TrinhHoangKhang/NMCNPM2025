@@ -1,8 +1,9 @@
 
 import { db, admin } from '../config/firebaseConfig.js';
 import presenceService from './presenceService.js';
+import { EventEmitter } from 'events';
 
-class ChatService {
+class ChatService extends EventEmitter {
 
     // 1. Get or Create Conversation
     async getOrCreateConversation(uid1, uid2) {
@@ -45,7 +46,12 @@ class ChatService {
             updatedAt: message.createdAt
         });
 
-        return { id: msgRef.id, conversationId: conv.id, ...message };
+        const fullMessage = { id: msgRef.id, conversationId: conv.id, ...message, recipientId };
+
+        // Emit event for real-time delivery
+        this.emit('messageSent', fullMessage);
+
+        return fullMessage;
     }
 
     // 3. Get Chat History

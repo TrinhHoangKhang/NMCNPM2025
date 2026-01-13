@@ -9,7 +9,10 @@ export const tripService = {
         // Backend endpoint: GET /api/trips/current
         try {
             const res = await apiClient('/trips/current');
-            return (res && res.success && res.data) ? res.data : res;
+            if (res && res.success && res.data) {
+                return res.data;
+            }
+            return null;
         } catch (e) {
             return null;
         }

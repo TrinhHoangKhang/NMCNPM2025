@@ -143,7 +143,7 @@ export default function Dashboard() {
           {/* SECTION 1: CURRENT ACTIVITY (Active Trip OR None) */}
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-slate-900">Current Activity</h2>
-            {currentTrip ? (
+            {currentTrip && currentTrip.id ? (
               <Card className="border-l-4 border-l-blue-500 shadow-md">
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-start">

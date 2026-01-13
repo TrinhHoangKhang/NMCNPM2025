@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,7 +8,7 @@ import { Loader2, ArrowLeft, Star, Trophy, Award, TrendingUp } from 'lucide-reac
 import { driverService } from "@/services/driverService";
 import { rankingService } from "@/services/rankingService";
 
-export default function OtherUserProfile() {
+const UserProfile = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
@@ -19,7 +19,6 @@ export default function OtherUserProfile() {
         const fetchData = async () => {
             setLoading(true);
             try {
-                // Fetch Driver Data
                 const [driverData, rank] = await Promise.all([
                     driverService.getDriverById(id),
                     rankingService.getUserRank(id, 'DRIVER')
@@ -157,4 +156,6 @@ export default function OtherUserProfile() {
             </div>
         </div>
     );
-}
+};
+
+export default UserProfile;

@@ -8,6 +8,8 @@ import Dashboard from '../pages/Dashboard';
 import Settings from '../pages/Settings';
 import DiscountsManagement from '../pages/DiscountsManagement';
 import Achievement from '../pages/Achievement';
+import DriverDetail from '../pages/DriverDetail';
+import RiderDetail from '../pages/RiderDetail';
 import { Navigate } from 'react-router-dom';
 
 export const adminRoutes = [
@@ -21,7 +23,9 @@ export const adminRoutes = [
           { index: true, element: <Navigate to="/dashboard" replace /> },
           { path: "dashboard", element: <Dashboard /> },
           { path: "riders", element: <RidersManagement /> },
+          { path: "riders/:id", element: <RiderDetail /> },
           { path: "drivers", element: <DriversManagement /> },
+          { path: "drivers/:id", element: <DriverDetail /> },
           { path: "admins", element: <AdminsManagement /> },
           { path: "discounts", element: <DiscountsManagement /> },
           { path: "trips", element: <TripsManagement /> },
