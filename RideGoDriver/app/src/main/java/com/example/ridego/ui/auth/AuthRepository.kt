@@ -209,49 +209,64 @@ class AuthRepository(
 
             val firebaseUid = user.uid
             val phoneNumber = user.phoneNumber ?: ""
-            val email = user.email ?: ""
-            val name = user.displayName ?: ""
-
-            // Generate custom user ID
-            val customUserId = generateCustomUserId(phoneNumber, email)
-
-            // Kiểm tra xem user đã tồn tại chưa
-            val userDoc = db.collection("users").document(customUserId).get().await()
             
-            if (!userDoc.exists()) {
-                // Chưa có → Tạo mới
-                val newUserDoc = hashMapOf(
-                    "customUserId" to customUserId,
-                    "firebaseUid" to firebaseUid,
-                    "email" to email,
-                    "name" to name,
-                    "phone" to phoneNumber,
-                    "role" to "RIDER",
-                    "isVerified" to true,
-                    "authMethod" to "phone",
-                    "createdAt" to FieldValue.serverTimestamp(),
-                    "createdAtISO" to System.currentTimeMillis().toString(),
-                    "createdAtUnix" to System.currentTimeMillis(),
-                    "updatedAt" to FieldValue.serverTimestamp()
-                )
-                db.collection("users").document(customUserId).set(newUserDoc).await()
-
-                // Create mapping Firebase UID -> customUserId
-                val mapping = hashMapOf(
-                    "customUserId" to customUserId,
-                    "createdAt" to FieldValue.serverTimestamp()
-                )
-                db.collection("uid_mapping").document(firebaseUid).set(mapping).await()
-            } else {
-                // Đã có → Chỉ update lastLogin
-                db.collection("users").document(customUserId)
-                    .update("lastLogin", FieldValue.serverTimestamp()).await()
+            // QUAN TRỌNG: Kiểm tra uid_mapping TRƯỚC để xác định user đã tồn tại chưa
+            val mappingDoc = db.collection("uid_mapping").document(firebaseUid).get().await()
+            
+            if (mappingDoc.exists()) {
+                // User đã có mapping -> Đây là user cũ, lấy customUserId từ mapping
+                val customUserId = mappingDoc.getString("customUserId") ?: firebaseUid
+                
+                // Kiểm tra xem document user có tồn tại không
+                val userDoc = db.collection("users").document(customUserId).get().await()
+                if (userDoc.exists()) {
+                    // User đã tồn tại -> Chỉ update lastLogin
+                    db.collection("users").document(customUserId)
+                        .update("lastLogin", FieldValue.serverTimestamp()).await()
+                    
+                    val name = userDoc.getString("name") ?: user.displayName ?: ""
+                    val email = userDoc.getString("email") ?: ""
+                    
+                    return Result.success(UserProfile(
+                        uid = customUserId,
+                        name = name.ifEmpty { null },
+                        email = email.ifEmpty { null }
+                    ))
+                }
+                // Nếu có mapping nhưng không có user doc -> xóa mapping cũ và tạo mới
+                db.collection("uid_mapping").document(firebaseUid).delete().await()
             }
+            
+            // User MỚI hoặc mapping đã bị xóa -> Tạo mới với email = "" (chưa có email)
+            val customUserId = generateCustomUserId(phoneNumber, "") // Không lấy email từ Firebase Auth
+            
+            val newUserDoc = hashMapOf(
+                "customUserId" to customUserId,
+                "firebaseUid" to firebaseUid,
+                "email" to "", // Email rỗng cho user mới đăng ký bằng SĐT
+                "name" to "",
+                "phone" to phoneNumber,
+                "role" to "RIDER",
+                "isVerified" to true,
+                "authMethod" to "phone",
+                "createdAt" to FieldValue.serverTimestamp(),
+                "createdAtISO" to System.currentTimeMillis().toString(),
+                "createdAtUnix" to System.currentTimeMillis(),
+                "updatedAt" to FieldValue.serverTimestamp()
+            )
+            db.collection("users").document(customUserId).set(newUserDoc).await()
+
+            // Create mapping Firebase UID -> customUserId
+            val mapping = hashMapOf(
+                "customUserId" to customUserId,
+                "createdAt" to FieldValue.serverTimestamp()
+            )
+            db.collection("uid_mapping").document(firebaseUid).set(mapping).await()
 
             val profile = UserProfile(
                 uid = customUserId,
-                name = name.ifEmpty { null },
-                email = email.ifEmpty { null }
+                name = null,
+                email = null
             )
 
             Result.success(profile)

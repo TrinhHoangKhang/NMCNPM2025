@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Khi đã check -->
+    <item
+        android:state_checked="true"
+        android:color="@color/purple_500" />
+
+    <!-- Khi chưa check -->
+    <item
+        android:state_checked="false"
+        android:color="@color/text_secondary" />
+
+</selector>
