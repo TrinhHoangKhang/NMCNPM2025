@@ -22,9 +22,32 @@ class UserService {
 
         const snapshot = await query.get();
         let users = [];
+        const driverFetches = [];
+
         snapshot.forEach(doc => {
-            users.push({ id: doc.id, ...doc.data() });
+            const userData = { id: doc.id, ...doc.data() };
+            users.push(userData);
+
+            // If user is a driver, prepare to fetch their status from 'drivers' collection
+            if (userData.role === 'DRIVER') {
+                driverFetches.push(
+                    db.collection('drivers').doc(doc.id).get()
+                        .then(driverDoc => {
+                            if (driverDoc.exists) {
+                                userData.status = driverDoc.data().status || 'OFFLINE';
+                            } else {
+                                userData.status = 'OFFLINE';
+                            }
+                        })
+                        .catch(() => { userData.status = 'OFFLINE'; })
+                );
+            }
         });
+
+        // Wait for all driver status fetches to complete
+        if (driverFetches.length > 0) {
+            await Promise.all(driverFetches);
+        }
 
         // Basic In-memory Search (Firestore doesn't support native partial text search easily)
         if (filters.search) {

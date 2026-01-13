@@ -61,8 +61,8 @@ const TripsManagement = () => {
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <div className="text-sm"><span className="font-semibold">R:</span> {trip.riderName || trip.customer || 'N/A'}</div>
-                                    <div className="text-sm"><span className="font-semibold">D:</span> {trip.driverName || trip.driver || 'N/A'}</div>
+                                    <div className="text-sm" title={trip.riderName || trip.customer}><span className="font-semibold">R:</span> <span className="font-mono text-xs">{trip.riderId || 'N/A'}</span></div>
+                                    <div className="text-sm" title={trip.driverName || trip.driver}><span className="font-semibold">D:</span> <span className="font-mono text-xs">{trip.driverId || 'N/A'}</span></div>
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="font-bold text-green-600">{(trip.fare || trip.price || 0).toLocaleString()} VND</div>

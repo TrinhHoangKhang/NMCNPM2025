@@ -1,0 +1,28 @@
+{
+    "rates": {
+        "Motorbike": {
+            "base": 12000,
+            "perKm": 5000
+        },
+        "Car 4-Seat": {
+            "base": 25000,
+            "perKm": 12000
+        },
+        "Car 7-Seat": {
+            "base": 30000,
+            "perKm": 15000
+        }
+    },
+    "peakHours": [
+        {
+            "start": "06:00",
+            "end": "08:00",
+            "multiplier": 1.5
+        },
+        {
+            "start": "18:00",
+            "end": "20:00",
+            "multiplier": 1.5
+        }
+    ]
+}

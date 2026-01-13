@@ -8,7 +8,12 @@ class TripController {
     async getAllTrips(req, res) {
         try {
             const trips = await tripService.getAllTrips();
-            const withIds = trips.map(trip => ({ id: trip.id, ...trip.toJSON() }));
+            const withIds = trips.map(trip => ({
+                id: trip.id,
+                ...trip.toJSON(),
+                riderName: trip.riderName,
+                driverName: trip.driverName
+            }));
 
             if (withIds.length > 0) {
                 console.log("DEBUG: First Trip in Response:", JSON.stringify(withIds[0], null, 2));

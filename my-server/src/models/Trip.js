@@ -72,7 +72,7 @@ class Trip {
             vehicleModel: this.vehicleModel,
             vehicleColor: this.vehicleColor,
             driverPhone: this.driverPhone,
-            driverEmail: this.driverEmail, // Added recently
+            driverEmail: this.driverEmail,
 
             // Rider populated fields
             riderName: this.riderName,

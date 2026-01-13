@@ -6,25 +6,47 @@ import driverService from './driverService.js';
 import friendService from './friendService.js';
 //const { v4: uuidv4 } = require('uuid'); // Need to install uuid, or just use Firestore auto-ID
 
-// Pricing Config (could be a separate file)
-// Pricing Config (loaded from .env)
-const PRICING = {
-    'Motorbike': {
-        BASE: parseFloat(process.env.PRICE_BASE_MOTORBIKE || '1.00'),
-        PER_KM: parseFloat(process.env.PRICE_KM_MOTORBIKE || '0.50')
-    },
-    'Car 4-Seat': {
-        BASE: parseFloat(process.env.PRICE_BASE_4SEAT || '2.00'),
-        PER_KM: parseFloat(process.env.PRICE_KM_4SEAT || '1.00')
-    },
-    'Car 7-Seat': {
-        BASE: parseFloat(process.env.PRICE_BASE_7SEAT || '5.00'),
-        PER_KM: parseFloat(process.env.PRICE_KM_7SEAT || '2.00')
-    }
-};
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+// Load Pricing Config
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pricingConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/pricing.json'), 'utf-8'));
 
 class TripService {
+
+    // Helper: Calculate Fare with Dynamic Pricing
+    _calculateFare(vehicleType, distanceKm) {
+        const rates = pricingConfig.rates[vehicleType] || pricingConfig.rates['Car 4-Seat'];
+        let baseFare = rates.base + (distanceKm * rates.perKm);
+
+        // Check Peak Hours
+        const now = new Date();
+        const currentHour = now.getHours();
+
+        // Simple check: user said 6-8am or pm. usually means 6:00 to 8:59? Or 08:00?
+        // JSON says "06:00" to "08:00".
+        // Let's parse JSON rules.
+        let multiplier = 1.0;
+
+        // Convert HH:mm to minutes from midnight for easier comparison
+        const currentMinutes = currentHour * 60 + now.getMinutes();
+
+        for (const window of pricingConfig.peakHours) {
+            const [startH, startM] = window.start.split(':').map(Number);
+            const [endH, endM] = window.end.split(':').map(Number);
+            const startTotal = startH * 60 + startM;
+            const endTotal = endH * 60 + endM;
+
+            if (currentMinutes >= startTotal && currentMinutes < endTotal) {
+                multiplier = Math.max(multiplier, window.multiplier);
+            }
+        }
+
+        let totalFare = baseFare * multiplier;
+        return Math.round(totalFare / 1000) * 1000; // Round to nearest 1000 VND
+    }
 
     // Helper: Fetch driver details and merge into trip
     async _populateDriverDetails(trip) {
@@ -69,6 +91,7 @@ class TripService {
             return trip;
         }
         try {
+            // console.log(`DEBUG: Populating rider for trip ${trip.id} (RiderID: ${trip.riderId})`);
             const userDoc = await db.collection('users').doc(trip.riderId).get();
             if (userDoc.exists) {
                 const rData = userDoc.data();
@@ -77,7 +100,9 @@ class TripService {
                 trip.riderRating = rData.rating || 5.0; // Assuming riders have ratings
                 trip.riderAvatar = rData.avatar || null;
                 trip.riderEmail = rData.email;
+                // console.log(`DEBUG: Found rider ${trip.riderName}`);
             } else {
+                console.warn(`DEBUG: Rider document not found for ID: ${trip.riderId}`);
                 trip.riderName = "Rider Not Found";
             }
         } catch (e) {
@@ -116,10 +141,8 @@ class TripService {
         // Calculate the distance in KM
         const distanceKm = routeData.distance.value / 1000;
 
-        // B. Calculate Fare based on vehicle type
-        const rates = PRICING[vehicleType] || PRICING['Car 4-Seat'];
-        let fare = rates.BASE + (distanceKm * rates.PER_KM);
-        fare = Math.round(fare * 100) / 100;
+        // B. Calculate Fare based on vehicle type (Dynamic Pricing)
+        let fare = this._calculateFare(vehicleType, distanceKm);
 
         // C. Save to DB
         const tripRef = db.collection('trips').doc();
@@ -162,13 +185,8 @@ class TripService {
             durationMin = Math.round(routeData.duration.value / 60);
         }
 
-        // Calculate Fare
-        const rates = PRICING[vehicleType] || PRICING['Car 4-Seat'];
-        let fare = rates.BASE + (distanceKm * rates.PER_KM);
-        fare = Math.round(fare * 1000); // Standardize to integer VND (e.g. 15000)
-
-        // Ensure minimum fare? (Optional logic, let's keep it simple)
-        if (fare < rates.BASE * 1000) fare = rates.BASE * 1000;
+        // Calculate Fare (Dynamic Pricing)
+        const fare = this._calculateFare(vehicleType, distanceKm);
 
         return {
             distance: distanceKm.toFixed(1), // km string
