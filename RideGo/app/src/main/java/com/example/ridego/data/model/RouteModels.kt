@@ -2,7 +2,18 @@ package com.example.ridego.data.model
 
 import com.google.gson.annotations.SerializedName
 
-// --- REQUEST (Gửi đi) ---
+data class LatLngData(
+    val lat: Double,
+    val lng: Double
+)
+
+data class LocationData(
+    val address: String,
+    val lat: Double,
+    val lng: Double
+)
+
+// --- TRIP REQUEST
 data class TripRequest(
     @SerializedName("pickupLocation") val pickupLocation: LocationData,
     @SerializedName("dropoffLocation") val dropoffLocation: LocationData,
@@ -12,24 +23,17 @@ data class TripRequest(
     val fare: Double
 )
 
-data class LocationData(
-    val address: String,
-    val lat: Double,
-    val lng: Double
-)
-
-// --- RESPONSE (Nhận về - ĐÃ SỬA ĐỂ BẮT MỌI TRƯỜNG HỢP) ---
+// --- TRIP RESPONSE
 data class TripResponse(
     val success: Boolean?,
     val message: String?,
 
-    // Trường hợp 1: ID nằm ngay ngoài (Root)
-    @SerializedName("tripId") val rootTripId: String?,
-    @SerializedName("_id") val rootMongoId: String?,
-    @SerializedName("id") val rootSimpleId: String?,
+    // Thêm các trường này để hứng ID nếu server trả về ở lớp ngoài cùng
+    @SerializedName("tripId") val rootTripId: String? = null,
+    @SerializedName("_id") val rootMongoId: String? = null,
+    @SerializedName("id") val rootSimpleId: String? = null,
 
-    // Trường hợp 2: ID nằm trong object "data" (Khả năng cao là cái này)
-    val data: TripDataContainer?
+    val data: TripDataContainer? = null
 )
 
 data class TripDataContainer(
@@ -39,25 +43,30 @@ data class TripDataContainer(
     val status: String?
 )
 
-// ... (Các class RouteRequest, RouteResponse... giữ nguyên như cũ)
+// --- ROUTE REQUEST ---
 data class RouteRequest(
     val origin: String,
     val destination: String,
     val vehicleType: String
 )
+
+// --- ROUTE RESPONSE ---
 data class RouteResponse(
     val success: Boolean,
     val data: RouteData?
 )
+
 data class RouteData(
     val distance: ValueText,
     val duration: ValueText,
     val geometry: GeometryData?
 )
+
 data class GeometryData(
     val type: String,
     val coordinates: String
 )
+
 data class ValueText(
     val text: String,
     val value: Int
