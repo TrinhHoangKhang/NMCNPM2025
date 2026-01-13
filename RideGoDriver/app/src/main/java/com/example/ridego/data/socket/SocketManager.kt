@@ -10,7 +10,7 @@ import org.json.JSONObject
 object SocketManager {
     private var mSocket: Socket? = null
     // Use Config.BASE_URL for ngrok tunnel
-    private val SOCKET_URL = Config.BASE_URL
+    private val SOCKET_URL = Config.BASE_URL.trimEnd('/')
 
     // Hàm connect KHÔNG nhận tham số (tự lấy Token)
     fun connect() {

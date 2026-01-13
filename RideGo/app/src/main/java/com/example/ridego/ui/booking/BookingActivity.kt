@@ -149,8 +149,6 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
         binding.btnConfirmBooking.text = "Đang tính tiền..."
         binding.btnConfirmBooking.isEnabled = false
 
-        // Khi tính đường (Estimate) thì gửi tên hiển thị cũng được, hoặc gửi tên chuẩn server tùy API estimate của bạn
-        // Ở đây giữ nguyên logic cũ cho API estimate
         val request = RouteRequest(
             origin = "$pickupLat,$pickupLng",
             destination = "$dropoffLat,$dropoffLng",
@@ -160,28 +158,49 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
         RetrofitClient.instance.calculateRoute(request).enqueue(object : Callback<RouteResponse> {
             override fun onResponse(call: Call<RouteResponse>, response: Response<RouteResponse>) {
                 binding.btnConfirmBooking.isEnabled = true
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val data = response.body()!!.data
-                    if (data != null) {
-                        currentDistanceKm = data.distance.value / 1000.0
-                        currentPolylineString = data.geometry?.coordinates ?: ""
+                try {
+                    Log.d("ROUTE_API", "Response code: ${response.code()}")
+                    Log.d("ROUTE_API", "Raw response: ${response.raw()}")
+                    
+                    if (response.isSuccessful) {
+                        val body = response.body()
+                        if (body?.success == true && body.data != null) {
+                            val data = body.data!!
+                            currentDistanceKm = data.distance.value / 1000.0
+                            currentPolylineString = data.geometry?.coordinates ?: ""
 
-                        val durationText = data.duration.text
-                        binding.tvDurationBike.text = "$durationText • 1 người"
-                        binding.tvDurationCar.text = "$durationText • 4 người"
-                        binding.tvDurationPremium.text = "$durationText • 7 người"
-                        binding.tvDurationPremium.text = "$durationText • 7 người"
+                            val durationText = data.duration.text
+                            binding.tvDurationBike.text = "$durationText • 1 người"
+                            binding.tvDurationCar.text = "$durationText • 4 người"
+                            binding.tvDurationPremium.text = "$durationText • 7 người"
 
-                        if (currentPolylineString.isNotEmpty()) {
-                            drawRoute(currentPolylineString)
+                            if (currentPolylineString.isNotEmpty()) {
+                                drawRoute(currentPolylineString)
+                            }
+                            calculatePriceLocally()
+                            Log.d("ROUTE_API", "Success: distance=$currentDistanceKm km, price=$finalPrice")
+                        } else {
+                            Log.e("ROUTE_API", "Response success=false or data=null")
+                            binding.btnConfirmBooking.text = "Lỗi kết nối"
+                            Toast.makeText(this@BookingActivity, "Không nhận được dữ liệu từ server", Toast.LENGTH_SHORT).show()
                         }
-                        calculatePriceLocally()
+                    } else {
+                        Log.e("ROUTE_API", "HTTP error: ${response.code()}")
+                        binding.btnConfirmBooking.text = "Lỗi kết nối"
+                        Toast.makeText(this@BookingActivity, "Lỗi Server: ${response.code()}", Toast.LENGTH_SHORT).show()
                     }
+                } catch (e: Exception) {
+                    Log.e("ROUTE_API", "Exception parsing response: ${e.javaClass.simpleName}: ${e.message}", e)
+                    binding.btnConfirmBooking.text = "Lỗi kết nối"
+                    Toast.makeText(this@BookingActivity, "Lỗi parse: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
+
             override fun onFailure(call: Call<RouteResponse>, t: Throwable) {
                 binding.btnConfirmBooking.isEnabled = true
                 binding.btnConfirmBooking.text = "Lỗi kết nối"
+                Log.e("ROUTE_API", "Network failure: ${t.javaClass.simpleName}: ${t.message}")
+                Toast.makeText(this@BookingActivity, "Lỗi mạng: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
     }
