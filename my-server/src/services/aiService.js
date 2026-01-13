@@ -19,8 +19,9 @@ class AIService {
         }
         this.groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
         this.modelName = 'llama-3.3-70b-versatile';
-        this.geocodingApiKey = process.env.GRAPHHOPPER_API_KEY;
-        this.geocodingBaseUrl = 'https://graphhopper.com/api/1/geocode';
+        this.googleApiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY; 
+        
+        this.geocodingBaseUrl = 'https://maps.googleapis.com/maps/api/geocode/json';
     }
 
     /**
@@ -29,34 +30,45 @@ class AIService {
      * @returns {Promise<{lat: number, lng: number}>} Coordinates
      */
     async geocodeLocation(locationName) {
-        if (!this.geocodingApiKey) {
-            throw new Error('GRAPHHOPPER_API_KEY is missing');
+        if (!this.googleApiKey) {
+            console.error('❌ Missing Google Maps API Key');
+            throw new Error('GOOGLE_MAPS_API_KEY is missing in .env');
         }
 
         try {
+            console.log(`⏳ Đang tìm địa điểm: "${locationName}" qua Google Maps...`);
+
             const response = await axios.get(this.geocodingBaseUrl, {
                 params: {
-                    q: locationName,
-                    locale: 'vi',
-                    key: this.geocodingApiKey,
-                    limit: 1
+                    address: locationName,
+                    key: this.googleApiKey,
+                    language: 'vi',
+                    region: 'vn'
                 },
                 timeout: 5000
             });
 
-            const hits = response.data?.hits;
-            if (!hits || hits.length === 0) {
+            const data = response.data;
+
+            if (data.status === 'OK' && data.results && data.results.length > 0) {
+                const location = data.results[0].geometry.location;
+                console.log(`✅ Tìm thấy: [${location.lat}, ${location.lng}]`);
+                
+                return {
+                    lat: location.lat,
+                    lng: location.lng
+                };
+            } else if (data.status === 'ZERO_RESULTS') {
+                console.warn(`⚠️ Không tìm thấy địa điểm: ${locationName}`);
                 throw new Error(`Location not found: ${locationName}`);
+            } else {
+                console.error(`❌ Google Maps Error: ${data.status} - ${data.error_message}`);
+                throw new Error(`Google API Error: ${data.status}`);
             }
 
-            const point = hits[0].point;
-            return {
-                lat: point.lat,
-                lng: point.lng
-            };
         } catch (error) {
             console.error('Geocoding error:', error.message);
-            throw new Error(`Failed to geocode location: ${locationName}`);
+            throw error;
         }
     }
 
@@ -156,18 +168,24 @@ Output:
 
             const responseText = completion.choices?.[0]?.message?.content || '';
 
-            // Clean the response (remove markdown code blocks if present)
-            let cleanedText = responseText.trim();
-            if (cleanedText.startsWith('```json')) {
-                cleanedText = cleanedText.replace(/```json\s*/, '').replace(/```\s*$/, '');
-            } else if (cleanedText.startsWith('```')) {
-                cleanedText = cleanedText.replace(/```\s*/, '').replace(/```\s*$/, '');
+            // --- QUAN TRỌNG: Cải thiện logic làm sạch JSON ---
+            console.log("🤖 [AI SERVICE] Raw Response:", responseText);
+
+            // 1. Xóa các dấu ```json và ``` thừa
+            let cleanedText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+            // 2. Chỉ lấy phần nằm giữa dấu { và } (đề phòng AI chém gió thêm ở đầu/cuối)
+            const firstBrace = cleanedText.indexOf('{');
+            const lastBrace = cleanedText.lastIndexOf('}');
+            
+            if (firstBrace !== -1 && lastBrace !== -1) {
+                cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
             }
 
             const parsed = JSON.parse(cleanedText);
             
             // Validate the response structure
-            if (!parsed.success || !parsed.data || !parsed.data.intent) {
+            if (parsed.success === undefined || !parsed.data) {
                 throw new Error('Invalid AI response structure');
             }
 
@@ -180,15 +198,7 @@ Output:
             //         parts: [{ text: `${systemPrompt}\n\nUser: ${userText}` }]
             //     }]
             // });
-            // const legacyText = result.response.text();
-            // let legacyClean = legacyText.trim();
-            // if (legacyClean.startsWith('```json')) {
-            //     legacyClean = legacyClean.replace(/```json\s*/, '').replace(/```\s*$/, '');
-            // } else if (legacyClean.startsWith('```')) {
-            //     legacyClean = legacyClean.replace(/```\s*/, '').replace(/```\s*$/, '');
-            // }
-            // const legacyParsed = JSON.parse(legacyClean);
-            // return legacyParsed;
+            // ... (Logic tương tự) ...
         } catch (error) {
             console.error('AI parsing error:', error.message);
             throw new Error(`Failed to parse user command: ${error.message}`);
@@ -367,14 +377,7 @@ ${userQuestion}`;
         return text || 'Tôi không tìm thấy thông tin chuyến đi nào trong khoảng thời gian này';
 
         // --- Legacy Gemini (commented out, kept for reference) ---
-        // const result = await this.model.generateContent({
-        //     contents: [{
-        //         role: 'user',
-        //         parts: [{ text: prompt }]
-        //     }]
-        // });
-        // const legacyText = result.response.text()?.trim();
-        // return legacyText || 'Tôi không tìm thấy thông tin chuyến đi nào trong khoảng thời gian này';
+        // ... (Logic cũ giữ nguyên)
     }
 
     /**

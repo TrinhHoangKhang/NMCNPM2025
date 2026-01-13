@@ -26,7 +26,7 @@ class AIController {
     async getCommandInstruction(req, res) {
         try {
             const { text } = req.body;
-
+            console.log("🔥 [AI CONTROLLER] Nhận lệnh:", text);
             // Validate input
             if (!text || typeof text !== 'string' || text.trim().length === 0) {
                 return res.status(400).json({
@@ -36,16 +36,17 @@ class AIController {
                     error: "Missing or invalid 'text' field"
                 });
             }
-
+            console.log("⏳ [AI CONTROLLER] Đang gửi sang aiService...");
             // Process the command using AI service
             const result = await aiService.processCommand(text.trim());
-
+            console.log("🤖 [AI CONTROLLER] Kết quả từ Service:", JSON.stringify(result, null, 2));
             // Return appropriate status code based on success
             const statusCode = result.success ? 200 : 400;
             
             return res.status(statusCode).json(result);
 
         } catch (error) {
+            console.error('❌ [AI CONTROLLER] Lỗi Crach:', error);
             console.error('AI Controller Error:', error);
             
             return res.status(500).json({
