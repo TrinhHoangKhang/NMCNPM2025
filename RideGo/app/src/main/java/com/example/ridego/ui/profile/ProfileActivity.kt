@@ -62,6 +62,10 @@ class ProfileActivity : AppCompatActivity() {
         binding.btnLogout.setOnClickListener {
             showLogoutDialog()
         }
+
+        binding.btnChatbot.setOnClickListener {
+            showChatbotBottomSheet()
+        }
     }
     
     override fun onResume() {
@@ -167,12 +171,160 @@ class ProfileActivity : AppCompatActivity() {
         }
     }
 
-    // --- ĐÃ SỬA HÀM NÀY ---
-    // Thay đổi tham số đầu tiên từ 'View' thành 'ItemProfileOptionRowBinding'
     private fun setupOption(itemBinding: ItemProfileOptionRowBinding, title: String, iconRes: Int, value: String = "") {
         // Dùng trực tiếp biến binding để gán dữ liệu, không cần findViewById nữa (Code gọn hơn nhiều)
         itemBinding.tvTitle.text = title
         itemBinding.imgIcon.setImageResource(iconRes)
         itemBinding.tvValue.text = value
+    }
+
+    // --- CHATBOT LOGIC ---
+    private fun showChatbotBottomSheet() {
+        val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_chatbot, null)
+        bottomSheetDialog.setContentView(view)
+
+        val rvChatHistory = view.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvChatHistory)
+        val etChatInput = view.findViewById<android.widget.EditText>(R.id.etChatInput)
+        val btnSendChat = view.findViewById<android.widget.ImageButton>(R.id.btnSendChat)
+
+        val messages = mutableListOf<com.example.ridego.data.model.ChatMessage>()
+        val adapter = ChatAdapter(messages)
+        rvChatHistory.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        rvChatHistory.adapter = adapter
+
+        // Welcome message
+        messages.add(com.example.ridego.data.model.ChatMessage("Xin chào! Tôi có thể giúp gì cho bạn?", false))
+        adapter.notifyDataSetChanged()
+
+        val rgChatMode = view.findViewById<android.widget.RadioGroup>(R.id.rgChatMode)
+        val rbModeCommand = view.findViewById<android.widget.RadioButton>(R.id.rbModeCommand)
+        val rbModeQuery = view.findViewById<android.widget.RadioButton>(R.id.rbModeQuery)
+
+        btnSendChat.setOnClickListener {
+            val userText = etChatInput.text.toString().trim()
+            if (userText.isNotEmpty()) {
+                // 1. Add User Message
+                messages.add(com.example.ridego.data.model.ChatMessage(userText, true))
+                adapter.notifyItemInserted(messages.size - 1)
+                rvChatHistory.scrollToPosition(messages.size - 1)
+                etChatInput.text.clear()
+
+                val request = com.example.ridego.data.model.ChatRequest(userText)
+
+                if (rbModeQuery.isChecked) {
+                    // --- MODE: TRA CỨU (QUERY) ---
+                    com.example.ridego.data.api.RetrofitClient.instance.chatQuery(request).enqueue(object : retrofit2.Callback<com.example.ridego.data.model.ChatResponse> {
+                        override fun onResponse(call: retrofit2.Call<com.example.ridego.data.model.ChatResponse>, response: retrofit2.Response<com.example.ridego.data.model.ChatResponse>) {
+                            if (response.isSuccessful && response.body() != null) {
+                                val botReply = response.body()!!.message
+                                messages.add(com.example.ridego.data.model.ChatMessage(botReply, false))
+                                adapter.notifyItemInserted(messages.size - 1)
+                                rvChatHistory.scrollToPosition(messages.size - 1)
+                            } else {
+                                messages.add(com.example.ridego.data.model.ChatMessage("Lỗi server: ${response.code()}", false))
+                                adapter.notifyItemInserted(messages.size - 1)
+                            }
+                        }
+
+                        override fun onFailure(call: retrofit2.Call<com.example.ridego.data.model.ChatResponse>, t: Throwable) {
+                            messages.add(com.example.ridego.data.model.ChatMessage("Lỗi kết nối: ${t.message}", false))
+                            adapter.notifyItemInserted(messages.size - 1)
+                        }
+                    })
+                } else {
+                    // --- MODE: ĐẶT XE (COMMAND) ---
+                    com.example.ridego.data.api.RetrofitClient.instance.chatCommand(request).enqueue(object : retrofit2.Callback<com.example.ridego.data.model.ChatCommandResponse> {
+                        override fun onResponse(call: retrofit2.Call<com.example.ridego.data.model.ChatCommandResponse>, response: retrofit2.Response<com.example.ridego.data.model.ChatCommandResponse>) {
+                            if (response.isSuccessful && response.body() != null) {
+                                val body = response.body()!!
+                                val botReply = body.message
+                                
+                                messages.add(com.example.ridego.data.model.ChatMessage(botReply, false))
+                                adapter.notifyItemInserted(messages.size - 1)
+                                rvChatHistory.scrollToPosition(messages.size - 1)
+
+                                // Xử lý hành động (Action)
+                                if (body.success && body.data != null) {
+                                    handleChatAction(body.data)
+                                }
+                            } else {
+                                messages.add(com.example.ridego.data.model.ChatMessage("Lỗi server (Command): ${response.code()}", false))
+                                adapter.notifyItemInserted(messages.size - 1)
+                            }
+                        }
+
+                        override fun onFailure(call: retrofit2.Call<com.example.ridego.data.model.ChatCommandResponse>, t: Throwable) {
+                            messages.add(com.example.ridego.data.model.ChatMessage("Lỗi kết nối: ${t.message}", false))
+                            adapter.notifyItemInserted(messages.size - 1)
+                        }
+                    })
+                }
+            }
+        }
+
+        bottomSheetDialog.show()
+    }
+
+    private fun handleChatAction(data: com.example.ridego.data.model.CommandData) {
+        when (data.intent) {
+            "BOOK_TRIP" -> {
+                val destinationStep = data.steps.find { it.cmd == "SET_DESTINATION" }
+                val vehicleStep = data.steps.find { it.cmd == "SET_VEHICLE" }
+
+                val destName = destinationStep?.value ?: ""
+                val destLat = destinationStep?.lat ?: 0.0
+                val destLng = destinationStep?.lng ?: 0.0
+                val vehicleType = vehicleStep?.value ?: "MOTORBIKE"
+
+                // 1. Lấy vị trí hiện tại từ Firestore
+                val user = auth.currentUser
+                if (user != null) {
+                    db.collection("uid_mapping").document(user.uid).get()
+                        .addOnSuccessListener { mappingDoc ->
+                            val customUserId = if (mappingDoc.exists()) mappingDoc.getString("customUserId") ?: user.uid else user.uid
+                            
+                            db.collection("users").document(customUserId).get()
+                                .addOnSuccessListener { doc ->
+                                    val pickupAddress = doc.getString("currentPickupAddress")
+                                    val pickupLat = doc.getDouble("currentPickupLat") ?: 0.0
+                                    val pickupLng = doc.getDouble("currentPickupLng") ?: 0.0
+
+                                    if (!pickupAddress.isNullOrEmpty() && pickupLat != 0.0) {
+                                        // 2. Đã có đủ thông tin -> Mở BookingActivity
+                                        val intent = Intent(this, com.example.ridego.ui.booking.BookingActivity::class.java)
+                                        intent.putExtra("PICKUP_ADDRESS", pickupAddress)
+                                        intent.putExtra("PICKUP_LAT", pickupLat)
+                                        intent.putExtra("PICKUP_LNG", pickupLng)
+                                        
+                                        intent.putExtra("DROPOFF_ADDRESS", destName)
+                                        intent.putExtra("DROPOFF_LAT", destLat)
+                                        intent.putExtra("DROPOFF_LNG", destLng)
+                                        
+                                        intent.putExtra("VEHICLE_TYPE", vehicleType)
+                                        
+                                        startActivity(intent)
+                                    } else {
+                                        Toast.makeText(this, "Bạn chưa có vị trí đón. Hãy ra trang chủ chọn vị trí trước!", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                        }
+                }
+            }
+            "ADD_FAVORITE_LOCATION" -> {
+                val locationStep = data.steps.find { it.cmd == "SET_LOCATION" }
+                val locName = locationStep?.value ?: ""
+                Toast.makeText(this, "🤖 Đang lưu địa điểm: $locName", Toast.LENGTH_LONG).show()
+                // TODO: Gọi API lưu địa điểm
+            }
+            "OPEN_TRIP_HISTORY" -> {
+                // Mở màn hình lịch sử (HistoryActivity nếu có, hoặc Fragment)
+                val intent = Intent(this, com.example.ridego.ui.history.HistoryActivity::class.java)
+                startActivity(intent)
+            }
+            else -> {
+                Toast.makeText(this, "🤖 Action: ${data.intent}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
