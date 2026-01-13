@@ -46,6 +46,10 @@ class SearchDestinationActivity : AppCompatActivity() {
     private var selectedAddress = ""
     private var selectedName = ""
 
+    // Discount data
+    private var discountId: String? = null
+    private var discountCode: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -54,6 +58,10 @@ class SearchDestinationActivity : AppCompatActivity() {
 
         binding = ActivitySearchDestinationBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // Receive discount data
+        discountId = intent.getStringExtra("DISCOUNT_ID")
+        discountCode = intent.getStringExtra("DISCOUNT_CODE")
 
         // 2. Khởi tạo Google Places
         val apiKey = getString(R.string.google_maps_key)
@@ -161,6 +169,10 @@ class SearchDestinationActivity : AppCompatActivity() {
         intent.putExtra("PICKUP_ADDRESS", pickupAddress)
         intent.putExtra("PICKUP_LAT", pickupLat)
         intent.putExtra("PICKUP_LNG", pickupLng)
+
+        // Pass discount info
+        intent.putExtra("DISCOUNT_ID", discountId)
+        intent.putExtra("DISCOUNT_CODE", discountCode)
 
         // Bắt đầu màn hình Booking
         startActivity(intent)

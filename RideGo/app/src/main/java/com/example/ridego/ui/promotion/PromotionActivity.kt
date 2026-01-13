@@ -92,7 +92,15 @@ class PromotionActivity : AppCompatActivity() {
     private fun updateList(list: List<Promotion>) {
         binding.rvPromotions.adapter = PromotionAdapter(list).apply {
             setOnUseClickListener { promo ->
-                 Toast.makeText(this@PromotionActivity, "Dùng mã: ${promo.code}", Toast.LENGTH_SHORT).show()
+                // Redirect to SetLocationActivity to start booking flow
+                val intent = android.content.Intent(this@PromotionActivity, com.example.ridego.ui.rider.location.SetLocationActivity::class.java)
+                intent.putExtra("IS_BOOKING_FLOW", true)
+                intent.putExtra("LOCATION_TYPE", 1) // 1: Pickup
+                intent.putExtra("DISCOUNT_ID", promo.id)
+                intent.putExtra("DISCOUNT_CODE", promo.code)
+                intent.flags = android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+                startActivity(intent)
+                finish()
             }
         }
     }

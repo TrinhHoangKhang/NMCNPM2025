@@ -9,7 +9,24 @@ data class TripRequest(
     @SerializedName("vehicleType") val vehicleType: String,
     @SerializedName("paymentMethod") val paymentMethod: String,
     val distance: Double,
-    val fare: Double
+    val fare: Double,
+    val discountId: String? = null
+)
+
+data class TripEstimateRequest(
+    val pickupLocation: LocationData,
+    val dropoffLocation: LocationData,
+    val vehicleType: String,
+    val discountId: String? = null
+)
+
+data class TripEstimateResponse(
+    val fare: Double,
+    val originalFare: Double,
+    val distance: Double,
+    val duration: String,
+    val discountAmount: Double,
+    val discountApplied: Boolean
 )
 
 data class LocationData(

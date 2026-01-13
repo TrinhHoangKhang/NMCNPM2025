@@ -47,6 +47,11 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
     // Lưu chuỗi đường đi để gửi sang màn hình sau
     private var currentPolylineString = ""
 
+    // Discount variables
+    private var myPromotions: List<Promotion> = emptyList()
+    private var selectedDiscountId: String? = null
+    private var selectedDiscountCode: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityBookingBinding.inflate(layoutInflater)
@@ -60,6 +65,7 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
         SocketManager.connect()
         setupSocketListeners()
         setupUI()
+        fetchUserPromotions()
     }
 
     private fun getDataFromIntent() {
@@ -85,6 +91,13 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
              }
              // Cập nhật UI ngay lập tức
              selectVehicle(selectedVehicleType)
+        }
+
+        // Nhận mã giảm giá từ màn hình Ưu đãi
+        selectedDiscountId = intent.getStringExtra("DISCOUNT_ID")
+        selectedDiscountCode = intent.getStringExtra("DISCOUNT_CODE")
+        if (!selectedDiscountId.isNullOrEmpty()) {
+            Toast.makeText(this, "Đã áp dụng mã: $selectedDiscountCode", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -122,6 +135,8 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
         binding.layoutCar.setOnClickListener { selectVehicle("RideGo Car") }
         binding.layoutPremium.setOnClickListener { selectVehicle("RideGo Premium") }
 
+        binding.btnSelectPromotion.setOnClickListener { showPromotionDialog() }
+
         binding.btnConfirmBooking.setOnClickListener { createBookingViaServer() }
     }
 
@@ -149,8 +164,50 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
         binding.btnConfirmBooking.text = "Đang tính tiền..."
         binding.btnConfirmBooking.isEnabled = false
 
-        // Khi tính đường (Estimate) thì gửi tên hiển thị cũng được, hoặc gửi tên chuẩn server tùy API estimate của bạn
-        // Ở đây giữ nguyên logic cũ cho API estimate
+        val serverVehicleType = when (selectedVehicleType) {
+            "RideGo Bike" -> "MOTORBIKE"
+            "RideGo Car" -> "4 SEAT"
+            "RideGo Premium" -> "7 SEAT"
+            else -> "MOTORBIKE"
+        }
+
+        val estimateRequest = TripEstimateRequest(
+            pickupLocation = LocationData(pickupAddress, pickupLat, pickupLng),
+            dropoffLocation = LocationData(dropoffAddress, dropoffLat, dropoffLng),
+            vehicleType = serverVehicleType,
+            discountId = selectedDiscountId
+        )
+
+        RetrofitClient.instance.estimateTrip(estimateRequest).enqueue(object : Callback<TripEstimateResponse> {
+            override fun onResponse(call: Call<TripEstimateResponse>, response: Response<TripEstimateResponse>) {
+                binding.btnConfirmBooking.isEnabled = true
+                if (response.isSuccessful) {
+                    val result = response.body()
+                    if (result != null) {
+                        currentDistanceKm = result.distance / 1000.0
+                        // Since estimate now doesn't return polyline directly, we might still need calculateRoute if we want polyline
+                        // But wait, the backend `estimateTrip` uses `tripService.estimateTrip` which calls `mapsService.calculateRoute`.
+                        // However, the current `TripEstimateResponse` only has distance/fare.
+                        
+                        // Let's call calculateRoute separately for the polyline or update estimateTrip.
+                        // For now, I'll call calculateRoute just once to get the path, then use estimate for price.
+                        fetchPathAndDetails()
+
+                        finalPrice = result.fare
+                        updatePriceUI(result)
+                    }
+                } else {
+                    Log.e("API_ESTIMATE", "Error: ${response.code()}")
+                }
+            }
+            override fun onFailure(call: Call<TripEstimateResponse>, t: Throwable) {
+                binding.btnConfirmBooking.isEnabled = true
+                binding.btnConfirmBooking.text = "Lỗi kết nối"
+            }
+        })
+    }
+
+    private fun fetchPathAndDetails() {
         val request = RouteRequest(
             origin = "$pickupLat,$pickupLng",
             destination = "$dropoffLat,$dropoffLng",
@@ -159,31 +216,76 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
 
         RetrofitClient.instance.calculateRoute(request).enqueue(object : Callback<RouteResponse> {
             override fun onResponse(call: Call<RouteResponse>, response: Response<RouteResponse>) {
-                binding.btnConfirmBooking.isEnabled = true
                 if (response.isSuccessful && response.body()?.success == true) {
                     val data = response.body()!!.data
                     if (data != null) {
-                        currentDistanceKm = data.distance.value / 1000.0
                         currentPolylineString = data.geometry?.coordinates ?: ""
-
+                        if (currentPolylineString.isNotEmpty()) {
+                            drawRoute(currentPolylineString)
+                        }
+                        
                         val durationText = data.duration.text
                         binding.tvDurationBike.text = "$durationText • 1 người"
                         binding.tvDurationCar.text = "$durationText • 4 người"
                         binding.tvDurationPremium.text = "$durationText • 7 người"
-                        binding.tvDurationPremium.text = "$durationText • 7 người"
-
-                        if (currentPolylineString.isNotEmpty()) {
-                            drawRoute(currentPolylineString)
-                        }
-                        calculatePriceLocally()
                     }
                 }
             }
-            override fun onFailure(call: Call<RouteResponse>, t: Throwable) {
-                binding.btnConfirmBooking.isEnabled = true
-                binding.btnConfirmBooking.text = "Lỗi kết nối"
-            }
+            override fun onFailure(call: Call<RouteResponse>, t: Throwable) {}
         })
+    }
+
+    private fun updatePriceUI(result: TripEstimateResponse) {
+        val formatter = DecimalFormat("#,###")
+        finalPrice = result.fare
+
+        // Cập nhật giá hiển thị trên nút
+        if (result.discountApplied) {
+            binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(result.fare)}đ (KM: -${formatter.format(result.discountAmount)}đ)"
+            binding.tvSelectPromotion.text = selectedDiscountCode ?: "Đã chọn"
+        } else {
+            binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(result.fare)}đ"
+            binding.tvSelectPromotion.text = " Ưu đãi"
+        }
+        
+        // Cập nhật giá danh sách xe (để user tham khảo)
+        calculatePriceLocally()
+    }
+
+    private fun fetchUserPromotions() {
+        RetrofitClient.instance.getDiscounts().enqueue(object : Callback<List<Promotion>> {
+            override fun onResponse(call: Call<List<Promotion>>, response: Response<List<Promotion>>) {
+                if (response.isSuccessful) {
+                    myPromotions = response.body() ?: emptyList()
+                }
+            }
+            override fun onFailure(call: Call<List<Promotion>>, t: Throwable) {}
+        })
+    }
+
+    private fun showPromotionDialog() {
+        if (myPromotions.isEmpty()) {
+            Toast.makeText(this, "Bạn chưa có mã giảm giá nào!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val codes = myPromotions.map { "${it.code} - ${it.description}" }.toTypedArray()
+        
+        val builder = android.app.AlertDialog.Builder(this)
+        builder.setTitle("Chọn mã giảm giá")
+        builder.setItems(codes) { dialog, which ->
+            val selected = myPromotions[which]
+            selectedDiscountId = selected.id
+            selectedDiscountCode = selected.code
+            Toast.makeText(this, "Đã chọn: ${selected.code}", Toast.LENGTH_SHORT).show()
+            calculateRouteViaServer() // Recalculate price
+        }
+        builder.setNeutralButton("Bỏ chọn") { _, _ ->
+            selectedDiscountId = null
+            selectedDiscountCode = null
+            calculateRouteViaServer()
+        }
+        builder.show()
     }
 
     private fun drawRoute(encodedPolyline: String) {
@@ -206,20 +308,12 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun calculatePriceLocally() {
-        var baseFare = 0.0
-        var pricePerKm = 0.0
-        when (selectedVehicleType) {
-            "RideGo Bike" -> { baseFare = 12000.0; pricePerKm = 5000.0 }
-            "RideGo Car" -> { baseFare = 25000.0; pricePerKm = 12000.0 }
-            "RideGo Premium" -> { baseFare = 50000.0; pricePerKm = 20000.0 }
-        }
-        finalPrice = baseFare + (currentDistanceKm * pricePerKm)
         val formatter = DecimalFormat("#,###")
-
         binding.tvPriceBike.text = "${formatter.format(12000 + currentDistanceKm * 5000)}đ"
         binding.tvPriceCar.text = "${formatter.format(25000 + currentDistanceKm * 12000)}đ"
         binding.tvPricePremium.text = "${formatter.format(50000 + currentDistanceKm * 20000)}đ"
-        binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(finalPrice)}đ"
+        
+        // Don't overwrite btnConfirmBooking here anymore, it's handled by updatePriceUI
     }
 
     private fun createBookingViaServer() {
@@ -246,7 +340,8 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
             vehicleType = serverVehicleType,
             paymentMethod = "CASH", //  Mặc định là Tiền mặt
             distance = currentDistanceKm,
-            fare = finalPrice
+            fare = finalPrice,
+            discountId = selectedDiscountId
         )
 
         // 2. Gọi API

@@ -39,12 +39,19 @@ class SetLocationActivity : AppCompatActivity(), OnMapReadyCallback {
     private var selectedLat = 0.0
     private var selectedLng = 0.0
 
+    // Discount data from intent
+    private var discountId: String? = null
+    private var discountCode: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySetLocationBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         isBookingFlow = intent.getBooleanExtra("IS_BOOKING_FLOW", false)
+        discountId = intent.getStringExtra("DISCOUNT_ID")
+        discountCode = intent.getStringExtra("DISCOUNT_CODE")
+        
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         val mapFragment = supportFragmentManager.findFragmentById(R.id.mapFragment) as SupportMapFragment
@@ -132,6 +139,8 @@ class SetLocationActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (isBookingFlow) {
                     // Logic cũ (nếu có): chuyển sang màn hình tiếp theo
                     val intent = Intent(this, SearchDestinationActivity::class.java)
+                    intent.putExtra("DISCOUNT_ID", discountId)
+                    intent.putExtra("DISCOUNT_CODE", discountCode)
                     startActivity(intent)
                 } else {
                     // Logic quan trọng cho BookingActivity: Trả kết quả về

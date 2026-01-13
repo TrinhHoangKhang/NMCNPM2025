@@ -12,6 +12,9 @@ interface RideGoApiService {
 
     @POST("api/discounts/claim")
     fun claimDiscount(@Body request: ClaimDiscountRequest): Call<ClaimDiscountResponse>
+    
+    @POST("api/trips/estimate")
+    fun estimateTrip(@Body request: TripEstimateRequest): Call<TripEstimateResponse>
 
     @POST("api/maps/calculate-route")
     fun calculateRoute(@Body request: RouteRequest): Call<RouteResponse>
