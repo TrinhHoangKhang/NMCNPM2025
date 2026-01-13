@@ -15,8 +15,8 @@ object RetrofitClient {
 
     // 2. Cấu hình OkHttpClient để tự động thêm Token (Sửa lỗi 401)
     private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
         .addInterceptor { chain ->
             val originalRequest = chain.request()
             val builder = originalRequest.newBuilder()

@@ -46,6 +46,20 @@
             app:layout_constraintStart_toEndOf="@+id/btnBack"
             app:layout_constraintTop_toTopOf="@+id/btnBack" />
 
+        <ImageView
+            android:id="@+id/btnChatbot"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_circle_icon_light"
+            android:backgroundTint="#2196F3"
+            android:padding="8dp"
+            android:src="@drawable/ic_chat_bubble"
+            app:layout_constraintBottom_toBottomOf="@+id/btnBack"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/btnBack"
+            app:tint="@color/white" />
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/userInfoBox"
             android:layout_width="match_parent"

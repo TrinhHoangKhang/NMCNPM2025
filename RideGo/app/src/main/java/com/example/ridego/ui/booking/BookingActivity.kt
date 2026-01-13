@@ -8,9 +8,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.ridego.R
 import com.example.ridego.databinding.ActivityBookingBinding
+import com.example.ridego.data.api.RideGoApiService
 import com.example.ridego.data.api.RetrofitClient
-import com.example.ridego.data.model.*
 import com.example.ridego.data.socket.SocketManager
+import com.example.ridego.data.model.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -69,6 +70,22 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
         dropoffAddress = intent.getStringExtra("DROPOFF_ADDRESS") ?: ""
         dropoffLat = intent.getDoubleExtra("DROPOFF_LAT", 0.0)
         dropoffLng = intent.getDoubleExtra("DROPOFF_LNG", 0.0)
+        
+        // Nhận loại xe từ Chatbot (nếu có)
+        val vehicleExtra = intent.getStringExtra("VEHICLE_TYPE")
+        if (!vehicleExtra.isNullOrEmpty()) {
+             // Mapping từ Server Code (MOTORBIKE/4_SEATS) sang App Name (RideGo Bike...)
+             // Vì Chatbot trả về Mapping code như "MOTORBIKE" hoặc "4_SEATS"
+             // Nhưng hàm selectVehicle cần "RideGo Bike"
+             selectedVehicleType = when (vehicleExtra) {
+                 "MOTORBIKE", "BIKE" -> "RideGo Bike"
+                 "4_SEATS", "CAR", "4 SEAT" -> "RideGo Car"
+                 "7_SEATS", "PREMIUM", "7 SEAT" -> "RideGo Premium"
+                 else -> "RideGo Bike"
+             }
+             // Cập nhật UI ngay lập tức
+             selectVehicle(selectedVehicleType)
+        }
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -152,6 +169,8 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
                         val durationText = data.duration.text
                         binding.tvDurationBike.text = "$durationText • 1 người"
                         binding.tvDurationCar.text = "$durationText • 4 người"
+                        binding.tvDurationPremium.text = "$durationText • 7 người"
+                        binding.tvDurationPremium.text = "$durationText • 7 người"
 
                         if (currentPolylineString.isNotEmpty()) {
                             drawRoute(currentPolylineString)
@@ -250,20 +269,20 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
                     if (!finalTripId.isNullOrEmpty()) {
                         Log.d("BOOKING", "Thành công! ID: $finalTripId")
 
-                        val intent = Intent(this@BookingActivity, FindingDriverActivity::class.java)
-                        intent.putExtra("TRIP_ID", finalTripId) // Gửi ID tìm được
-                        intent.putExtra("PICKUP_ADDRESS", pickupAddress)
-                        intent.putExtra("DROPOFF_ADDRESS", dropoffAddress)
-                        intent.putExtra("PICKUP_LAT", pickupLat)
-                        intent.putExtra("PICKUP_LNG", pickupLng)
-                        intent.putExtra("DROPOFF_LAT", dropoffLat)
-                        intent.putExtra("DROPOFF_LNG", dropoffLng)
-                        intent.putExtra("VEHICLE_TYPE", selectedVehicleType)
-                        intent.putExtra("DISTANCE", currentDistanceKm)
-                        intent.putExtra("PRICE", finalPrice)
-                        intent.putExtra("POLYLINE", currentPolylineString)
+                        val nextIntent = Intent(this@BookingActivity, FindingDriverActivity::class.java)
+                        nextIntent.putExtra("TRIP_ID", finalTripId) // Gửi ID tìm được
+                        nextIntent.putExtra("PICKUP_ADDRESS", pickupAddress)
+                        nextIntent.putExtra("DROPOFF_ADDRESS", dropoffAddress)
+                        nextIntent.putExtra("PICKUP_LAT", pickupLat)
+                        nextIntent.putExtra("PICKUP_LNG", pickupLng)
+                        nextIntent.putExtra("DROPOFF_LAT", dropoffLat)
+                        nextIntent.putExtra("DROPOFF_LNG", dropoffLng)
+                        nextIntent.putExtra("VEHICLE_TYPE", selectedVehicleType)
+                        nextIntent.putExtra("DISTANCE", currentDistanceKm)
+                        nextIntent.putExtra("PRICE", finalPrice)
+                        nextIntent.putExtra("POLYLINE", currentPolylineString)
 
-                        startActivity(intent)
+                        startActivity(nextIntent)
                     } else {
                         // Server trả về thành công nhưng Android không mò thấy ID
                         binding.btnConfirmBooking.isEnabled = true
