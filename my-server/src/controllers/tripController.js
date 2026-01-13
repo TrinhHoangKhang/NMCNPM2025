@@ -19,7 +19,7 @@ class TripController {
     async requestTrip(req, res) {
         try {
             console.log('CONTROLLER DEBUG: req.user is', req.user);
-            const { pickupLocation, dropoffLocation, vehicleType, paymentMethod } = req.body;
+            let { pickupLocation, dropoffLocation, vehicleType, paymentMethod } = req.body;
 
             // Validate required fields
             if (!pickupLocation || !dropoffLocation || !vehicleType || !paymentMethod) {
@@ -28,8 +28,29 @@ class TripController {
                 });
             }
 
+            // Nếu là string thì tự động geocode sang lat/lng
+            const geocodeIfNeeded = async (loc) => {
+                if (typeof loc === 'string') {
+                    const axios = (await import('axios')).default;
+                    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+                    const url = `https://maps.googleapis.com/maps/api/geocode/json`;
+                    const resp = await axios.get(url, { params: { address: loc, key: apiKey } });
+                    if (resp.data.status === 'OK' && resp.data.results.length > 0) {
+                        const { lat, lng } = resp.data.results[0].geometry.location;
+                        return { lat, lng };
+                    } else {
+                        throw new Error(`Không tìm được tọa độ cho địa chỉ: ${loc}`);
+                    }
+                }
+                return loc;
+            };
+
+            pickupLocation = await geocodeIfNeeded(pickupLocation);
+            dropoffLocation = await geocodeIfNeeded(dropoffLocation);
+
             // Validate location structure
-            if (!pickupLocation.lat || !pickupLocation.lng || !dropoffLocation.lat || !dropoffLocation.lng) {
+            if (pickupLocation.lat === undefined || pickupLocation.lng === undefined ||
+                dropoffLocation.lat === undefined || dropoffLocation.lng === undefined) {
                 return res.status(400).json({
                     error: "Location objects must contain lat and lng properties"
                 });

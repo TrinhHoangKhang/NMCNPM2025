@@ -29,33 +29,54 @@ class AIService {
      * @returns {Promise<{lat: number, lng: number}>} Coordinates
      */
     async geocodeLocation(locationName) {
-        if (!this.geocodingApiKey) {
-            throw new Error('GRAPHHOPPER_API_KEY is missing');
+        // Try GraphHopper first if API key exists
+        if (this.geocodingApiKey) {
+            try {
+                const response = await axios.get(this.geocodingBaseUrl, {
+                    params: {
+                        q: locationName,
+                        locale: 'vi',
+                        key: this.geocodingApiKey,
+                        limit: 1
+                    },
+                    timeout: 5000
+                });
+
+                const hits = response.data?.hits;
+                if (hits && hits.length > 0) {
+                    const point = hits[0].point;
+                    return { lat: point.lat, lng: point.lng };
+                }
+            } catch (error) {
+                console.warn('GraphHopper geocoding failed, trying Google Maps fallback:', error.message);
+            }
+        }
+
+        // Fallback to Google Maps Geocoding
+        const googleApiKey = process.env.GOOGLE_MAPS_API_KEY;
+        if (!googleApiKey) {
+            throw new Error('Both GRAPHHOPPER_API_KEY and GOOGLE_MAPS_API_KEY are missing');
         }
 
         try {
-            const response = await axios.get(this.geocodingBaseUrl, {
+            const googleUrl = 'https://maps.googleapis.com/maps/api/geocode/json';
+            const response = await axios.get(googleUrl, {
                 params: {
-                    q: locationName,
-                    locale: 'vi',
-                    key: this.geocodingApiKey,
-                    limit: 1
+                    address: locationName,
+                    key: googleApiKey,
+                    language: 'vi'
                 },
                 timeout: 5000
             });
 
-            const hits = response.data?.hits;
-            if (!hits || hits.length === 0) {
-                throw new Error(`Location not found: ${locationName}`);
+            if (response.data.status === 'OK' && response.data.results.length > 0) {
+                const { lat, lng } = response.data.results[0].geometry.location;
+                return { lat, lng };
+            } else {
+                throw new Error(`Google Geocoding failed: ${response.data.status}`);
             }
-
-            const point = hits[0].point;
-            return {
-                lat: point.lat,
-                lng: point.lng
-            };
         } catch (error) {
-            console.error('Geocoding error:', error.message);
+            console.error('All geocoding methods failed:', error.message);
             throw new Error(`Failed to geocode location: ${locationName}`);
         }
     }
@@ -80,6 +101,10 @@ Nhiệm vụ của bạn là phân tích câu lệnh của người dùng và ch
    - Lệnh đi kèm: SET_LOCATION (bắt buộc).
 
 3. Intent "OPEN_TRIP_HISTORY" (Mở lịch sử chuyến đi):
+   - Không có lệnh đi kèm trong "steps".
+
+4. Intent "GENERAL_CHAT" (Chào hỏi hoặc hội thoại thông thường):
+   - Sử dụng cho các câu chào hỏi (xin chào, hi, hello) hoặc các câu nói không phải lệnh thực thi.
    - Không có lệnh đi kèm trong "steps".
 
 ### QUY TẮC ĐẦU RA (CHỈ TRẢ VỀ JSON):
@@ -141,8 +166,23 @@ Output:
     "intent": "OPEN_TRIP_HISTORY",
     "steps": []
   }
+}
+
+User: "Xin chào bạn"
+Output:
+{
+  "success": true,
+  "response_type": "ACTION",
+  "message": "Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?",
+  "data": {
+    "intent": "GENERAL_CHAT",
+    "steps": []
+  }
 }`;
         try {
+            console.log("--> [AI Service] Sending request to Groq SDK...");
+            console.log("--> [AI Service] Model:", this.modelName);
+
             // --- Groq (current) ---
             const completion = await this.groq.chat.completions.create({
                 model: this.modelName,
@@ -154,7 +194,9 @@ Output:
                 max_tokens: 512
             });
 
+            console.log("--> [AI Service] Groq response received.");
             const responseText = completion.choices?.[0]?.message?.content || '';
+            console.log("--> [AI Service] Raw content:", responseText);
 
             // Clean the response (remove markdown code blocks if present)
             let cleanedText = responseText.trim();
@@ -165,7 +207,7 @@ Output:
             }
 
             const parsed = JSON.parse(cleanedText);
-            
+
             // Validate the response structure
             if (!parsed.success || !parsed.data || !parsed.data.intent) {
                 throw new Error('Invalid AI response structure');
@@ -190,7 +232,8 @@ Output:
             // const legacyParsed = JSON.parse(legacyClean);
             // return legacyParsed;
         } catch (error) {
-            console.error('AI parsing error:', error.message);
+            console.error('--> [AI Service] Parsing/Groq Error:', error.message);
+            console.error('--> [AI Service] Stack Trace:', error.stack);
             throw new Error(`Failed to parse user command: ${error.message}`);
         }
     }
@@ -314,10 +357,11 @@ Dưới đây là lịch sử chuyến đi của người dùng trong 3 tháng q
 ${historyText}
 
 ### NHIỆM VỤ:
-1. Trả lời các câu hỏi về thống kê (tổng tiền, số chuyến, tháng này đi mấy chuyến), thói quen (giờ hay đi, loại xe hay dùng).
-2. Nếu người dùng hỏi về thời gian (hôm qua, tuần trước), hãy đối chiếu với ngày hiện tại (${currentDate}).
-3. Nếu không có dữ liệu, hãy trả lời: "Tôi không tìm thấy thông tin chuyến đi nào trong khoảng thời gian này".
-4. Câu trả lời cần ngắn gọn, thân thiện và trả về dạng VĂN BẢN THUẦN (TEXT), không trả về JSON.
+1. Nếu câu hỏi là CHÀO HỎI hoặc KHÔNG LIÊN QUAN đến lịch sử (VD: "Xin chào", "Bạn là ai", "Hôm nay trời đẹp không"): Hãy trả lời thân thiện, xã giao như một trợ lý ảo. KHÔNG cần nhắc đến lịch sử chuyến đi.
+2. Nếu câu hỏi LIÊN QUAN đến thống kê/lịch sử:
+   - Trả lời dựa trên DỮ LIỆU ở trên.
+   - Nếu DỮ LIỆU là "KHÔNG CÓ DỮ LIỆU" hoặc trống, hãy nói: "Bạn chưa có chuyến đi nào gần đây để tôi thống kê."
+3. Câu trả lời cần ngắn gọn, thân thiện và trả về dạng VĂN BẢN THUẦN (TEXT), không trả về JSON.
 
 ### CÂU HỎI CỦA NGƯỜI DÙNG:
 ${userQuestion}`;
@@ -333,22 +377,23 @@ ${userQuestion}`;
         // Fetch trips: completed in last 3 months
         const now = new Date();
 
-        const recentCompleted = await tripService.getUserCompletedTripsWithinMonths(userId, 3, 200);
+        const recentCompleted = await tripService.getUserCompletedTripsWithinMonths(userId, 1, 200);
 
-        if (recentCompleted.length === 0) {
-            return 'Tôi không tìm thấy thông tin chuyến đi nào trong khoảng thời gian này';
+        let historyText = "KHÔNG CÓ DỮ LIỆU (Người dùng chưa đi chuyến nào)";
+
+        if (recentCompleted.length > 0) {
+            // Limit to avoid long prompts
+            const limitedTrips = recentCompleted
+                .sort((a, b) => {
+                    const da = this.parseTripDate(a.completedAt || a.createdAt)?.getTime() || 0;
+                    const db = this.parseTripDate(b.completedAt || b.createdAt)?.getTime() || 0;
+                    return db - da;
+                })
+                .slice(0, 100);
+
+            historyText = this.compressTripHistory(limitedTrips);
         }
 
-        // Limit to avoid long prompts
-        const limitedTrips = recentCompleted
-            .sort((a, b) => {
-                const da = this.parseTripDate(a.completedAt || a.createdAt)?.getTime() || 0;
-                const db = this.parseTripDate(b.completedAt || b.createdAt)?.getTime() || 0;
-                return db - da;
-            })
-            .slice(0, 100);
-
-        const historyText = this.compressTripHistory(limitedTrips);
         const currentDateStr = this.formatDate(now);
         const prompt = this.buildHistoryPrompt(historyText, currentDateStr, userQuestion);
 
@@ -393,13 +438,13 @@ ${userQuestion}`;
 
         // Check if SET_VEHICLE exists
         const hasVehicle = steps.some(step => step.cmd === 'SET_VEHICLE');
-        
+
         // Check if SET_PAYMENT_METHOD exists
         const hasPayment = steps.some(step => step.cmd === 'SET_PAYMENT_METHOD');
 
         // Add defaults if missing
         const enhancedSteps = [...steps];
-        
+
         if (!hasVehicle) {
             enhancedSteps.push({
                 cmd: 'SET_VEHICLE',
@@ -440,8 +485,8 @@ ${userQuestion}`;
         // Find location-based commands and add coordinates
         const enhancedSteps = await Promise.all(
             steps.map(async (step) => {
-                const needsGeocoding = 
-                    step.cmd === 'SET_DESTINATION' || 
+                const needsGeocoding =
+                    step.cmd === 'SET_DESTINATION' ||
                     step.cmd === 'SET_LOCATION';
 
                 if (needsGeocoding && step.value) {
@@ -481,17 +526,17 @@ ${userQuestion}`;
         try {
             // Step 1: Parse user intent
             const aiResponse = await this.parseUserCommand(userText);
-            
+
             // Step 2: Apply default values (MOTORBIKE and WALLET for BOOK_TRIP)
             const responseWithDefaults = this.applyDefaultValues(aiResponse);
-            
+
             // Step 3: Add coordinates for location-based commands
             const enhancedResponse = await this.enhanceWithCoordinates(responseWithDefaults);
-            
+
             return enhancedResponse;
         } catch (error) {
             console.error('Command processing error:', error.message);
-            
+
             // Return error response
             return {
                 success: false,

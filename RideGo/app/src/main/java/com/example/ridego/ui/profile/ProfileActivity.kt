@@ -54,6 +54,10 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         setupOption(binding.optRate, "Đánh giá ứng dụng", R.drawable.ic_star_outline)
+        binding.optRate.root.setOnClickListener {
+            val intent = Intent(this, com.example.ridego.ui.rating.AppRatingActivity::class.java)
+            startActivity(intent)
+        }
         setupOption(binding.optShare, "Giới thiệu bạn bè", R.drawable.ic_share_icon, "Nhận 50k")
         binding.optShare.root.setOnClickListener {
             startActivity(Intent(this, ReferralActivity::class.java))
@@ -61,6 +65,10 @@ class ProfileActivity : AppCompatActivity() {
 
         binding.btnLogout.setOnClickListener {
             showLogoutDialog()
+        }
+
+        binding.btnChatbot.setOnClickListener {
+            showChatbotBottomSheet()
         }
     }
     
@@ -167,12 +175,162 @@ class ProfileActivity : AppCompatActivity() {
         }
     }
 
-    // --- ĐÃ SỬA HÀM NÀY ---
-    // Thay đổi tham số đầu tiên từ 'View' thành 'ItemProfileOptionRowBinding'
     private fun setupOption(itemBinding: ItemProfileOptionRowBinding, title: String, iconRes: Int, value: String = "") {
         // Dùng trực tiếp biến binding để gán dữ liệu, không cần findViewById nữa (Code gọn hơn nhiều)
         itemBinding.tvTitle.text = title
         itemBinding.imgIcon.setImageResource(iconRes)
         itemBinding.tvValue.text = value
+    }
+
+    // --- CHATBOT LOGIC ---
+    private fun showChatbotBottomSheet() {
+        val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_chatbot, null)
+        bottomSheetDialog.setContentView(view)
+
+        val rvChatHistory = view.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvChatHistory)
+        val etChatInput = view.findViewById<android.widget.EditText>(R.id.etChatInput)
+        val btnSendChat = view.findViewById<android.widget.ImageButton>(R.id.btnSendChat)
+        val rgChatMode = view.findViewById<android.widget.RadioGroup>(R.id.rgChatMode)
+        val rbModeCommand = view.findViewById<android.widget.RadioButton>(R.id.rbModeCommand)
+        val rbModeQuery = view.findViewById<android.widget.RadioButton>(R.id.rbModeQuery)
+
+        val messages = mutableListOf<com.example.ridego.data.model.ChatMessage>()
+        val adapter = ChatAdapter(messages)
+        rvChatHistory.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+        rvChatHistory.adapter = adapter
+
+        // Welcome message
+        messages.add(com.example.ridego.data.model.ChatMessage("Xin chào! Tôi có thể giúp gì cho bạn?", false))
+        adapter.notifyDataSetChanged()
+
+        btnSendChat.setOnClickListener {
+            val userText = etChatInput.text.toString().trim()
+            if (userText.isNotEmpty()) {
+                messages.add(com.example.ridego.data.model.ChatMessage(userText, true))
+                adapter.notifyItemInserted(messages.size - 1)
+                rvChatHistory.scrollToPosition(messages.size - 1)
+                etChatInput.text.clear()
+
+                // Thêm typing indicator
+                val typingMessage = com.example.ridego.data.model.ChatMessage("Đang trả lời...", false)
+                messages.add(typingMessage)
+                val typingIndex = messages.size - 1
+                adapter.notifyItemInserted(typingIndex)
+                rvChatHistory.scrollToPosition(typingIndex)
+
+                val request = com.example.ridego.data.model.ChatRequest(userText)
+                
+                // Chọn API theo chế độ người dùng toggle
+                if (rbModeCommand.isChecked) {
+                    // Chế độ Lệnh: Gọi /api/ai/command
+                    com.example.ridego.data.api.RetrofitClient.instance.chatCommand(request).enqueue(object : retrofit2.Callback<com.example.ridego.data.model.ChatCommandResponse> {
+                        override fun onResponse(call: retrofit2.Call<com.example.ridego.data.model.ChatCommandResponse>, response: retrofit2.Response<com.example.ridego.data.model.ChatCommandResponse>) {
+                            // Xóa typing indicator
+                            messages.removeAt(typingIndex)
+                            adapter.notifyItemRemoved(typingIndex)
+                            
+                            handleChatCommandResponse(response, messages, adapter, rvChatHistory)
+                        }
+
+                        override fun onFailure(call: retrofit2.Call<com.example.ridego.data.model.ChatCommandResponse>, t: Throwable) {
+                            // Xóa typing indicator
+                            messages.removeAt(typingIndex)
+                            adapter.notifyItemRemoved(typingIndex)
+                            
+                            messages.add(com.example.ridego.data.model.ChatMessage("Lỗi kết nối: ${t.message}", false))
+                            adapter.notifyItemInserted(messages.size - 1)
+                        }
+                    })
+                } else {
+                    // Chế độ Tra cứu: Gọi /api/ai/query
+                    com.example.ridego.data.api.RetrofitClient.instance.chatQuery(request).enqueue(object : retrofit2.Callback<com.example.ridego.data.model.ChatResponse> {
+                        override fun onResponse(call: retrofit2.Call<com.example.ridego.data.model.ChatResponse>, response: retrofit2.Response<com.example.ridego.data.model.ChatResponse>) {
+                            // Xóa typing indicator
+                            messages.removeAt(typingIndex)
+                            adapter.notifyItemRemoved(typingIndex)
+                            
+                            if (response.isSuccessful && response.body() != null) {
+                                val botReply = response.body()!!.message
+                                messages.add(com.example.ridego.data.model.ChatMessage(botReply, false))
+                                adapter.notifyItemInserted(messages.size - 1)
+                                rvChatHistory.scrollToPosition(messages.size - 1)
+                            } else {
+                                messages.add(com.example.ridego.data.model.ChatMessage("Lỗi server: ${response.code()}", false))
+                                adapter.notifyItemInserted(messages.size - 1)
+                            }
+                        }
+
+                        override fun onFailure(call: retrofit2.Call<com.example.ridego.data.model.ChatResponse>, t: Throwable) {
+                            // Xóa typing indicator
+                            messages.removeAt(typingIndex)
+                            adapter.notifyItemRemoved(typingIndex)
+                            
+                            messages.add(com.example.ridego.data.model.ChatMessage("Lỗi kết nối: ${t.message}", false))
+                            adapter.notifyItemInserted(messages.size - 1)
+                        }
+                    })
+                }
+            }
+        }
+
+        bottomSheetDialog.show()
+    }
+
+    // Hàm xử lý phản hồi chung cho Chatbot
+    private fun handleChatCommandResponse(
+        response: retrofit2.Response<com.example.ridego.data.model.ChatCommandResponse>,
+        messages: MutableList<com.example.ridego.data.model.ChatMessage>,
+        adapter: ChatAdapter,
+        rvChatHistory: androidx.recyclerview.widget.RecyclerView
+    ) {
+        try {
+            // Log response để debug
+            android.util.Log.d("ChatBot", "Response code: ${response.code()}")
+            android.util.Log.d("ChatBot", "Response body: ${response.body()}")
+            android.util.Log.d("ChatBot", "Response success: ${response.isSuccessful}")
+            
+            if (response.isSuccessful && response.body() != null) {
+                val cmdResp = response.body()!!
+                val botReply = cmdResp.message ?: "Không có câu trả lời."
+                
+                android.util.Log.d("ChatBot", "Bot reply: $botReply")
+                android.util.Log.d("ChatBot", "Intent: ${cmdResp.data?.intent}")
+                
+                messages.add(com.example.ridego.data.model.ChatMessage(botReply, false))
+                adapter.notifyItemInserted(messages.size - 1)
+                rvChatHistory.scrollToPosition(messages.size - 1)
+
+                // Xử lý lệnh điều hướng
+                if (cmdResp.data?.intent == "BOOK_TRIP") {
+                    val destination = cmdResp.data.steps?.find { it.cmd == "SET_DESTINATION" }?.value ?: ""
+                    val lat = cmdResp.data.steps?.find { it.cmd == "SET_DESTINATION" }?.lat ?: 0.0
+                    val lng = cmdResp.data.steps?.find { it.cmd == "SET_DESTINATION" }?.lng ?: 0.0
+                    
+                    android.util.Log.d("ChatBot", "Booking: $destination at ($lat, $lng)")
+                    
+                    // Chuyển sang màn hình SetLocationActivity (Bước 1 của đặt xe)
+                    // Delay một chút để người dùng kịp đọc tin nhắn phản hồi của Bot
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        val intent = Intent(this@ProfileActivity, com.example.ridego.ui.rider.location.SetLocationActivity::class.java)
+                        intent.putExtra("IS_BOOKING_FLOW", true) // Quan trọng: Bật chế độ đặt xe
+                        intent.putExtra("DESTINATION_NAME", destination) // Gửi kèm để nếu cần dùng sau
+                        intent.putExtra("DESTINATION_LAT", lat)
+                        intent.putExtra("DESTINATION_LNG", lng)
+                        startActivity(intent)
+                    }, 1500) // Delay 1.5s
+                }
+            } else {
+                val errorMsg = "Lỗi server: ${response.code()} - ${response.message()}"
+                android.util.Log.e("ChatBot", errorMsg)
+                messages.add(com.example.ridego.data.model.ChatMessage(errorMsg, false))
+                adapter.notifyItemInserted(messages.size - 1)
+            }
+        } catch (e: Exception) {
+            val errorMsg = "Lỗi xử lý: ${e.message}"
+            android.util.Log.e("ChatBot", errorMsg, e)
+            messages.add(com.example.ridego.data.model.ChatMessage(errorMsg, false))
+            adapter.notifyItemInserted(messages.size - 1)
+        }
     }
 }

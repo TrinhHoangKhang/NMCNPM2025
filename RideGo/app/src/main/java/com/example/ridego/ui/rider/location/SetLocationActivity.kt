@@ -130,8 +130,13 @@ class SetLocationActivity : AppCompatActivity(), OnMapReadyCallback {
             saveLocationToFirebase {
                 // Sau khi lưu xong thì trả kết quả về
                 if (isBookingFlow) {
-                    // Logic cũ (nếu có): chuyển sang màn hình tiếp theo
                     val intent = Intent(this, SearchDestinationActivity::class.java)
+                    // Forward destination info if available (from Chatbot)
+                    if (getIntent().hasExtra("DESTINATION_NAME")) {
+                        intent.putExtra("DESTINATION_NAME", getIntent().getStringExtra("DESTINATION_NAME"))
+                        intent.putExtra("DESTINATION_LAT", getIntent().getDoubleExtra("DESTINATION_LAT", 0.0))
+                        intent.putExtra("DESTINATION_LNG", getIntent().getDoubleExtra("DESTINATION_LNG", 0.0))
+                    }
                     startActivity(intent)
                 } else {
                     // Logic quan trọng cho BookingActivity: Trả kết quả về

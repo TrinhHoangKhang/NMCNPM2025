@@ -24,11 +24,14 @@ class AIController {
      * }
      */
     async getCommandInstruction(req, res) {
+        console.log("--> [AI Controller] Received command request");
         try {
             const { text } = req.body;
+            console.log(`--> [AI Controller] Input text: "${text}"`);
 
             // Validate input
             if (!text || typeof text !== 'string' || text.trim().length === 0) {
+                console.warn("--> [Ai Controller] Invalid input");
                 return res.status(400).json({
                     success: false,
                     response_type: "ERROR",
@@ -38,16 +41,18 @@ class AIController {
             }
 
             // Process the command using AI service
+            console.log("--> [AI Controller] Calling aiService.processCommand...");
             const result = await aiService.processCommand(text.trim());
+            console.log("--> [AI Controller] aiService returned result:", JSON.stringify(result).substring(0, 100) + "...");
 
             // Return appropriate status code based on success
             const statusCode = result.success ? 200 : 400;
-            
+
             return res.status(statusCode).json(result);
 
         } catch (error) {
-            console.error('AI Controller Error:', error);
-            
+            console.error('--> [AI Controller] CRITICAL ERROR:', error);
+
             return res.status(500).json({
                 success: false,
                 response_type: "ERROR",
@@ -103,7 +108,7 @@ class AIController {
         }
     }
 
-    
+
 }
 
 export default new AIController();

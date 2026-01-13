@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F9FA"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/white"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_back_arrow"
+            app:tint="#333333" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:text="Đánh giá ứng dụng"
+            android:textColor="#333333"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_star_outline"
+            app:tint="#FF7D28" />
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="16dp">
+
+            <!-- Overall Rating Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Đánh giá chung"
+                        android:textColor="#666666"
+                        android:textSize="14sp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/tvOverallRating"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="4.8"
+                            android:textColor="#B516D6"
+                            android:textSize="32sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginStart="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="★★★★★"
+                                android:textColor="#FFD700"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:id="@+id/tvTotalReviews"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="(45.2K đánh giá)"
+                                android:textColor="#999999"
+                                android:textSize="12sp"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Rating Distribution -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginTop="16dp">
+
+                        <!-- 5 Star -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="20dp"
+                                android:layout_height="wrap_content"
+                                android:text="5★"
+                                android:textSize="12sp"
+                                android:textColor="#666666" />
+                            <ProgressBar
+                                android:id="@+id/progress5Star"
+                                android:layout_width="0dp"
+                                android:layout_height="6dp"
+                                android:layout_weight="1"
+                                android:layout_marginHorizontal="8dp"
+                                style="?android:attr/progressBarStyleHorizontal"
+                                android:progress="60"
+                                android:progressBackgroundTint="#E0E0E0"
+                                android:progressTint="#4CAF50" />
+                            <TextView
+                                android:layout_width="30dp"
+                                android:layout_height="wrap_content"
+                                android:text="60%"
+                                android:textSize="12sp"
+                                android:textColor="#666666"
+                                android:gravity="end" />
+                        </LinearLayout>
+
+                        <!-- 4 Star -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="20dp"
+                                android:layout_height="wrap_content"
+                                android:text="4★"
+                                android:textSize="12sp"
+                                android:textColor="#666666" />
+                            <ProgressBar
+                                android:id="@+id/progress4Star"
+                                android:layout_width="0dp"
+                                android:layout_height="6dp"
+                                android:layout_weight="1"
+                                android:layout_marginHorizontal="8dp"
+                                style="?android:attr/progressBarStyleHorizontal"
+                                android:progress="25"
+                                android:progressBackgroundTint="#E0E0E0"
+                                android:progressTint="#2196F3" />
+                            <TextView
+                                android:layout_width="30dp"
+                                android:layout_height="wrap_content"
+                                android:text="25%"
+                                android:textSize="12sp"
+                                android:textColor="#666666"
+                                android:gravity="end" />
+                        </LinearLayout>
+
+                        <!-- 3 Star -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="20dp"
+                                android:layout_height="wrap_content"
+                                android:text="3★"
+                                android:textSize="12sp"
+                                android:textColor="#666666" />
+                            <ProgressBar
+                                android:id="@+id/progress3Star"
+                                android:layout_width="0dp"
+                                android:layout_height="6dp"
+                                android:layout_weight="1"
+                                android:layout_marginHorizontal="8dp"
+                                style="?android:attr/progressBarStyleHorizontal"
+                                android:progress="10"
+                                android:progressBackgroundTint="#E0E0E0"
+                                android:progressTint="#FFC107" />
+                            <TextView
+                                android:layout_width="30dp"
+                                android:layout_height="wrap_content"
+                                android:text="10%"
+                                android:textSize="12sp"
+                                android:textColor="#666666"
+                                android:gravity="end" />
+                        </LinearLayout>
+
+                        <!-- 2 Star -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="20dp"
+                                android:layout_height="wrap_content"
+                                android:text="2★"
+                                android:textSize="12sp"
+                                android:textColor="#666666" />
+                            <ProgressBar
+                                android:id="@+id/progress2Star"
+                                android:layout_width="0dp"
+                                android:layout_height="6dp"
+                                android:layout_weight="1"
+                                android:layout_marginHorizontal="8dp"
+                                style="?android:attr/progressBarStyleHorizontal"
+                                android:progress="3"
+                                android:progressBackgroundTint="#E0E0E0"
+                                android:progressTint="#FF9800" />
+                            <TextView
+                                android:layout_width="30dp"
+                                android:layout_height="wrap_content"
+                                android:text="3%"
+                                android:textSize="12sp"
+                                android:textColor="#666666"
+                                android:gravity="end" />
+                        </LinearLayout>
+
+                        <!-- 1 Star -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical">
+                            <TextView
+                                android:layout_width="20dp"
+                                android:layout_height="wrap_content"
+                                android:text="1★"
+                                android:textSize="12sp"
+                                android:textColor="#666666" />
+                            <ProgressBar
+                                android:id="@+id/progress1Star"
+                                android:layout_width="0dp"
+                                android:layout_height="6dp"
+                                android:layout_weight="1"
+                                android:layout_marginHorizontal="8dp"
+                                style="?android:attr/progressBarStyleHorizontal"
+                                android:progress="2"
+                                android:progressBackgroundTint="#E0E0E0"
+                                android:progressTint="#F44336" />
+                            <TextView
+                                android:layout_width="30dp"
+                                android:layout_height="wrap_content"
+                                android:text="2%"
+                                android:textSize="12sp"
+                                android:textColor="#666666"
+                                android:gravity="end" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- User Rating Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Đánh giá của bạn"
+                android:textColor="#333333"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="12dp" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <!-- Star Selection -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:layout_marginBottom="16dp">
+
+                        <TextView
+                            android:id="@+id/star1"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:text="☆"
+                            android:textSize="32sp"
+                            android:textColor="#CCCCCC"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/star2"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:text="☆"
+                            android:textSize="32sp"
+                            android:textColor="#CCCCCC"
+                            android:gravity="center"
+                            android:layout_marginHorizontal="8dp"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/star3"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:text="☆"
+                            android:textSize="32sp"
+                            android:textColor="#CCCCCC"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/star4"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:text="☆"
+                            android:textSize="32sp"
+                            android:textColor="#CCCCCC"
+                            android:gravity="center"
+                            android:layout_marginHorizontal="8dp"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <TextView
+                            android:id="@+id/star5"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:text="☆"
+                            android:textSize="32sp"
+                            android:textColor="#CCCCCC"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvRatingTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Chọn đánh giá của bạn"
+                        android:textColor="#999999"
+                        android:textSize="14sp"
+                        android:gravity="center"
+                        android:layout_marginBottom="16dp" />
+
+                    <EditText
+                        android:id="@+id/etFeedback"
+                        android:layout_width="match_parent"
+                        android:layout_height="100dp"
+                        android:hint="Thêm bình luận (tùy chọn)..."
+                        android:background="@drawable/bg_input_field"
+                        android:padding="12dp"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/black"
+                        android:textColorHint="@android:color/darker_gray"
+                        android:gravity="top|start"
+                        android:layout_marginBottom="16dp" />
+
+                    <Button
+                        android:id="@+id/btnSubmitRating"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="GỬI ĐÁNH GIÁ"
+                        android:textColor="@color/white"
+                        android:textStyle="bold"
+                        android:textSize="14sp"
+                        android:background="@drawable/bg_button_gradient"
+                        android:foreground="?attr/selectableItemBackground" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Recent Reviews Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Đánh giá gần đây"
+                android:textColor="#333333"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="12dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerReviews"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>
