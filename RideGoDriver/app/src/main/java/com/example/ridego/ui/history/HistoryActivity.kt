@@ -28,6 +28,6 @@ class HistoryActivity : AppCompatActivity() {
         )
 
         binding.rvHistory.layoutManager = LinearLayoutManager(this)
-       // binding.rvHistory.adapter = HistoryAdapter(list)
+        binding.rvHistory.adapter = HistoryAdapter(list)
     }
 }

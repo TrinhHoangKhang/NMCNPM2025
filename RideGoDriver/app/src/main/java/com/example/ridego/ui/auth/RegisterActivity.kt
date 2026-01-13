@@ -8,8 +8,6 @@ import androidx.lifecycle.Observer
 import com.example.ridego.data.AuthRepository
 import com.example.ridego.databinding.ActivityRegisterBinding
 import android.content.Intent
-import com.example.ridegodriver.ui.driver.main.DriverMainActivity
-
 
 
 class RegisterActivity : AppCompatActivity() {

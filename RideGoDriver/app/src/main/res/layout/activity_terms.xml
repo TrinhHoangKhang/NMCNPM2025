@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:fitsSystemWindows="true">
+
+    <!-- Header -->
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:background="#FFFFFF"
+        android:elevation="4dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Quay lại"
+            app:tint="#212121" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:text="Điều khoản sử dụng"
+            android:textColor="#212121"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:fitsSystemWindows="true"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Cập nhật lần cuối -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cập nhật lần cuối: 01/01/2026"
+                android:textColor="#757575"
+                android:textSize="12sp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 1. Giới thiệu -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1. Giới thiệu"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Chào mừng bạn đến với RideGo - ứng dụng đặt xe được phát triển như một đồ án môn học Nhập môn Công nghệ Phần mềm bởi nhóm 4 sinh viên Trường Đại học Khoa học Tự nhiên - ĐHQG TP.HCM. Bằng việc sử dụng ứng dụng, bạn đồng ý tuân thủ các điều khoản dưới đây."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 2. Định nghĩa -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="2. Định nghĩa"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• RideGo hoặc Chúng tôi: Nhóm phát triển gồm 4 sinh viên Trường ĐHKHTN - ĐHQG TP.HCM.\n• Người dùng hoặc Bạn: Cá nhân đăng ký và sử dụng ứng dụng RideGo.\n• Tài xế: Người dùng có vai trò cung cấp dịch vụ vận chuyển trong ứng dụng.\n• Dịch vụ: Các tính năng được cung cấp thông qua ứng dụng RideGo.\n• Chuyến đi: Một lượt sử dụng dịch vụ vận chuyển từ điểm đón đến điểm trả."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 3. Điều kiện sử dụng -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="3. Điều kiện sử dụng"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Để sử dụng dịch vụ RideGo, bạn phải:\n\n• Đủ 18 tuổi trở lên hoặc có sự đồng ý của phụ huynh/người giám hộ.\n• Cung cấp thông tin chính xác, đầy đủ khi đăng ký tài khoản.\n• Có số điện thoại hợp lệ tại Việt Nam.\n• Không sử dụng dịch vụ cho mục đích bất hợp pháp.\n• Chịu trách nhiệm bảo mật thông tin tài khoản của mình."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 4. Quy trình đặt xe -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="4. Quy trình đặt xe"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• Bạn có thể đặt xe thông qua ứng dụng RideGo bằng cách nhập điểm đón và điểm đến.\n• Giá cước sẽ được hiển thị trước khi bạn xác nhận đặt xe.\n• Sau khi xác nhận, hệ thống sẽ tìm tài xế phù hợp trong khu vực.\n• Bạn có thể theo dõi vị trí tài xế trong thời gian thực.\n• Thanh toán có thể thực hiện bằng tiền mặt hoặc các phương thức điện tử."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 5. Hủy chuyến -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="5. Chính sách hủy chuyến"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• Bạn có thể hủy chuyến miễn phí trong vòng 2 phút sau khi đặt.\n• Sau 2 phút, phí hủy có thể được áp dụng tùy theo loại dịch vụ.\n• Hủy chuyến liên tục có thể ảnh hưởng đến uy tín tài khoản.\n• RideGo có quyền tạm khóa tài khoản nếu phát hiện hành vi lạm dụng."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 6. Thanh toán -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="6. Thanh toán và giá cước"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• Giá cước được tính dựa trên khoảng cách, thời gian và loại dịch vụ.\n• Giá có thể biến động vào giờ cao điểm hoặc thời tiết xấu.\n• Mã khuyến mãi phải được áp dụng trước khi hoàn tất đặt xe.\n• Hóa đơn điện tử sẽ được gửi qua email sau mỗi chuyến đi.\n• Mọi khiếu nại về giá cước phải được gửi trong vòng 7 ngày."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 7. Quyền và nghĩa vụ -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="7. Quyền và nghĩa vụ của người dùng"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Bạn có quyền:\n• Sử dụng dịch vụ đặt xe 24/7.\n• Được bảo vệ thông tin cá nhân.\n• Đánh giá và phản hồi về chất lượng dịch vụ.\n• Khiếu nại khi gặp vấn đề.\n\nBạn có nghĩa vụ:\n• Cư xử lịch sự với tài xế.\n• Thanh toán đầy đủ chi phí chuyến đi.\n• Không mang theo hàng cấm, chất gây cháy nổ.\n• Thắt dây an toàn khi di chuyển."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 8. Giới hạn trách nhiệm -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="8. Giới hạn trách nhiệm"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• RideGo là đồ án học tập, được phát triển với mục đích nghiên cứu và thực hành.\n• Ứng dụng không hoạt động như dịch vụ vận chuyển thương mại thực tế.\n• Nhóm phát triển không chịu trách nhiệm về bất kỳ thiệt hại nào phát sinh từ việc sử dụng ứng dụng.\n• Dữ liệu trong ứng dụng chỉ phục vụ mục đích demo và học tập."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 9. Sở hữu trí tuệ -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="9. Sở hữu trí tuệ"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• RideGo là sản phẩm đồ án thuộc môn Nhập môn Công nghệ Phần mềm.\n• Mã nguồn và thiết kế thuộc quyền sở hữu của nhóm phát triển và Trường ĐHKHTN.\n• Ứng dụng chỉ được sử dụng cho mục đích học tập và nghiên cứu.\n• Mọi hình thức sao chép để thương mại hóa đều không được phép."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 10. Thay đổi điều khoản -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="10. Thay đổi điều khoản"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• RideGo có quyền cập nhật điều khoản sử dụng bất cứ lúc nào.\n• Thông báo sẽ được gửi qua ứng dụng hoặc email.\n• Việc tiếp tục sử dụng sau khi thay đổi đồng nghĩa với việc bạn chấp nhận điều khoản mới.\n• Phiên bản hiện tại luôn có sẵn trong ứng dụng."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 11. Liên hệ -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="11. Liên hệ"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nếu bạn có bất kỳ câu hỏi nào về ứng dụng, vui lòng liên hệ:\n\n📧 Email: ridego.hcmus@gmail.com\n🏫 Trường Đại học Khoa học Tự nhiên - ĐHQG TP.HCM\n📍 Địa chỉ: 227 Nguyễn Văn Cừ, Phường 4, Quận 5, TP. Hồ Chí Minh"
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="32dp" />
+
+            <!-- Footer -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="© 2025 RideGo - Đồ án NMCNPM\nTrường Đại học Khoa học Tự nhiên - ĐHQG TP.HCM"
+                android:textColor="#9E9E9E"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:layout_marginBottom="20dp" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

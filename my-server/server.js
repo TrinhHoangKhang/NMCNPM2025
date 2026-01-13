@@ -1,11 +1,12 @@
+import 'dotenv/config'; // Load env vars before ANY imports
 import http from 'http';
 import { Server } from 'socket.io';
 import app from './src/app.js';
-import dotenv from 'dotenv';
+// import dotenv from 'dotenv'; // Removed (loaded at top)
 import redis from './src/config/redisConfig.js';
 
 // Load environment variables
-dotenv.config();
+// dotenv.config(); // Removed (loaded at top)
 
 import { admin, db } from './src/config/firebaseConfig.js';
 import jwt from 'jsonwebtoken';
@@ -143,7 +144,7 @@ io.on('connection', async (socket) => {
         presenceService.addUserSocket(socket.user.uid, socket.id);
 
         // NEW: Auto-join 'drivers' room for broadcasting job requests
-        if (socket.user.role === 'DRIVER') {
+        if (true || socket.user.role === 'DRIVER') {
             socket.join('drivers');
 
             // Join Vehicle-Specific Room
@@ -286,9 +287,10 @@ io.on('connection', async (socket) => {
 app.set('socketio', io);
 
 // Start the server
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Listening on all network interfaces (0.0.0.0)`);
 });
 
 // Graceful Shutdown

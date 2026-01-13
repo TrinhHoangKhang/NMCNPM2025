@@ -3,64 +3,68 @@ import aiService from '../services/aiService.js';
 class AIController {
     /**
      * POST /api/ai/command
-     * Process user's natural language command and return structured instructions
-     * 
-     * Request body:
-     * {
-     *   "text": "User's command text in Vietnamese"
-     * }
-     * 
-     * Response:
-     * {
-     *   "success": true,
-     *   "response_type": "ACTION",
-     *   "message": "Confirmation message",
-     *   "data": {
-     *     "intent": "BOOK_TRIP|ADD_FAVORITE_LOCATION|OPEN_TRIP_HISTORY",
-     *     "steps": [
-     *       { "cmd": "SET_DESTINATION", "value": "Location name", "lat": 10.123, "lng": 106.456 }
-     *     ]
-     *   }
-     * }
+     * Nhận lệnh giọng nói/văn bản và trả về chỉ thị cấu trúc
      */
     async getCommandInstruction(req, res) {
         try {
-            const { text, query } = req.body;
-            const userText = text || query;
+            // Nhận thêm userLocation (lat, lng) từ App gửi lên để tìm kiếm chính xác hơn
+            const { text, userLocation } = req.body;
+            
+            console.log("🔥 [AI CONTROLLER] Nhận lệnh:", text);
+            if (userLocation) {
+                console.log(`📍 [AI CONTROLLER] Vị trí người dùng: ${userLocation.lat}, ${userLocation.lng}`);
+            }
 
-            // Validate input
-            if (!userText || typeof userText !== 'string' || userText.trim().length === 0) {
+            // 1. Kiểm tra đầu vào
+            if (!text || typeof text !== 'string' || text.trim().length === 0) {
                 return res.status(400).json({
                     success: false,
                     response_type: "ERROR",
-                    message: "Vui lòng cung cấp câu lệnh hợp lệ.",
-                    error: "Missing or invalid 'text' or 'query' field"
+                    message: "Vui lòng cung cấp câu lệnh hợp lệ."
                 });
             }
 
-            // Process the command using AI service
-            const result = await aiService.processCommand(userText.trim());
+            console.log("⏳ [AI CONTROLLER] Đang gửi sang Gemini...");
 
-            // Return appropriate status code based on success
-            const statusCode = result.success ? 200 : 400;
+            // 2. Bước 1: Cho Gemini phân tích Intent và trích xuất địa danh
+            const aiResult = await aiService.parseUserCommand(text.trim());
 
-            return res.status(statusCode).json(result);
+            // 3. Bước 2: Nếu có lệnh liên quan đến địa điểm, tiến hành Geocoding lấy tọa độ thực
+            if (aiResult.success && aiResult.data && aiResult.data.steps) {
+                for (let step of aiResult.data.steps) {
+                    if (step.cmd === 'SET_DESTINATION' || step.cmd === 'SET_LOCATION') {
+                        console.log(`⏳ [AI CONTROLLER] Đang Geocoding: "${step.value}"...`);
+                        
+                        // Gọi hàm Geocode đã nâng cấp (có kèm userLocation để ưu tiên vùng miền)
+                        const coords = await aiService.geocodeLocation(step.value, userLocation);
+                        
+                        if (coords) {
+                            console.log(`✅ [AI CONTROLLER] Tìm thấy: [${coords.lat}, ${coords.lng}]`);
+                            step.lat = coords.lat;
+                            step.lng = coords.lng;
+                            // Cập nhật lại tên địa chỉ đầy đủ từ Google để App hiển thị đẹp hơn
+                            step.value = coords.address; 
+                        }
+                    }
+                }
+            }
+
+            console.log("🤖 [AI CONTROLLER] Kết quả cuối cùng:", JSON.stringify(aiResult, null, 2));
+            return res.status(aiResult.success ? 200 : 400).json(aiResult);
 
         } catch (error) {
-            console.error('AI Controller Error:', error);
-
+            console.error('❌ [AI CONTROLLER] Lỗi hệ thống:', error);
             return res.status(500).json({
                 success: false,
                 response_type: "ERROR",
-                message: "Đã xảy ra lỗi khi xử lý yêu cầu. Vui lòng thử lại.",
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+                message: "Máy chủ AI đang bận, vui lòng thử lại sau."
             });
         }
     }
 
     /**
      * POST /api/ai/query
-     * Answer user queries about trip history using LLM
+     * Trả lời các câu hỏi về lịch sử chuyến đi
      */
     async getQueryResponse(req, res) {
         try {
@@ -69,24 +73,15 @@ class AIController {
             const userId = req.user?.uid;
 
             if (!userId) {
-                return res.status(401).json({
-                    success: false,
-                    response_type: "ERROR",
-                    message: "Người dùng chưa được xác thực.",
-                    error: "Missing user id"
-                });
+                return res.status(401).json({ success: false, message: "Bạn cần đăng nhập." });
             }
 
-            if (!userText || typeof userText !== 'string' || userText.trim().length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    response_type: "ERROR",
-                    message: "Vui lòng cung cấp câu hỏi hợp lệ.",
-                    error: "Missing or invalid 'text' or 'query' field"
-                });
+            if (!text) {
+                return res.status(400).json({ success: false, message: "Nội dung trống." });
             }
 
-            const answer = await aiService.answerTripHistoryQuery(userId, userText.trim());
+            // Gọi service xử lý trả lời bằng Gemini
+            const answer = await aiService.answerTripHistoryQuery(userId, text.trim());
 
             return res.status(200).json({
                 success: true,
@@ -95,13 +90,8 @@ class AIController {
             });
 
         } catch (error) {
-            console.error('AI Query Error:', error);
-            return res.status(500).json({
-                success: false,
-                response_type: "ERROR",
-                message: "Đã xảy ra lỗi khi xử lý câu hỏi. Vui lòng thử lại.",
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
-            });
+            console.error('❌ [AI QUERY ERROR]:', error);
+            return res.status(500).json({ success: false, message: "Lỗi xử lý câu hỏi." });
         }
     }
 

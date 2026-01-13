@@ -2,13 +2,16 @@ package com.example.ridego.ui.profile
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.bumptech.glide.Glide
 import com.example.ridego.R
 import com.example.ridego.databinding.ActivityProfileBinding
 import com.example.ridego.databinding.ItemProfileOptionRowBinding
 import com.example.ridego.ui.auth.LoginActivity
+import com.example.ridego.utils.DeviceSessionManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -39,14 +42,32 @@ class ProfileActivity : AppCompatActivity() {
         setupOption(binding.optPromo, "Ưu đãi của tôi", R.drawable.ic_gift_icon_profile, "5")
 
         setupOption(binding.optSecurity, "Bảo mật & Quyền riêng tư", R.drawable.ic_shield_icon)
+        binding.optSecurity.root.setOnClickListener {
+            val intent = Intent(this, SecurityPrivacyActivity::class.java)
+            startActivity(intent)
+        }
+        
         setupOption(binding.optHelp, "Trợ giúp & Hỗ trợ", R.drawable.ic_help_icon)
+        binding.optHelp.root.setOnClickListener {
+            val intent = Intent(this, SupportActivity::class.java)
+            startActivity(intent)
+        }
 
         setupOption(binding.optRate, "Đánh giá ứng dụng", R.drawable.ic_star_outline)
         setupOption(binding.optShare, "Giới thiệu bạn bè", R.drawable.ic_share_icon, "Nhận 50k")
+        binding.optShare.root.setOnClickListener {
+            startActivity(Intent(this, ReferralActivity::class.java))
+        }
 
         binding.btnLogout.setOnClickListener {
             showLogoutDialog()
         }
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Reload thông tin user khi quay lại (sau khi đổi ảnh đại diện)
+        loadUserInfo()
     }
 
     private fun loadUserInfo() {
@@ -75,6 +96,20 @@ class ProfileActivity : AppCompatActivity() {
                                 
                                 // Hiển thị chữ cái đầu làm avatar
                                 binding.tvUserAvatar.text = name.first().uppercase()
+                                
+                                // Load ảnh đại diện từ Supabase nếu có
+                                val avatarUrl = document.getString("avatarUrl")
+                                if (!avatarUrl.isNullOrEmpty()) {
+                                    binding.cardUserAvatar.visibility = View.VISIBLE
+                                    binding.tvUserAvatar.visibility = View.GONE
+                                    Glide.with(this@ProfileActivity)
+                                        .load(avatarUrl)
+                                        .circleCrop()
+                                        .into(binding.imgUserAvatar)
+                                } else {
+                                    binding.cardUserAvatar.visibility = View.GONE
+                                    binding.tvUserAvatar.visibility = View.VISIBLE
+                                }
                             } else {
                                 // Fallback: Dùng displayName từ FirebaseAuth
                                 val name = user.displayName ?: "User"
@@ -119,14 +154,17 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     private fun logout() {
-        auth.signOut()
-        Toast.makeText(this, "Đã đăng xuất", Toast.LENGTH_SHORT).show()
-        
-        // Chuyển về màn hình login và xóa stack
-        val intent = Intent(this, LoginActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-        finish()
+        // Xóa session của thiết bị hiện tại trước khi đăng xuất
+        DeviceSessionManager.removeCurrentDevice(this) {
+            auth.signOut()
+            Toast.makeText(this, "Đã đăng xuất", Toast.LENGTH_SHORT).show()
+            
+            // Chuyển về màn hình login và xóa stack
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        }
     }
 
     // --- ĐÃ SỬA HÀM NÀY ---

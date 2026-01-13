@@ -16,7 +16,8 @@ object Config {
             return if (isEmulator()) {
                 "http://10.0.2.2:$PORT/"
             } else {
-                "http://$YOUR_PC_IP:$PORT/"
+                //"http://$YOUR_PC_IP:$PORT/"
+                        "https://superingenious-outdated-lilia.ngrok-free.dev/"
             }
         }
 

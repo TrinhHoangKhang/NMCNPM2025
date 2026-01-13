@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AlertDialog
 import com.example.ridego.data.AuthRepository
 import com.example.ridego.databinding.ActivityCompleteProfileBinding
-import com.example.ridegodriver.ui.driver.main.DriverMainActivity
+import com.example.ridego.ui.driver.home.DriverMainActivity
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -60,9 +60,15 @@ class CompleteProfileActivity : AppCompatActivity() {
                             firebaseUid // Fallback nếu chưa có mapping
                         }
                         
-                        // Update name vào document đúng
+                        // Dùng set với merge để tạo hoặc update document
+                        val userData = hashMapOf(
+                            "name" to name,
+                            "phone" to (user.phoneNumber ?: ""),
+                            "updatedAt" to com.google.firebase.Timestamp.now()
+                        )
+                        
                         db.collection("users").document(customUserId)
-                            .update("name", name)
+                            .set(userData, com.google.firebase.firestore.SetOptions.merge())
                             .addOnSuccessListener {
                                 Toast.makeText(this, "Hoàn tất hồ sơ!", Toast.LENGTH_SHORT).show()
                                 // Chuyển thẳng đến màn hình thêm email
