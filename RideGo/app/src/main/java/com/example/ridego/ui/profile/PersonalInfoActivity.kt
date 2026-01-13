@@ -669,8 +669,9 @@ class PersonalInfoActivity : AppCompatActivity() {
                         android.util.Log.d("PersonalInfo", "Response: $responseCode - $responseMessage")
                         
                         if (responseCode in 200..299) {
-                            // Tạo public URL
-                            val publicUrl = "$SUPABASE_URL/storage/v1/object/public/$BUCKET_NAME/$fileName"
+                            // Tạo public URL kèm timestamp để tránh cache
+                            val timestamp = System.currentTimeMillis()
+                            val publicUrl = "$SUPABASE_URL/storage/v1/object/public/$BUCKET_NAME/$fileName?t=$timestamp"
                             
 
                             withContext(Dispatchers.Main) {

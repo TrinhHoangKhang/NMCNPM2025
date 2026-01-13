@@ -212,54 +212,34 @@ class ProfileActivity : AppCompatActivity() {
 
                 val request = com.example.ridego.data.model.ChatRequest(userText)
 
-                if (rbModeQuery.isChecked) {
-                    // --- MODE: TRA CỨU (QUERY) ---
-                    com.example.ridego.data.api.RetrofitClient.instance.chatQuery(request).enqueue(object : retrofit2.Callback<com.example.ridego.data.model.ChatResponse> {
-                        override fun onResponse(call: retrofit2.Call<com.example.ridego.data.model.ChatResponse>, response: retrofit2.Response<com.example.ridego.data.model.ChatResponse>) {
-                            if (response.isSuccessful && response.body() != null) {
-                                val botReply = response.body()!!.message
-                                messages.add(com.example.ridego.data.model.ChatMessage(botReply, false))
-                                adapter.notifyItemInserted(messages.size - 1)
-                                rvChatHistory.scrollToPosition(messages.size - 1)
-                            } else {
-                                messages.add(com.example.ridego.data.model.ChatMessage("Lỗi server: ${response.code()}", false))
-                                adapter.notifyItemInserted(messages.size - 1)
-                            }
-                        }
+                // --- UNIFIED MODE: LUÔN DÙNG chatCommand ---
+                // Lý do: chatCommand thông minh hơn, handle được cả lệnh đặt xe VÀ câu hỏi thường.
+                // chatQuery đang bị lỗi logic "tìm kiếm chuyến đi" khi hỏi câu thường.
+                com.example.ridego.data.api.RetrofitClient.instance.chatCommand(request).enqueue(object : retrofit2.Callback<com.example.ridego.data.model.ChatCommandResponse> {
+                    override fun onResponse(call: retrofit2.Call<com.example.ridego.data.model.ChatCommandResponse>, response: retrofit2.Response<com.example.ridego.data.model.ChatCommandResponse>) {
+                        if (response.isSuccessful && response.body() != null) {
+                            val body = response.body()!!
+                            val botReply = body.message
+                            
+                            messages.add(com.example.ridego.data.model.ChatMessage(botReply, false))
+                            adapter.notifyItemInserted(messages.size - 1)
+                            rvChatHistory.scrollToPosition(messages.size - 1)
 
-                        override fun onFailure(call: retrofit2.Call<com.example.ridego.data.model.ChatResponse>, t: Throwable) {
-                            messages.add(com.example.ridego.data.model.ChatMessage("Lỗi kết nối: ${t.message}", false))
+                            // Xử lý hành động (Action) nếu có
+                            if (body.success && body.data != null) {
+                                handleChatAction(body.data)
+                            }
+                        } else {
+                            messages.add(com.example.ridego.data.model.ChatMessage("Lỗi server: ${response.code()}", false))
                             adapter.notifyItemInserted(messages.size - 1)
                         }
-                    })
-                } else {
-                    // --- MODE: ĐẶT XE (COMMAND) ---
-                    com.example.ridego.data.api.RetrofitClient.instance.chatCommand(request).enqueue(object : retrofit2.Callback<com.example.ridego.data.model.ChatCommandResponse> {
-                        override fun onResponse(call: retrofit2.Call<com.example.ridego.data.model.ChatCommandResponse>, response: retrofit2.Response<com.example.ridego.data.model.ChatCommandResponse>) {
-                            if (response.isSuccessful && response.body() != null) {
-                                val body = response.body()!!
-                                val botReply = body.message
-                                
-                                messages.add(com.example.ridego.data.model.ChatMessage(botReply, false))
-                                adapter.notifyItemInserted(messages.size - 1)
-                                rvChatHistory.scrollToPosition(messages.size - 1)
+                    }
 
-                                // Xử lý hành động (Action)
-                                if (body.success && body.data != null) {
-                                    handleChatAction(body.data)
-                                }
-                            } else {
-                                messages.add(com.example.ridego.data.model.ChatMessage("Lỗi server (Command): ${response.code()}", false))
-                                adapter.notifyItemInserted(messages.size - 1)
-                            }
-                        }
-
-                        override fun onFailure(call: retrofit2.Call<com.example.ridego.data.model.ChatCommandResponse>, t: Throwable) {
-                            messages.add(com.example.ridego.data.model.ChatMessage("Lỗi kết nối: ${t.message}", false))
-                            adapter.notifyItemInserted(messages.size - 1)
-                        }
-                    })
-                }
+                    override fun onFailure(call: retrofit2.Call<com.example.ridego.data.model.ChatCommandResponse>, t: Throwable) {
+                        messages.add(com.example.ridego.data.model.ChatMessage("Lỗi kết nối: ${t.message}", false))
+                        adapter.notifyItemInserted(messages.size - 1)
+                    }
+                })
             }
         }
 
