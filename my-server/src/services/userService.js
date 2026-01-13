@@ -1,4 +1,4 @@
-import { db } from '../config/firebaseConfig.js';
+import { db, admin } from '../config/firebaseConfig.js';
 
 class UserService {
 
@@ -81,6 +81,43 @@ class UserService {
         });
 
         return result;
+    }
+
+    async deleteUser(userId) {
+        const batch = db.batch();
+
+        // 1. Delete user from 'users' collection
+        const userRef = db.collection('users').doc(userId);
+        batch.delete(userRef);
+
+        // 2. Also attempt to delete from 'drivers' if they have a driver profile
+        const driverRef = db.collection('drivers').doc(userId);
+        batch.delete(driverRef);
+
+        // Execute batch delete
+        await batch.commit();
+        return true;
+    }
+
+    // 5. Add Favorite Location
+    async addFavoriteLocation(userId, locationData) {
+        // locationData: { name, address, lat, lng, type (optional: home, work) }
+        const userRef = db.collection('users').doc(userId);
+
+        // Use arrayUnion to append to the list
+        await userRef.update({
+            favoriteLocations: admin.firestore.FieldValue.arrayUnion(locationData)
+        });
+
+        const updatedDoc = await userRef.get();
+        return updatedDoc.data().favoriteLocations;
+    }
+
+    // 6. Get Favorite Locations
+    async getFavoriteLocations(userId) {
+        const doc = await db.collection('users').doc(userId).get();
+        if (!doc.exists) throw new Error("User not found");
+        return doc.data().favoriteLocations || [];
     }
 }
 

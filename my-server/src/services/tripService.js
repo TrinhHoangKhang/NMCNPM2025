@@ -52,16 +52,22 @@ class TripService {
                 trip.vehicleColor = dData.vehicle?.color || "White";
                 trip.driverPhone = dData.phone;
                 trip.driverEmail = dData.email;
+            } else {
+                trip.driverName = "Driver Not Found";
             }
         } catch (e) {
             console.error(`Failed to populate driver for trip ${trip.id}:`, e);
+            trip.driverName = "Error Loading Driver";
         }
         return trip;
     }
 
     // Helper: Fetch rider details
     async _populateRiderDetails(trip) {
-        if (!trip.riderId) return trip;
+        if (!trip.riderId) {
+            trip.riderName = "No Rider ID";
+            return trip;
+        }
         try {
             const userDoc = await db.collection('users').doc(trip.riderId).get();
             if (userDoc.exists) {
@@ -71,9 +77,12 @@ class TripService {
                 trip.riderRating = rData.rating || 5.0; // Assuming riders have ratings
                 trip.riderAvatar = rData.avatar || null;
                 trip.riderEmail = rData.email;
+            } else {
+                trip.riderName = "Rider Not Found";
             }
         } catch (e) {
             console.error(`Failed to populate rider for trip ${trip.id}:`, e);
+            trip.riderName = "Error Loading Rider";
         }
         return trip;
     }
@@ -408,10 +417,16 @@ class TripService {
             // 2. Redis Ranking
             await rankingService.updateScore(driverId, 1);
 
+            // 3. Increment Trip Count for Rider (Active User)
+            if (data.riderId) {
+                const riderRef = db.collection('users').doc(data.riderId);
+                await riderRef.update({
+                    tripCount: admin.firestore.FieldValue.increment(1)
+                });
+            }
+
         } catch (err) {
-            console.error(`Failed to update stats for driver ${driverId}:`, err);
-            // Non-blocking error
-            // Non-blocking error
+            console.error(`Failed to update stats for trip ${tripId}:`, err);
         }
 
         // Revert Driver Status to ONLINE

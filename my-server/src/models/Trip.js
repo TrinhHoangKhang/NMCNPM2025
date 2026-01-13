@@ -24,6 +24,21 @@ class Trip {
         this.ratingDriver = data.ratingDriver || null;
         this.ratingTrip = data.ratingTrip || null;
         this.ratingComment = data.ratingComment || null;
+
+        // Populated fields (init to null)
+        this.driverName = null;
+        this.driverRating = null;
+        this.vehiclePlate = null;
+        this.vehicleModel = null;
+        this.vehicleColor = null;
+        this.driverPhone = null;
+        this.driverEmail = null;
+
+        this.riderName = null;
+        this.riderPhone = null;
+        this.riderRating = null;
+        this.riderAvatar = null;
+        this.riderEmail = null;
     }
 
     toJSON() {

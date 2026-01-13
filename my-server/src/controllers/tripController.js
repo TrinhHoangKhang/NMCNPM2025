@@ -9,6 +9,11 @@ class TripController {
         try {
             const trips = await tripService.getAllTrips();
             const withIds = trips.map(trip => ({ id: trip.id, ...trip.toJSON() }));
+
+            if (withIds.length > 0) {
+                console.log("DEBUG: First Trip in Response:", JSON.stringify(withIds[0], null, 2));
+            }
+
             res.status(200).json({ success: true, data: withIds });
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });

@@ -5,7 +5,7 @@ import android.os.Build
 object Config {
     // --- CẤU HÌNH IP MÁY TÍNH CỦA BẠN (Dành cho máy thật) ---
     // Mở CMD gõ "ipconfig" (Win) hoặc Terminal gõ "ifconfig" (Mac) để lấy IP này
-    private const val YOUR_PC_IP = "192.168.31.228" // <--- Sửa số này thành IP máy bạn
+    private const val YOUR_PC_IP = "10.0.101.89" // <--- Sửa số này thành IP máy bạn
 
     // Cổng Server (Port)
     private const val PORT = "3001"

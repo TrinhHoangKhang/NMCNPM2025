@@ -1,5 +1,6 @@
 import rankingService from '../services/rankingService.js';
 import driverService from '../services/driverService.js';
+import { db } from '../config/firebaseConfig.js';
 
 class RankingController {
 
@@ -36,6 +37,45 @@ class RankingController {
 
         } catch (error) {
             console.error("Leaderboard Error:", error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // GET /api/ranks/ranking
+    async getRanking(req, res) {
+        try {
+            // 1. Top 5 Active Users (by tripCount)
+            const usersSnapshot = await db.collection('users')
+                .where('role', 'in', ['RIDER', 'rider'])
+                .orderBy('tripCount', 'desc')
+                .limit(5)
+                .get();
+
+            const topUsers = usersSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            // 2. Top 5 Ranked Drivers (by rating)
+            const driversSnapshot = await db.collection('drivers')
+                .orderBy('rating', 'desc')
+                .limit(5)
+                .get();
+
+            const topDrivers = driversSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            res.status(200).json({
+                success: true,
+                data: {
+                    activeUsers: topUsers,
+                    topDrivers: topDrivers
+                }
+            });
+        } catch (error) {
+            console.error("Ranking Error:", error);
             res.status(500).json({ success: false, error: error.message });
         }
     }

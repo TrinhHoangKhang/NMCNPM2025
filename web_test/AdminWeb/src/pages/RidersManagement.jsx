@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { Search } from 'lucide-react';
+import { Trash2, Search } from 'lucide-react';
 
 const RidersManagement = () => {
     const [users, setUsers] = useState([]);
@@ -30,15 +30,27 @@ const RidersManagement = () => {
             const params = { role: 'RIDER' };
             if (searchTerm) params.search = searchTerm;
 
-            if (searchTerm) params.search = searchTerm;
             const response = await apiClient('/users', { params });
             setUsers(response.data || []);
             setLoading(false);
         } catch (err) {
             console.error("Failed to fetch riders", err);
-            // Fallback only if strictly needed, but let's show empty or error
             setLoading(false);
-            // setError("Could not fetch riders"); // Let empty list show instead of error
+        }
+    };
+
+    const handleDeleteUser = async (userId) => {
+        if (!window.confirm("Are you sure you want to remove this rider? This action cannot be undone.")) {
+            return;
+        }
+
+        try {
+            await apiClient(`/users/${userId}`, { method: 'DELETE' });
+            // Refresh list
+            fetchUsers(search);
+        } catch (err) {
+            console.error("Failed to delete user", err);
+            alert("Failed to delete user: " + err.message);
         }
     };
 
@@ -73,12 +85,13 @@ const RidersManagement = () => {
                             <TableHead>Email</TableHead>
                             <TableHead>Phone</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {loading ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center p-8 text-slate-500">
+                                <TableCell colSpan={6} className="text-center p-8 text-slate-500">
                                     <div className="flex flex-col items-center justify-center">
                                         <Loader2 className="h-8 w-8 animate-spin text-slate-400 mb-2" />
                                         <span>Loading Riders...</span>
@@ -86,7 +99,7 @@ const RidersManagement = () => {
                                 </TableCell>
                             </TableRow>
                         ) : users.length === 0 ? (
-                            <TableRow><TableCell colSpan={5} className="text-center p-4">No riders found</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={6} className="text-center p-4">No riders found</TableCell></TableRow>
                         ) : (
                             users.map((user) => (
                                 <TableRow key={user.id || user._id}>
@@ -95,7 +108,26 @@ const RidersManagement = () => {
                                     <TableCell>{user.email}</TableCell>
                                     <TableCell>{user.phone || 'N/A'}</TableCell>
                                     <TableCell>
-                                        <Badge variant="secondary" className="bg-green-100 text-green-700">Active</Badge>
+                                        <Badge
+                                            variant={user.status === 'ONLINE' ? 'default' : 'secondary'}
+                                            className={
+                                                user.status === 'ONLINE'
+                                                    ? "bg-green-100 text-green-700 hover:bg-green-100"
+                                                    : "bg-slate-100 text-slate-700 hover:bg-slate-100"
+                                            }
+                                        >
+                                            {user.status || 'OFFLINE'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                            onClick={() => handleDeleteUser(user.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             ))
