@@ -57,7 +57,11 @@ class SearchDestinationActivity : AppCompatActivity() {
 
     private var workAddress: String? = null
     private var workLat: Double = 0.0
+
     private var workLng: Double = 0.0
+
+    // List to hold custom saved places
+    private val savedPlaces = mutableListOf<Map<String, Any>>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,6 +113,13 @@ class SearchDestinationActivity : AppCompatActivity() {
                 workAddress = doc.getString("workAddress")
                 workLat = doc.getDouble("workLat") ?: 0.0
                 workLng = doc.getDouble("workLng") ?: 0.0
+                
+                // Load Custom Saved Places
+                savedPlaces.clear()
+                val placesList = doc.get("savedPlaces") as? List<Map<String, Any>>
+                if (placesList != null) {
+                    savedPlaces.addAll(placesList)
+                }
             }
         }
     }
@@ -147,6 +158,20 @@ class SearchDestinationActivity : AppCompatActivity() {
         if (!workAddress.isNullOrEmpty()) {
             options.add("🏢 Văn phòng: $workAddress")
             actions.add { selectFavorite(workAddress!!, workLat, workLng) }
+        }
+        
+        // Add Custom Places to Dialog
+        for (place in savedPlaces) {
+            val name = place["name"] as? String ?: "Địa điểm"
+            val address = place["address"] as? String ?: ""
+            val lat = place["lat"] as? Double ?: 0.0
+            val lng = place["lng"] as? Double ?: 0.0
+            val icon = place["icon"] as? String ?: "📍"
+            
+            if (address.isNotEmpty()) {
+                options.add("$icon $name: $address")
+                actions.add { selectFavorite(address, lat, lng) }
+            }
         }
         
         if (options.isEmpty()) {

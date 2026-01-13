@@ -48,6 +48,11 @@ class HomeFragment : Fragment() {
         binding.layoutWork.setOnClickListener {
             handleFavoriteClick(workAddress, workLat, workLng, 4)
         }
+
+        binding.tvSeeAllLocations.setOnClickListener {
+            val intent = Intent(requireContext(), com.example.ridego.ui.favorite.FavoriteLocationsActivity::class.java)
+            startActivity(intent)
+        }
     }
     
     private fun handleFavoriteClick(address: String?, lat: Double, lng: Double, type: Int) {

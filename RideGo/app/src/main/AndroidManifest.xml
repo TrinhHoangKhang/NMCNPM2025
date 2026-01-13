@@ -132,6 +132,10 @@
             android:name=".ui.profile.OtherUserProfileActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".ui.favorite.FavoriteLocationsActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

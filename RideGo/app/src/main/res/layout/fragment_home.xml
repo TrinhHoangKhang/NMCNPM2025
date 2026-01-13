@@ -497,11 +497,16 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/tvSeeAllLocations"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Xem tất cả >"
                             android:textColor="@color/purple_500"
-                            android:textSize="12sp" />
+                            android:textSize="12sp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackground"
+                            android:padding="4dp"/>
                     </LinearLayout>
 
                     <LinearLayout
