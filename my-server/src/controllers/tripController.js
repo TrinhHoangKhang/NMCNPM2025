@@ -155,12 +155,11 @@ class TripController {
             const userId = req.user.uid;
             const role = req.user.role;
             const currentTrip = await tripService.getCurrentTripForUser(userId, role);
-            if (!currentTrip) {
-                return res.status(200).json(null);
-            }
-            res.status(200).json(currentTrip);
+
+            // Always return a success envelope, data can be null
+            res.status(200).json({ success: true, data: currentTrip || null });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ success: false, error: error.message });
         }
     }
 
@@ -248,9 +247,9 @@ class TripController {
         try {
             const { id } = req.params;
             const trip = await tripService.getTrip(id);
-            res.status(200).json(trip);
+            res.status(200).json({ success: true, data: trip });
         } catch (error) {
-            res.status(404).json({ error: error.message });
+            res.status(404).json({ success: false, error: error.message });
         }
     }
 

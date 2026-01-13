@@ -111,12 +111,11 @@ class FindingDriverActivity : AppCompatActivity(), OnMapReadyCallback {
                 val driverId = data.optString("driverId")
                 Toast.makeText(this, "Tài xế đã nhận chuyến! ID: $driverId", Toast.LENGTH_LONG).show()
 
-                // CHUYỂN SANG MÀN HÌNH THEO DÕI TÀI XẾ (TrackingActivity)
-                // val intent = Intent(this, TrackingActivity::class.java)
-                // intent.putExtra("TRIP_ID", tripId)
-                // intent.putExtra("DRIVER_ID", driverId)
-                // startActivity(intent)
-                // finish()
+                // Navigate to TripDetailsActivity
+                val intent = android.content.Intent(this, TripDetailsActivity::class.java)
+                intent.putExtra("TRIP_ID", tripId)
+                startActivity(intent)
+                finish()
             }
         }
     }

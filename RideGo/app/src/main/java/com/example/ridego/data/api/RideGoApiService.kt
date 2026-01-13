@@ -33,6 +33,12 @@ interface RideGoApiService {
 
     @PATCH("api/trips/cancel")
     fun cancelTrip(@Body request: CancelTripRequest): Call<TripResponse>
+
+    @GET("api/trips/{id}")
+    fun getTripDetails(@Path("id") id: String): Call<TripResponse>
+
+    @GET("api/trips/current")
+    fun getCurrentTrip(): Call<TripResponse>
 }
 
 // --- NẾU THẤY object RetrofitClient Ở ĐÂY THÌ XÓA NÓ ĐI NHÉ! ---

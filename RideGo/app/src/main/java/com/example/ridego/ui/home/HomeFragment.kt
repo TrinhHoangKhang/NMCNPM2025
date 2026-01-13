@@ -140,6 +140,60 @@ class HomeFragment : Fragment() {
         super.onResume()
         // Reload tên người dùng mỗi khi quay lại màn hình
         loadUserInfo()
+        checkCurrentTrip()
+    }
+
+    private fun checkCurrentTrip() {
+        com.example.ridego.data.api.RetrofitClient.instance.getCurrentTrip().enqueue(object : retrofit2.Callback<com.example.ridego.data.model.TripResponse> {
+             override fun onResponse(call: retrofit2.Call<com.example.ridego.data.model.TripResponse>, response: retrofit2.Response<com.example.ridego.data.model.TripResponse>) {
+                 if (response.isSuccessful && response.body() != null) {
+                     // Check if data is wrapped or direct (handling both cases just to be safe, though we fixed backend)
+                     val tripResponse = response.body()!!
+                     val tripData = tripResponse.data // Access the wrapped data directly
+
+                     if (tripData != null && tripData.status != "COMPLETED" && tripData.status != "CANCELLED" && tripData.status != "NO_DRIVER_FOUND") {
+                         // Active Trip Found!
+                         showCurrentTripUI(tripData)
+                     } else {
+                         // No Active Trip
+                         showNormalUI()
+                     }
+                 } else {
+                     showNormalUI()
+                 }
+             }
+
+             override fun onFailure(call: retrofit2.Call<com.example.ridego.data.model.TripResponse>, t: Throwable) {
+                 showNormalUI()
+             }
+        })
+    }
+
+    private fun showCurrentTripUI(trip: com.example.ridego.data.model.TripDataContainer) {
+        binding.normalStateContainer.visibility = View.GONE
+        binding.cardCurrentTrip.visibility = View.VISIBLE
+        
+        val statusText = when(trip.status) {
+            "REQUESTED" -> "Đang tìm tài xế..."
+            "ACCEPTED" -> "Tài xế đang đến!"
+            "IN_PROGRESS" -> "Đang trong chuyến đi"
+            else -> "Đang xử lý..."
+        }
+        binding.tvCurrentTripStatus.text = statusText
+        
+        binding.cardCurrentTrip.setOnClickListener {
+             // Navigate to TripDetailsActivity
+             val intent = Intent(requireContext(), com.example.ridego.ui.booking.TripDetailsActivity::class.java)
+             // Use tripId or simpleId depending on what's available, preferring tripId or _id
+             val finalId = trip.tripId ?: trip.mongoId ?: trip.simpleId ?: ""
+             intent.putExtra("TRIP_ID", finalId)
+             startActivity(intent)
+        }
+    }
+
+    private fun showNormalUI() {
+        binding.normalStateContainer.visibility = View.VISIBLE
+        binding.cardCurrentTrip.visibility = View.GONE
     }
 
     private fun loadUserInfo() {

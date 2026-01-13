@@ -53,7 +53,14 @@ data class TripDataContainer(
     @SerializedName("tripId") val tripId: String?,
     @SerializedName("_id") val mongoId: String?,
     @SerializedName("id") val simpleId: String?,
-    val status: String?
+    val status: String?,
+    val driverId: String? = null,
+    val vehicleType: String? = null,
+    val pickupLocation: LocationData? = null,
+    val dropoffLocation: LocationData? = null,
+    val fare: Double = 0.0,
+    val distance: Double = 0.0,
+    val duration: String? = null
 )
 
 // ... (Các class RouteRequest, RouteResponse... giữ nguyên như cũ)

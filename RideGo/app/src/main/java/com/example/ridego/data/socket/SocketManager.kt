@@ -13,6 +13,8 @@ object SocketManager {
 
     // 1. Kết nối với Server
     fun connect() {
+        if (mSocket?.connected() == true) return
+
         try {
             mSocket = IO.socket(SOCKET_URL)
             mSocket?.connect()
@@ -31,16 +33,22 @@ object SocketManager {
     fun disconnect() {
         mSocket?.disconnect()
         mSocket?.off()
+        mSocket = null
     }
 
-    // 3. Lắng nghe tin báo "Tài xế đã nhận chuyến"
-    fun onTripAccepted(listener: (JSONObject) -> Unit) {
-        mSocket?.on("trip_accepted") { args ->
-            if (args.isNotEmpty()) {
+    // 3. Lắng nghe sự kiện bất kỳ
+    fun on(event: String, listener: (JSONObject) -> Unit) {
+        mSocket?.on(event) { args ->
+            if (args.isNotEmpty() && args[0] is JSONObject) {
                 val data = args[0] as JSONObject
                 listener(data)
             }
         }
+    }
+
+    // 4. Lắng nghe tin báo "Tài xế đã nhận chuyến"
+    fun onTripAccepted(listener: (JSONObject) -> Unit) {
+        on("trip_accepted", listener)
     }
 
     // Gửi sự kiện lên server (nếu cần)

@@ -10,7 +10,8 @@ export const tripService = {
     },
 
     getCurrentTrip: async () => {
-        return apiClient('/trips/current');
+        const res = await apiClient('/trips/current');
+        return (res && res.success && res.data) ? res.data : res;
     },
 
     estimateTrip: async (estimateData) => {
@@ -26,7 +27,8 @@ export const tripService = {
     },
 
     getTripDetails: async (id) => {
-        return apiClient(`/trips/${id}`);
+        const res = await apiClient(`/trips/${id}`);
+        return (res && res.success && res.data) ? res.data : res;
     },
 
     cancelTrip: async () => {

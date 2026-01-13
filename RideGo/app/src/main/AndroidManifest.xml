@@ -119,6 +119,10 @@
             android:name=".ui.booking.FindingDriverActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".ui.booking.TripDetailsActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>
