@@ -55,6 +55,9 @@ interface RideGoApiService {
 
     @POST("api/chat/send")
     fun sendChatMessage(@Body request: SendMessageRequest): Call<ChatHistoryItem>
+
+    @POST("api/trips/{id}/rate")
+    fun rateTrip(@Path("id") id: String, @Body request: RateTripRequest): Call<RateTripResponse>
 }
 
 // --- NẾU THẤY object RetrofitClient Ở ĐÂY THÌ XÓA NÓ ĐI NHÉ! ---

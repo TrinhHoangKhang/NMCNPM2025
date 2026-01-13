@@ -70,14 +70,6 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Setup Chat Button
         binding.root.findViewById<android.widget.ImageView>(R.id.btnChat)?.setOnClickListener {
             if (tripId.isNotEmpty()) {
-                // We need driverId. 
-                // Option 1: Store it in a variable when fetched.
-                // Option 2: Rely on what we have.
-                // Let's assume we fetch details and have access to driverId.
-                // Since 'tripId' is available, let's pass that? 
-                // ChatActivity expects PARTNER_ID (Driver's UID).
-                // We need to fetch trip details first or store it.
-                // Let's modify fetchTripDetails to store driverId in a class-level var.
                 if (currentDriverId.isNotEmpty()) {
                      val intent = Intent(this, com.example.ridego.ui.chat.ChatActivity::class.java)
                      intent.putExtra("PARTNER_ID", currentDriverId)
@@ -91,7 +83,7 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun performCancelTrip() {
         // Use default reason or let user type? Keeping it simple "Rider aborted"
-        val request = com.example.ridego.data.model.CancelTripRequest(tripId, "Rider aborted trip")
+        val request = com.example.ridego.data.model.CancelTripRequest(tripId)
         
         binding.btnCancelTrip.isEnabled = false
         binding.btnCancelTrip.text = "Đang hủy..."
@@ -101,8 +93,7 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (response.isSuccessful) {
                     Toast.makeText(this@TripDetailsActivity, "Đã hủy chuyến đi", Toast.LENGTH_SHORT).show()
                     updateStatusUI("CANCELLED")
-                    finish() // Close details or stay? User said "abort trip right away", likely wants to exit or see cancelled state.
-                    // finish() is safer to return to home.
+                    finish() 
                 } else {
                     binding.btnCancelTrip.isEnabled = true
                     binding.btnCancelTrip.text = "Hủy chuyến"
@@ -128,16 +119,6 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
                             // Update Driver Info
                             if (!trip.driverId.isNullOrEmpty()) {
                                 currentDriverId = trip.driverId
-                                // In a real app, we might need to fetch driver details (name, vehicle) 
-                                // if they are not fully populated in the trip object.
-                                // Assuming simplest case: server populates some info or we just show ID for now
-                                // Actually, checking backend Trip model, it has 'driverId', not full object usually.
-                                // But let's check what UI needs.
-                                
-                                // For now, bind what we have. If backend doesn't populate, we might need another API call.
-                                // But let's assume we can get some info.
-                                // If trip response doesn't have driver name, we might display "Tài xế" placeholder.
-                                
                                 binding.tvDriverName.text = "Tài xế đang đến" // Placeholder if name missing
                                 binding.tvVehicleInfo.text = "• ${trip.vehicleType}"
                             }
@@ -156,6 +137,9 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
                             if (pickup.latitude != 0.0 && dropoff.latitude != 0.0) {
                                 updateMap(pickup, dropoff)
                             }
+                            
+                            // BUG FIX: Update status UI immediately based on fetched data
+                            trip.status?.let { updateStatusUI(it) }
                         }
                     }
                 }
@@ -230,7 +214,6 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
             .setNegativeButton("Hỗ trợ") { _, _ -> 
                 Toast.makeText(this, "Vui lòng liên hệ tổng đài", Toast.LENGTH_SHORT).show()
-                // Keep dialog open/reopen logic if strict
             }
             .show()
     }
@@ -255,42 +238,78 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun updateStatusUI(status: String) {
+        val btnChat = binding.root.findViewById<android.view.View>(R.id.btnChat)
+        val btnCall = binding.root.findViewById<android.view.View>(R.id.btnCall)
+
         when(status) {
             "REQUESTED" -> {
                 binding.tvTripStatus.text = "Đang tìm tài xế..."
                 binding.tvTripStatus.setTextColor(Color.parseColor("#FF9800"))
                 binding.btnCancelTrip.visibility = android.view.View.VISIBLE
+                btnChat?.visibility = android.view.View.VISIBLE
+                btnCall?.visibility = android.view.View.VISIBLE
             }
             "ACCEPTED" -> {
                 binding.tvTripStatus.text = "Tài xế đang đến"
                 binding.tvTripStatus.setTextColor(Color.parseColor("#4CAF50")) // Green
                 binding.btnCancelTrip.visibility = android.view.View.VISIBLE
+                btnChat?.visibility = android.view.View.VISIBLE
+                btnCall?.visibility = android.view.View.VISIBLE
             }
             "IN_PROGRESS" -> {
                  binding.tvTripStatus.text = "Đang trong chuyến đi"
                  binding.tvTripStatus.setTextColor(Color.parseColor("#2196F3")) // Blue
-                 binding.btnCancelTrip.visibility = android.view.View.VISIBLE
+                 binding.btnCancelTrip.visibility = android.view.View.GONE // Cannot cancel during trip usually
+                 btnChat?.visibility = android.view.View.VISIBLE
+                 btnCall?.visibility = android.view.View.VISIBLE
             }
             "ARRIVED" -> {
                  binding.tvTripStatus.text = "Đã đến nơi - Vui lòng thanh toán"
                  binding.tvTripStatus.setTextColor(Color.parseColor("#FF9800")) // Orange
                  binding.btnCancelTrip.visibility = android.view.View.GONE
-                 // Optionally re-trigger dialog if missed
+                 btnChat?.visibility = android.view.View.VISIBLE
+                 btnCall?.visibility = android.view.View.VISIBLE
             }
             "PAYMENT_PROCESSING" -> {
                  binding.tvTripStatus.text = "Đang xử lý thanh toán..."
                  binding.tvTripStatus.setTextColor(Color.parseColor("#FF9800"))
                  binding.btnCancelTrip.visibility = android.view.View.GONE
+                 btnChat?.visibility = android.view.View.VISIBLE
             }
             "COMPLETED" -> {
                  binding.tvTripStatus.text = "Chuyến đi hoàn tất"
                  binding.tvTripStatus.setTextColor(Color.parseColor("#4CAF50"))
                  binding.btnCancelTrip.visibility = android.view.View.GONE
+                 binding.btnRateTrip.visibility = android.view.View.VISIBLE
+                 binding.btnRateTrip.setOnClickListener { showRatingDialog() }
+                 
+                 val btnGetBill = binding.root.findViewById<android.view.View>(R.id.btnGetBill)
+                 btnGetBill?.visibility = android.view.View.VISIBLE
+                 btnGetBill?.setOnClickListener { showBillDialog() }
+
+                 btnChat?.visibility = android.view.View.GONE
+                 btnCall?.visibility = android.view.View.GONE
+                 
+                 // Check if we should auto-show rating (e.g. valid timestamp or flag). 
+                 // For now, simple call is fine, but maybe verify if not already rated?
+                 // Current API rateTrip doesn't block re-rating in UI, backend might.
+                 // We'll rely on user click mostly, or auto-show ONCE if we tracked it.
+                 // The 'trip_completed' event calls this, so it auto-shows on real-time completion.
+                 // On re-open (fetchTripDetails), it will just show button. That's good behavior.
             }
             "CANCELLED" -> {
                  binding.tvTripStatus.text = "Đã hủy"
                  binding.tvTripStatus.setTextColor(Color.RED)
                  binding.btnCancelTrip.visibility = android.view.View.GONE
+                 binding.btnRateTrip.visibility = android.view.View.VISIBLE
+                 binding.btnRateTrip.setOnClickListener { showRatingDialog() }
+                 
+                 val btnGetBill = binding.root.findViewById<android.view.View>(R.id.btnGetBill)
+                 btnGetBill?.visibility = android.view.View.VISIBLE
+                 btnGetBill?.setOnClickListener { showBillDialog() }
+
+                 btnChat?.visibility = android.view.View.GONE
+                 btnCall?.visibility = android.view.View.GONE
             }
         }
     }
@@ -302,11 +321,10 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
             driverMarker = mMap?.addMarker(MarkerOptions()
                 .position(pos)
                 .title("Tài xế")
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_car_logo))) // Assuming icon exists or use default
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))) 
         } else {
             driverMarker?.position = pos
         }
-        // mMAp?.animateCamera(CameraUpdateFactory.newLatLng(pos)) // Optional follow
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -323,8 +341,131 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
         val bounds = LatLngBounds.Builder().include(pickup).include(dropoff).build()
         try {
             mMap?.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 150))
-        } catch (e: Exception) {
-            mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(pickup, 14f))
-        }
+        } catch (e: Exception) {}
+    }
+
+    private fun fetchAndShowQR() {
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setMessage("Đang tạo mã QR...")
+            .setCancelable(false)
+            .create()
+        dialog.show()
+
+        RetrofitClient.instance.getPaymentQR(tripId).enqueue(object : Callback<com.example.ridego.data.model.PaymentQRResponse> {
+            override fun onResponse(call: Call<com.example.ridego.data.model.PaymentQRResponse>, response: Response<com.example.ridego.data.model.PaymentQRResponse>) {
+                dialog.dismiss()
+                if (response.isSuccessful && response.body() != null) {
+                    val qrData = response.body()!!
+                    showQRDialog(qrData.qrUrl, qrData.amount)
+                } else {
+                    Toast.makeText(this@TripDetailsActivity, "Lỗi tạo QR: ${response.message()}", Toast.LENGTH_SHORT).show()
+                }
+            }
+            override fun onFailure(call: Call<com.example.ridego.data.model.PaymentQRResponse>, t: Throwable) {
+                dialog.dismiss()
+                Toast.makeText(this@TripDetailsActivity, "Lỗi mạng: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun showQRDialog(qrUrl: String, amount: Double) {
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+        val inflater = layoutInflater
+        val dialogLayout = inflater.inflate(R.layout.dialog_payment_qr, null)
+        val imgQR = dialogLayout.findViewById<android.widget.ImageView>(R.id.imgQR)
+        val tvAmount = dialogLayout.findViewById<android.widget.TextView>(R.id.tvAmount)
+
+        val formatter = DecimalFormat("#,###")
+        tvAmount.text = "Số tiền: ${formatter.format(amount)}đ"
+
+        com.bumptech.glide.Glide.with(this)
+            .load(qrUrl)
+            .placeholder(android.R.drawable.ic_menu_gallery)
+            .into(imgQR)
+
+        builder.setView(dialogLayout)
+            .setTitle("Quét mã để thanh toán")
+            .setPositiveButton("Đã chuyển khoản") { _, _ ->
+                submitPayment("WALLET")
+            }
+            .setNegativeButton("Hủy", null)
+            .show()
+    }
+
+    private fun showRatingDialog() {
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+        val inflater = layoutInflater
+        val dialogLayout = inflater.inflate(R.layout.dialog_rating, null)
+        
+        val rbDriver = dialogLayout.findViewById<android.widget.RatingBar>(R.id.rbDriver)
+        val rbTrip = dialogLayout.findViewById<android.widget.RatingBar>(R.id.rbTrip)
+        val etComment = dialogLayout.findViewById<android.widget.EditText>(R.id.etComment)
+
+        builder.setView(dialogLayout)
+            .setTitle("Đánh giá chuyến đi")
+            .setPositiveButton("Gửi đánh giá") { _, _ ->
+                val driverRating = rbDriver.rating
+                val tripRating = rbTrip.rating
+                val comment = etComment.text.toString()
+                submitRating(driverRating, tripRating, comment)
+            }
+            .setNegativeButton("Để sau", null)
+            .show()
+    }
+
+    private fun submitRating(driverRating: Float, tripRating: Float, comment: String) {
+        val request = com.example.ridego.data.model.RateTripRequest(driverRating, tripRating, comment)
+        RetrofitClient.instance.rateTrip(tripId, request).enqueue(object : Callback<com.example.ridego.data.model.RateTripResponse> {
+             override fun onResponse(call: Call<com.example.ridego.data.model.RateTripResponse>, response: Response<com.example.ridego.data.model.RateTripResponse>) {
+                 if (response.isSuccessful) {
+                     Toast.makeText(this@TripDetailsActivity, "Cảm ơn đánh giá của bạn!", Toast.LENGTH_SHORT).show()
+                     binding.btnRateTrip.isEnabled = false
+                     binding.btnRateTrip.text = "Đã đánh giá"
+                 } else {
+                     Toast.makeText(this@TripDetailsActivity, "Lỗi đánh giá: ${response.code()}", Toast.LENGTH_SHORT).show()
+                 }
+             }
+             override fun onFailure(call: Call<com.example.ridego.data.model.RateTripResponse>, t: Throwable) {}
+        })
+    }
+    private fun showBillDialog() {
+        // Need currentTrip data. We fetch it in fetchTripDetails.
+        // Let's store currentTrip globally or fetch again? 
+        // Better store it.
+        // For now, let's just use the data we have on UI or fetch fresh.
+        // Actually, fetching fresh ensures accuracy.
+        RetrofitClient.instance.getTripDetails(tripId).enqueue(object : Callback<TripResponse> {
+            override fun onResponse(call: Call<TripResponse>, response: Response<TripResponse>) {
+                if(response.isSuccessful) {
+                    val trip = response.body()?.data
+                    if(trip != null) {
+                         val dialogView = layoutInflater.inflate(R.layout.dialog_bill_detail, null)
+                         val dialog = androidx.appcompat.app.AlertDialog.Builder(this@TripDetailsActivity)
+                            .setView(dialogView)
+                            .create()
+                         dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+
+                         val tvBaseFare = dialogView.findViewById<android.widget.TextView>(R.id.tvBaseFare)
+                         val tvDiscount = dialogView.findViewById<android.widget.TextView>(R.id.tvDiscount)
+                         val tvPlatformFee = dialogView.findViewById<android.widget.TextView>(R.id.tvPlatformFee)
+                         val tvTotalFare = dialogView.findViewById<android.widget.TextView>(R.id.tvTotalFare)
+                         val btnClose = dialogView.findViewById<android.widget.Button>(R.id.btnCloseBill)
+
+                         val formatter = DecimalFormat("#,###")
+                         val total = trip.fare
+                         val discount = trip.discountAmount ?: 0.0
+                         
+                         tvBaseFare.text = "${formatter.format(total + discount)}đ"
+                         tvDiscount.text = "-${formatter.format(discount)}đ"
+                         tvPlatformFee.text = "Đã bao gồm"
+                         tvTotalFare.text = "${formatter.format(total)}đ"
+
+                         btnClose.setOnClickListener { dialog.dismiss() }
+                         dialog.show()
+                    }
+                }
+            }
+            override fun onFailure(call: Call<TripResponse>, t: Throwable) {}
+        })
     }
 }

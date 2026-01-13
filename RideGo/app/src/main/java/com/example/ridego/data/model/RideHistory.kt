@@ -20,5 +20,6 @@ data class RideHistory(
     val ratingTrip: Float? = null,
     
     val distance: Double = 0.0,
-    val duration: String? = "0"
+    val duration: String? = "0",
+    val discountAmount: Double? = 0.0
 )

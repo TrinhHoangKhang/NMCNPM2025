@@ -601,9 +601,19 @@ class TripService {
         const data = doc.data();
 
         // Validation
-        if (data.riderId !== userId) throw new Error("Unauthorized to rate this trip");
-        if (data.status !== 'COMPLETED') throw new Error("Can only rate completed trips");
-        if (data.ratingDriver || data.ratingTrip) throw new Error("Trip already rated");
+        // Validation
+        if (data.riderId !== userId) {
+            console.warn(`[RateTrip] Unauthorized: RiderID ${data.riderId} !== UserID ${userId}`);
+            throw new Error("Unauthorized to rate this trip");
+        }
+        if (data.status !== 'COMPLETED' && data.status !== 'CANCELLED') {
+            console.warn(`[RateTrip] Invalid Status: ${data.status}`);
+            throw new Error("Can only rate completed or cancelled trips");
+        }
+        if (data.ratingDriver || data.ratingTrip) {
+            console.warn(`[RateTrip] Already Rated: ${data.ratingDriver}, ${data.ratingTrip}`);
+            throw new Error("Trip already rated");
+        }
 
         const driverRatingVal = parseFloat(driverRating);
         const tripRatingVal = parseFloat(tripRating);

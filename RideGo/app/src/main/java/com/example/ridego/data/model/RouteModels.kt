@@ -60,7 +60,8 @@ data class TripDataContainer(
     val dropoffLocation: LocationData? = null,
     val fare: Double = 0.0,
     val distance: Double = 0.0,
-    val duration: String? = null
+    val duration: String? = null,
+    val discountAmount: Double? = 0.0
 )
 
 // ... (Các class RouteRequest, RouteResponse... giữ nguyên như cũ)
@@ -87,7 +88,7 @@ data class ValueText(
     val value: Int
 )
 
-// --- DISCOUNT MODELS (Moved back here to avoid duplicate files) ---
+// --- DISCOUNT MODELS ---
 data class ClaimDiscountRequest(
     val code: String
 )
@@ -104,4 +105,21 @@ data class ClaimDiscountResponse(
 
 data class PaymentRequest(
     val method: String // "CASH" or "WALLET"
+)
+
+// --- PAYMENT & RATING MODELS ---
+data class PaymentQRResponse(
+    val qrUrl: String,
+    val amount: Double
+)
+
+data class RateTripRequest(
+    val driverRating: Float,
+    val tripRating: Float,
+    val comment: String?
+)
+
+data class RateTripResponse(
+    val success: Boolean,
+    val message: String?
 )

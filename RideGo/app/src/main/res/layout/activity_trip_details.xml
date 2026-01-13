@@ -227,6 +227,27 @@
                     android:backgroundTint="#FFEBEE"
                     android:textColor="#D32F2F"
                     style="@style/Widget.MaterialComponents.Button.TextButton"/>
+                
+                <Button
+                    android:id="@+id/btnGetBill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Chi tiết hóa đơn"
+                    android:backgroundTint="#2196F3"
+                    android:textColor="#FFFFFF"
+                    android:visibility="gone"
+                    android:layout_marginEnd="8dp"
+                    style="@style/Widget.MaterialComponents.Button"/>
+
+                <Button
+                    android:id="@+id/btnRateTrip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Đánh giá"
+                    android:backgroundTint="#FFC107"
+                    android:textColor="#FFFFFF"
+                    android:visibility="gone"
+                    style="@style/Widget.MaterialComponents.Button"/>
             </LinearLayout>
             
         </LinearLayout>

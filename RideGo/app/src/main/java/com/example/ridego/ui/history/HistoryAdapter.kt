@@ -9,7 +9,9 @@ import java.text.DecimalFormat
 
 class HistoryAdapter(
     private val list: List<RideHistory>,
-    private val onItemClick: (RideHistory) -> Unit
+    private val onItemClick: (RideHistory) -> Unit,
+    private val onReorderClick: (RideHistory) -> Unit,
+    private val onGetBillClick: (RideHistory) -> Unit
 ) : RecyclerView.Adapter<HistoryAdapter.HistoryViewHolder>() {
 
     inner class HistoryViewHolder(val binding: ItemTripHistoryBinding) :
@@ -17,6 +19,13 @@ class HistoryAdapter(
         init {
             binding.root.setOnClickListener {
                 onItemClick(list[adapterPosition])
+            }
+            // Bind Action Buttons
+            binding.root.findViewById<android.widget.Button>(com.example.ridego.R.id.btnReorder).setOnClickListener {
+                onReorderClick(list[adapterPosition])
+            }
+            binding.root.findViewById<android.widget.Button>(com.example.ridego.R.id.btnGetBill).setOnClickListener {
+                 onGetBillClick(list[adapterPosition])
             }
         }
     }
