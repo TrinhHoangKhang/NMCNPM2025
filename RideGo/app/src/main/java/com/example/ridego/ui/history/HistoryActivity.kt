@@ -1,10 +1,16 @@
 package com.example.ridego.ui.history
 
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.ridego.databinding.ActivityHistoryBinding
-import com.example.ridego.model.RideHistory
+import com.example.ridego.data.model.RideHistory
+import com.example.ridego.data.api.RetrofitClient
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class HistoryActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHistoryBinding
@@ -17,17 +23,30 @@ class HistoryActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener { finish() }
 
         setupRecyclerView()
+        fetchHistory()
     }
 
     private fun setupRecyclerView() {
-        // Dữ liệu giả lập giống ảnh mẫu
-        val list = listOf(
-            RideHistory("RideGo Car", "45.000đ", "Hoàn thành", "123 Nguyễn Huệ, Q.1", "456 Lê Lợi, Q.3", "15/11/2024", "14:30", "8.5 km", "25 phút", "Nguyễn Văn B", 4.8f, true),
-            RideHistory("RideGo Bike", "25.000đ", "Hoàn thành", "789 Trần Hưng Đạo, Q.5", "321 Võ Văn Tần, Q.3", "14/11/2024", "09:15", "5.2 km", "15 phút", "Trần Thị C", 4.9f, false),
-            RideHistory("RideGo Premium", "65.000đ", "Hoàn thành", "555 Hai Bà Trưng, Q.1", "888 Lý Thường Kiệt, Q.10", "12/11/2024", "18:45", "12.3 km", "35 phút", "Lê Văn D", 4.7f, true)
-        )
-
         binding.rvHistory.layoutManager = LinearLayoutManager(this)
-        binding.rvHistory.adapter = HistoryAdapter(list)
+        binding.rvHistory.adapter = HistoryAdapter(emptyList())
+    }
+
+    private fun fetchHistory() {
+        RetrofitClient.instance.getTripHistory().enqueue(object : Callback<List<RideHistory>> {
+            override fun onResponse(call: Call<List<RideHistory>>, response: Response<List<RideHistory>>) {
+                if (response.isSuccessful) {
+                    val list = response.body() ?: emptyList()
+                    val sortedList = list.sortedByDescending { it.createdAt }
+                    binding.rvHistory.adapter = HistoryAdapter(sortedList)
+                } else {
+                    Toast.makeText(this@HistoryActivity, "Lỗi tải lịch sử: ${response.code()}", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<List<RideHistory>>, t: Throwable) {
+                Log.e("HISTORY", "Error: ${t.message}")
+                Toast.makeText(this@HistoryActivity, "Lỗi kết nối", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 }

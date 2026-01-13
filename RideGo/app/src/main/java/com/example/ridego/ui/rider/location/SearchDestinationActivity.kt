@@ -49,6 +49,15 @@ class SearchDestinationActivity : AppCompatActivity() {
     // Discount data
     private var discountId: String? = null
     private var discountCode: String? = null
+    
+    // Favorites
+    private var homeAddress: String? = null
+    private var homeLat: Double = 0.0
+    private var homeLng: Double = 0.0
+
+    private var workAddress: String? = null
+    private var workLat: Double = 0.0
+    private var workLng: Double = 0.0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,11 +86,31 @@ class SearchDestinationActivity : AppCompatActivity() {
         }
         binding.recyclerSearchResults.layoutManager = LinearLayoutManager(this)
         binding.recyclerSearchResults.adapter = adapter
-
+        
         // 4. Load & Setup
         loadCurrentPickupLocation()
+        loadFavoriteLocations()
         setupUI()
         setupSearchLogic()
+    }
+    
+    private fun loadFavoriteLocations() {
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        val db = FirebaseFirestore.getInstance()
+        val uid = currentUser.uid
+        
+        db.collection("uid_mapping").document(uid).get().addOnSuccessListener { mapping ->
+            val targetId = mapping.getString("customUserId") ?: uid
+            db.collection("users").document(targetId).get().addOnSuccessListener { doc ->
+                homeAddress = doc.getString("homeAddress")
+                homeLat = doc.getDouble("homeLat") ?: 0.0
+                homeLng = doc.getDouble("homeLng") ?: 0.0
+                
+                workAddress = doc.getString("workAddress")
+                workLat = doc.getDouble("workLat") ?: 0.0
+                workLng = doc.getDouble("workLng") ?: 0.0
+            }
+        }
     }
 
     private fun setupUI() {
@@ -93,6 +122,10 @@ class SearchDestinationActivity : AppCompatActivity() {
             intent.putExtra("LOCATION_TYPE", 2)
             startActivityForResult(intent, 101)
         }
+        
+        binding.btnFavoriteSelect.setOnClickListener {
+            showFavoritesDialog()
+        }
 
         binding.btnConfirmSelection.setOnClickListener {
             if (selectedLat != 0.0 && selectedLng != 0.0) {
@@ -101,6 +134,43 @@ class SearchDestinationActivity : AppCompatActivity() {
                 Toast.makeText(this, "Vui lòng chọn điểm đến", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+    
+    private fun showFavoritesDialog() {
+        val options = mutableListOf<String>()
+        val actions = mutableListOf<() -> Unit>()
+        
+        if (!homeAddress.isNullOrEmpty()) {
+            options.add("🏠 Nhà riêng: $homeAddress")
+            actions.add { selectFavorite(homeAddress!!, homeLat, homeLng) }
+        }
+        if (!workAddress.isNullOrEmpty()) {
+            options.add("🏢 Văn phòng: $workAddress")
+            actions.add { selectFavorite(workAddress!!, workLat, workLng) }
+        }
+        
+        if (options.isEmpty()) {
+            Toast.makeText(this, "Bạn chưa lưu địa điểm nào. Hãy thiết lập ở màn hình chính!", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val builder = android.app.AlertDialog.Builder(this)
+        builder.setTitle("Chọn điểm đến đã lưu")
+        builder.setItems(options.toTypedArray()) { _, which ->
+            actions[which].invoke()
+        }
+        builder.show()
+    }
+    
+    private fun selectFavorite(address: String, lat: Double, lng: Double) {
+        selectedAddress = address
+        selectedName = address
+        selectedLat = lat
+        selectedLng = lng
+        
+        binding.edtDestination.setText(address)
+        enableConfirmButton()
+        // Optional: Auto navigate logic could go here if checking pickup location validity
     }
 
     private fun setupSearchLogic() {

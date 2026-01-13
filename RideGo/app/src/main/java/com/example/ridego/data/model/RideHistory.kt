@@ -1,16 +1,24 @@
-package com.example.ridego.model
+package com.example.ridego.data.model
+
+import com.google.gson.annotations.SerializedName
 
 data class RideHistory(
-    val serviceName: String, // Ví dụ: RideGo Car, RideGo Bike
-    val price: String,       // Ví dụ: 45.000đ
-    val status: String,      // Ví dụ: Hoàn thành
-    val pickupAddress: String,
-    val dropoffAddress: String,
-    val date: String,        // 15/11/2024
-    val time: String,        // 14:30
-    val distance: String,    // 8.5 km
-    val duration: String,    // 25 phút
-    val driverName: String,
-    val rating: Float,
-    val isCar: Boolean       // True = Ô tô, False = Xe máy (để đổi icon)
+    @SerializedName("id", alternate = ["_id"])
+    val id: String,
+    
+    val pickupLocation: LocationData?,
+    val dropoffLocation: LocationData?,
+    
+    val fare: Double,
+    val status: String,
+    val createdAt: String,
+    
+    @SerializedName("vehicleType")
+    val vehicleType: String,
+    
+    val driverName: String? = null,
+    val ratingTrip: Float? = null,
+    
+    val distance: Double = 0.0,
+    val duration: String? = "0"
 )

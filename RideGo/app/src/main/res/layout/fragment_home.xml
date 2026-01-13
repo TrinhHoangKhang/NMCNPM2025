@@ -348,6 +348,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/layoutHome"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -356,7 +357,10 @@
                 android:elevation="2dp"
                 android:padding="12dp"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
 
                 <FrameLayout
                     android:layout_width="40dp"
@@ -384,9 +388,10 @@
                         android:textColor="#333333"
                         android:textStyle="bold"/>
                     <TextView
+                        android:id="@+id/tvHomeAddress"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="456 Lê Lợi, Q.1"
+                        android:text="Thiết lập ngay"
                         android:textColor="#757575"
                         android:textSize="12sp"/>
                 </LinearLayout>
@@ -400,6 +405,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/layoutWork"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -408,7 +414,10 @@
                 android:elevation="2dp"
                 android:padding="12dp"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
 
                 <FrameLayout
                     android:layout_width="40dp"
@@ -437,9 +446,10 @@
                         android:textColor="#333333"
                         android:textStyle="bold"/>
                     <TextView
+                        android:id="@+id/tvWorkAddress"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="789 Trần Hưng Đạo, Q.5"
+                        android:text="Thiết lập ngay"
                         android:textColor="#757575"
                         android:textSize="12sp"/>
                 </LinearLayout>

@@ -159,12 +159,31 @@ class SetLocationActivity : AppCompatActivity(), OnMapReadyCallback {
         val currentUser = FirebaseAuth.getInstance().currentUser ?: return
         val db = FirebaseFirestore.getInstance()
         val firebaseUid = currentUser.uid
+        
+        val type = intent.getIntExtra("LOCATION_TYPE", 0)
+        val prefix = when(type) {
+            3 -> "home"
+            4 -> "work"
+            else -> "currentPickup"
+        }
 
-        val locationData = mapOf(
-            "currentPickupAddress" to selectedAddressName,
-            "currentPickupLat" to selectedLat,
-            "currentPickupLng" to selectedLng
-        )
+        // Nếu là Home/Work thì lưu theo field riêng, còn lại lưu currentPickup (hoặc tuỳ logic cũ)
+        // Logic cũ của bạn chỉ lưu "currentPickup...". 
+        // Giờ mình tách ra:
+        val locationData = if (type == 3 || type == 4) {
+             mapOf(
+                "${prefix}Address" to selectedAddressName,
+                "${prefix}Lat" to selectedLat,
+                "${prefix}Lng" to selectedLng
+            )
+        } else {
+             // Logic cũ cho booking pickup
+             mapOf(
+                "currentPickupAddress" to selectedAddressName,
+                "currentPickupLat" to selectedLat,
+                "currentPickupLng" to selectedLng
+            )
+        }
 
         db.collection("uid_mapping").document(firebaseUid).get()
             .addOnSuccessListener { mappingDoc ->
