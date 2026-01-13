@@ -354,6 +354,20 @@ class TripController {
             const driverId = req.user.uid;
             const { id } = req.params;
             const trip = await tripService.markTripPickup(id, driverId);
+
+            // SOCKET: Notify Rider that trip is in progress
+            const io = req.app.get('socketio');
+            if (io) {
+                const riderSocketIds = await presenceService.getUserSocketIds(trip.riderId);
+                riderSocketIds.forEach(socketId => {
+                    io.to(socketId).emit('trip_status_update', {
+                        tripId: trip.id,
+                        status: 'IN_PROGRESS'
+                    });
+                });
+                console.log(`Socket emitted trip_status_update (IN_PROGRESS) for trip ${id}`);
+            }
+
             res.status(200).json({ id: trip.id, ...trip.toJSON() });
         } catch (error) {
             res.status(400).json({ error: error.message });

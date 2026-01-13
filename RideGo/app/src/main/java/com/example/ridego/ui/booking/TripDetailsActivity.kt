@@ -29,6 +29,7 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var binding: ActivityTripDetailsBinding
     private var mMap: GoogleMap? = null
     private var tripId: String = ""
+    private var currentDriverId: String = ""
     private var driverMarker: Marker? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +65,27 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
                  }
                  .setNegativeButton("Quay lại", null)
                  .show()
+        }
+
+        // Setup Chat Button
+        binding.root.findViewById<android.widget.ImageView>(R.id.btnChat)?.setOnClickListener {
+            if (tripId.isNotEmpty()) {
+                // We need driverId. 
+                // Option 1: Store it in a variable when fetched.
+                // Option 2: Rely on what we have.
+                // Let's assume we fetch details and have access to driverId.
+                // Since 'tripId' is available, let's pass that? 
+                // ChatActivity expects PARTNER_ID (Driver's UID).
+                // We need to fetch trip details first or store it.
+                // Let's modify fetchTripDetails to store driverId in a class-level var.
+                if (currentDriverId.isNotEmpty()) {
+                     val intent = Intent(this, com.example.ridego.ui.chat.ChatActivity::class.java)
+                     intent.putExtra("PARTNER_ID", currentDriverId)
+                     startActivity(intent)
+                } else {
+                    Toast.makeText(this, "Chưa có thông tin tài xế", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
@@ -105,6 +127,7 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
                         runOnUiThread {
                             // Update Driver Info
                             if (!trip.driverId.isNullOrEmpty()) {
+                                currentDriverId = trip.driverId
                                 // In a real app, we might need to fetch driver details (name, vehicle) 
                                 // if they are not fully populated in the trip object.
                                 // Assuming simplest case: server populates some info or we just show ID for now

@@ -24,10 +24,12 @@ export const rankingService = {
      */
     getUserRank: async (userId, role = 'DRIVER') => {
         try {
-            const res = await apiClient(`/ranks/${userId}?role=${role}`);
+            const res = await apiClient(`/ranks/${userId}?role=${role}`, { silent: true });
             return (res && res.success) ? res.data : null;
         } catch (e) {
-            console.error("Failed to fetch user rank", e);
+            if (e.message !== 'User not found in ranking') {
+                console.warn("Failed to fetch user rank", e.message);
+            }
             return null;
         }
     }

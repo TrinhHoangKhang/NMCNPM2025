@@ -20,12 +20,15 @@ export default function OtherUserProfile() {
             setLoading(true);
             try {
                 // Fetch Driver Data
-                const [driverData, rank] = await Promise.all([
+                const [driverData, fetchedRankData] = await Promise.all([
                     driverService.getDriverById(id),
-                    rankingService.getUserRank(id, 'DRIVER')
+                    rankingService.getUserRank(id, 'DRIVER').catch(err => {
+                        console.warn("Ranking fetch failed, defaulting to null", err);
+                        return null;
+                    })
                 ]);
                 setProfile(driverData);
-                setRankData(rank);
+                setRankData(fetchedRankData);
             } catch (error) {
                 console.error("Error fetching user profile:", error);
             } finally {
