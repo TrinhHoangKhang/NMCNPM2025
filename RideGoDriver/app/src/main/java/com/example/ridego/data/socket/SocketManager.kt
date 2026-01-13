@@ -1,6 +1,7 @@
 package com.example.ridego.data.socket
 
 import android.util.Log
+import com.example.ridego.data.Config
 import com.google.firebase.auth.FirebaseAuth
 import io.socket.client.IO
 import io.socket.client.Socket
@@ -8,8 +9,8 @@ import org.json.JSONObject
 
 object SocketManager {
     private var mSocket: Socket? = null
-    // IP của bạn (nhớ giữ nguyên IP 192.168.1.5 và port 3001 như bạn đã sửa)
-    private const val SOCKET_URL = "http://192.168.1.5:3001"
+    // Use Config.BASE_URL for ngrok tunnel
+    private val SOCKET_URL = Config.BASE_URL
 
     // Hàm connect KHÔNG nhận tham số (tự lấy Token)
     fun connect() {

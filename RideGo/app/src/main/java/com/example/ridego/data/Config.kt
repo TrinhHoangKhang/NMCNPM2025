@@ -3,21 +3,22 @@ package com.example.ridego.data
 import android.os.Build
 
 object Config {
-    // --- CẤU HÌNH IP MÁY TÍNH CỦA BẠN (Dành cho máy thật) ---
-    // Mở CMD gõ "ipconfig" (Win) hoặc Terminal gõ "ifconfig" (Mac) để lấy IP này
-    private const val YOUR_PC_IP = "192.168.31.228" // <--- IP Windows (port forwarding sang WSL)
+    // --- NGROK TUNNEL CONFIGURATION ---
+    private const val NGROK_URL = "https://52250268f092.ngrok-free.app"
+    private const val PORT = "3000"
 
-    // Cổng Server (Port)
-    private const val PORT = "3001"
+    // --- LOCAL IP CONFIGURATION (for development) ---
+    private const val YOUR_PC_IP = "192.168.31.228"
+    private const val LOCAL_PORT = "3001"
 
     // Logic tự động chọn URL
     val BASE_URL: String
         get() {
             return if (isEmulator()) {
-                "http://10.0.2.2:$PORT/"
+                "http://10.0.2.2:$LOCAL_PORT/"
             } else {
-                "http://$YOUR_PC_IP:$PORT/"
-                       // "https://superingenious-outdated-lilia.ngrok-free.dev/"
+                // Use ngrok URL for real devices
+                "$NGROK_URL:$PORT/"
             }
         }
 
