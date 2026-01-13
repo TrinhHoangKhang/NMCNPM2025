@@ -47,10 +47,24 @@ class TripController {
 
             const riderId = req.user.uid; // Identified via JWT token
 
+            // [FIX] Ensure User Exists
+            try {
+                await userService.getUser(riderId);
+            } catch (e) {
+                console.log(`[AUTO-FIX] User ${riderId} missing. Creating new user record.`);
+                await userService.createUser(riderId, {
+                    name: req.user.name || "Rider",
+                    email: req.user.email,
+                    role: "RIDER"
+                });
+            }
+
             // CHECK: Prevent new trip if user has active trip
             const existingTrip = await tripService.getCurrentTripForUser(riderId, 'RIDER');
             if (existingTrip) {
-                return res.status(400).json({ error: "You already have an ongoing trip." });
+                // [FIX] Instead of error 400, return the existing trip so the app can recover
+                console.log(`[AUTO-FIX] Returning existing trip ${existingTrip.id} for user ${riderId}`);
+                return res.status(200).json({ id: existingTrip.id, ...existingTrip.toJSON() });
             }
 
             const newTrip = await tripService.createTripRequest(

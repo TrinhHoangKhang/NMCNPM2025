@@ -9,6 +9,20 @@ class UserService {
         return doc.data();
     }
 
+    async createUser(userId, userData) {
+        const userRef = db.collection('users').doc(userId);
+        const data = {
+            name: userData.name || 'User',
+            email: userData.email || '',
+            phone: userData.phone || '',
+            role: userData.role || 'RIDER',
+            createdAt: new Date().toISOString(),
+            ...userData
+        };
+        await userRef.set(data);
+        return { id: userId, ...data };
+    }
+
     // 1.5 Get All Users with Filter
     async getAllUsers(filters = {}) {
         let query = db.collection('users');

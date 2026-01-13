@@ -7,9 +7,11 @@ import com.example.ridego.data.model.TripResponse
 import com.example.ridego.data.model.ChatRequest
 import com.example.ridego.data.model.ChatResponse
 import com.example.ridego.data.model.ChatCommandResponse
+import com.example.ridego.data.model.CancelTripRequest
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST
+import retrofit2.http.PATCH
 
 // CHỈ GIỮ LẠI INTERFACE NÀY
 interface RideGoApiService {
@@ -25,6 +27,9 @@ interface RideGoApiService {
 
     @POST("api/ai/command")
     fun chatCommand(@Body request: ChatRequest): Call<ChatCommandResponse>
+
+    @PATCH("api/trips/cancel")
+    fun cancelTrip(@Body request: CancelTripRequest): Call<TripResponse>
 }
 
 // --- NẾU THẤY object RetrofitClient Ở ĐÂY THÌ XÓA NÓ ĐI NHÉ! ---
