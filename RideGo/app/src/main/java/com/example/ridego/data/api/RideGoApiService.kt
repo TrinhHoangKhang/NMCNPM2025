@@ -50,6 +50,9 @@ interface RideGoApiService {
     @GET("api/chat/history/{partnerId}")
     fun getChatHistory(@Path("partnerId") partnerId: String): Call<List<ChatHistoryItem>>
 
+    @GET("api/payments/{id}/pay")
+    fun getPaymentQR(@Path("id") id: String): Call<PaymentQRResponse>
+
     @POST("api/chat/send")
     fun sendChatMessage(@Body request: SendMessageRequest): Call<ChatHistoryItem>
 }

@@ -206,6 +206,11 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
         val formatter = DecimalFormat("#,###")
         val amountStr = formatter.format(amount) + "đ"
 
+        if (isFinishing || isDestroyed) return
+        
+        // Prevent stacking dialogs
+        if (binding.tvTripStatus.text.toString().contains("Đang xử lý")) return
+
         val options = arrayOf("Tiền mặt (Cash)", "Ví điện tử (Wallet)")
         
         androidx.appcompat.app.AlertDialog.Builder(this)
@@ -216,7 +221,12 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
                 val listView = (dialog as androidx.appcompat.app.AlertDialog).listView
                 val selectedPosition = listView.checkedItemPosition
                 val method = if (selectedPosition == 1) "WALLET" else "CASH"
-                submitPayment(method)
+                
+                if (method == "WALLET") {
+                    fetchAndShowQR()
+                } else {
+                    submitPayment("CASH")
+                }
             }
             .setNegativeButton("Hỗ trợ") { _, _ -> 
                 Toast.makeText(this, "Vui lòng liên hệ tổng đài", Toast.LENGTH_SHORT).show()

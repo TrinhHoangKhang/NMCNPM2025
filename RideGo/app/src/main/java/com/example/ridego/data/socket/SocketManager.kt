@@ -77,7 +77,10 @@ object SocketManager {
     }
     
     fun onEvent(event: String, listener: Emitter.Listener) {
-        mSocket?.on(event, listener)
+        mSocket?.on(event) { args ->
+            Log.d("SocketManager", "Event received: $event, Args: ${args.contentToString()}")
+            listener.call(*args)
+        }
     }
     
     fun offEvent(event: String, listener: Emitter.Listener) {

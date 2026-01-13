@@ -25,6 +25,7 @@ import friendRoutes from './routes/friendRoutes.js';
 import discountRoutes from './routes/discountRoutes.js';
 
 import paymentRoutes from './routes/paymentRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 // ==========================================
 // 1. CONFIGURATION & SETUP
 // ==========================================
@@ -77,6 +78,7 @@ app.use('/api/ranks', rankingRoutes);
 app.use('/api/friends', friendRoutes);
 app.use('/api/discounts', discountRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health Check
 app.get('/', (req, res) => {

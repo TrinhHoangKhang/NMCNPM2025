@@ -360,9 +360,16 @@ class TripController {
             if (io) {
                 const riderSocketIds = await presenceService.getUserSocketIds(trip.riderId);
                 riderSocketIds.forEach(socketId => {
+                    // Update Status
                     io.to(socketId).emit('trip_status_update', {
                         tripId: trip.id,
                         status: 'IN_PROGRESS'
+                    });
+                    // Notification
+                    io.to(socketId).emit('server_notification', {
+                        title: "Driver Arrived",
+                        message: "Your driver has arrived at the pickup location. The trip is now in progress.",
+                        timestamp: new Date().toISOString()
                     });
                 });
                 console.log(`Socket emitted trip_status_update (IN_PROGRESS) for trip ${id}`);
@@ -386,10 +393,17 @@ class TripController {
             if (io) {
                 const riderSocketIds = await presenceService.getUserSocketIds(trip.riderId);
                 riderSocketIds.forEach(socketId => {
+                    // Payment Request Logic (Status)
                     io.to(socketId).emit('payment_required', {
                         tripId: trip.id,
                         amount: trip.fare,
                         status: 'ARRIVED'
+                    });
+                    // Notification
+                    io.to(socketId).emit('server_notification', {
+                        title: "Arrived at Destination",
+                        message: `You have arrived! Please pay ${trip.fare.toLocaleString()} VND to the driver.`,
+                        timestamp: new Date().toISOString()
                     });
                 });
                 console.log(`Socket emitted payment_required for trip ${id}`);
@@ -420,6 +434,12 @@ class TripController {
                         method: method,
                         amount: trip.fare,
                         status: 'PAYMENT_PROCESSING'
+                    });
+                    // Notification (Optional for Driver Web, but good for consistency)
+                    io.to(socketId).emit('server_notification', {
+                        title: "Payment Received",
+                        message: `Rider has paid via ${method}. Please confirm.`,
+                        timestamp: new Date().toISOString()
                     });
                 });
             }
@@ -457,6 +477,13 @@ class TripController {
                         tripId: trip.id,
                         fare: trip.fare,
                         status: 'COMPLETED'
+                    });
+
+                    // Notification
+                    io.to(socketId).emit('server_notification', {
+                        title: "Trip Completed",
+                        message: "Thank you for using RideGo! Please rate your trip.",
+                        timestamp: new Date().toISOString()
                     });
                 });
 
