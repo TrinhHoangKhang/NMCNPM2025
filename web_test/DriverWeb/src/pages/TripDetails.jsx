@@ -75,28 +75,37 @@ export default function TripDetails() {
 
     const { socket } = useSocket();
 
+    // Payment Handshake State
+    const [paymentRequest, setPaymentRequest] = useState(null); // { method, amount }
+
     useEffect(() => {
         if (!socket || !id) return;
 
         const onTripCancelled = (data) => {
-            console.log("Trip Cancelled Event:", data);
             if (data.tripId === id) {
                 setTrip(prev => ({ ...prev, status: 'CANCELLED' }));
                 showToast("Trip Cancelled", "The rider has cancelled the trip.", "info");
-                // Stop simulation
                 setDriverLocation(null);
                 setRoutePath(null);
             }
         };
 
+        const onPaymentConfirmation = (data) => {
+            // data: { tripId, method, amount, status }
+            if (data.tripId === id) {
+                setPaymentRequest(data);
+                setShowCompleteDialog(true);
+            }
+        };
+
         socket.on('trip_cancelled', onTripCancelled);
+        socket.on('driver_confirm_payment', onPaymentConfirmation);
 
         return () => {
             socket.off('trip_cancelled', onTripCancelled);
+            socket.off('driver_confirm_payment', onPaymentConfirmation);
         };
-    }, [socket, id]); // Removed currentTrip dependency to prevent auto-switching
-
-
+    }, [socket, id]);
 
     // Simulation Logic (Adapted from Dashboard)
     useEffect(() => {
@@ -161,13 +170,11 @@ export default function TripDetails() {
     const handleCancel = async () => {
         setLoading(true);
         try {
-            console.log("Calling tripService.cancelTrip...");
             await tripService.cancelTrip(trip.id);
             setCurrentTrip(null);
             showToast("Success", "Trip Cancelled", "success");
             navigate('/dashboard');
         } catch (e) {
-            console.error(e);
             showToast("Error", "Failed to cancel trip", "error");
         } finally {
             setLoading(false);
@@ -175,24 +182,36 @@ export default function TripDetails() {
         }
     };
 
+    // Step 1: Arrive & Request Payment
+    const handleFinishPhase = async () => {
+        setLoading(true);
+        try {
+            // 1. Call finishPhase API
+            const updated = await tripService.finishPhase(trip.id);
+            setTrip(updated);
+            showToast("Info", "Waiting for Rider Payment...", "info");
+        } catch (e) {
+            showToast("Error", "Action failed", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Step 2: Confirm & Close
     const handleComplete = async () => {
         setLoading(true);
         try {
-            console.log("Calling tripService.markComplete...");
-            // markComplete returns the updated trip object
-            const updatedTrip = await tripService.markComplete(trip.id, { cashCollected: true });
+            const cashCollected = (paymentRequest?.method === 'CASH');
+            const updatedTrip = await tripService.markComplete(trip.id, { cashCollected });
 
-            // 1. Update local state immediately to show "COMPLETED" UI
             setTrip(updatedTrip);
-
-            // 2. Clear global context so Dashboard knows we are free
             setCurrentTrip(null);
-
             showToast("Success", "Trip Completed!", "success");
+
+            // Allow rating or navigate home?
+            setTimeout(() => navigate('/dashboard'), 2000);
         } catch (e) {
             console.error("Complete error", e);
-            // Show more visible error if something goes wrong
-            alert(`Failed to complete trip: ${e.message}`);
             showToast("Error", "Action failed", "error");
         } finally {
             setLoading(false);
@@ -219,7 +238,9 @@ export default function TripDetails() {
                     <div className="flex justify-between items-start">
                         <div>
                             <CardTitle className="text-xl text-blue-700 flex items-center gap-2">
-                                {trip.status === 'ACCEPTED' ? 'Heading to Pickup' : (trip.status === 'IN_PROGRESS' ? 'Trip in Progress' : trip.status)}
+                                {trip.status === 'ACCEPTED' ? 'Heading to Pickup' :
+                                    (trip.status === 'IN_PROGRESS' ? 'Trip in Progress' :
+                                        (trip.status === 'ARRIVED' || trip.status === 'PAYMENT_PROCESSING' ? 'Waiting for Payment' : trip.status))}
                             </CardTitle>
                             <CardDescription>Trip ID: #{trip.id.slice(0, 8)}</CardDescription>
                         </div>
@@ -299,20 +320,8 @@ export default function TripDetails() {
                     <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-100">
                         <h3 className="font-semibold text-slate-900 text-sm">Payment Details</h3>
                         <div className="space-y-2 text-sm text-slate-600">
-                            <div className="flex justify-between">
-                                <span>Base Fare</span>
-                                <span>{(trip.fare ? trip.fare * 0.3 : 0).toLocaleString()} VND</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Distance & Time</span>
-                                <span>{(trip.fare ? trip.fare * 0.6 : 0).toLocaleString()} VND</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Platform Fee</span>
-                                <span>{(trip.fare ? trip.fare * 0.1 : 0).toLocaleString()} VND</span>
-                            </div>
                             <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-slate-900 font-bold text-lg">
-                                <span>Total</span>
+                                <span>Total Fare</span>
                                 <span className="text-green-700">{trip.fare?.toLocaleString()} VND</span>
                             </div>
                         </div>
@@ -347,15 +356,21 @@ export default function TripDetails() {
                         <>
                             <Button
                                 className="w-full h-12 text-lg bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200"
-                                onClick={() => setShowCompleteDialog(true)}
+                                onClick={handleFinishPhase}
                                 disabled={loading}
                             >
-                                <DollarSign className="w-5 h-5 mr-2" /> {loading ? 'Processing...' : 'Complete & Collect Cash'}
+                                <MapPin className="w-5 h-5 mr-2" /> {loading ? 'Processing...' : 'Arrived at Destination'}
                             </Button>
                             <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50" onClick={() => setShowAbandonDialog(true)} disabled={loading}>
                                 Abandon Trip (Emergency)
                             </Button>
                         </>
+                    )}
+                    {(trip.status === 'ARRIVED' || trip.status === 'PAYMENT_PROCESSING') && (
+                        <div className="w-full p-4 bg-yellow-50 text-yellow-800 rounded-lg flex flex-col items-center gap-2 border border-yellow-200">
+                            <Loader2 className="animate-spin w-6 h-6" />
+                            <span className="font-semibold">Waiting for Rider Payment...</span>
+                        </div>
                     )}
                 </CardFooter>
             </Card>
@@ -363,16 +378,17 @@ export default function TripDetails() {
             <AlertDialog open={showCompleteDialog} onOpenChange={setShowCompleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Complete Trip</AlertDialogTitle>
+                        <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Please confirm that you have arrived at the destination and collected
-                            <span className="font-bold text-green-600 ml-1">{trip.fare?.toLocaleString()} VND</span> in cash.
+                            Rider has paid using <span className="font-bold uppercase">{paymentRequest?.method}</span>.
+                            <br />
+                            Please confirm you have received <span className="font-bold text-green-600 ml-1">{paymentRequest?.amount?.toLocaleString()} VND</span>.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        {/* No Cancel really, just Confirm */}
                         <AlertDialogAction onClick={handleComplete} className="bg-green-600 hover:bg-green-700">
-                            Confirm Completion
+                            Confirm {paymentRequest?.method === 'CASH' ? 'Cash Received' : 'Payment'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

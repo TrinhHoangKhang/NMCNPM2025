@@ -20,7 +20,24 @@ data class TripRequest(
     @SerializedName("vehicleType") val vehicleType: String,
     @SerializedName("paymentMethod") val paymentMethod: String,
     val distance: Double,
-    val fare: Double
+    val fare: Double,
+    val discountId: String? = null
+)
+
+data class TripEstimateRequest(
+    val pickupLocation: LocationData,
+    val dropoffLocation: LocationData,
+    val vehicleType: String,
+    val discountId: String? = null
+)
+
+data class TripEstimateResponse(
+    val fare: Double,
+    val originalFare: Double,
+    val distance: Double,
+    val duration: String,
+    val discountAmount: Double,
+    val discountApplied: Boolean
 )
 
 // --- TRIP RESPONSE
@@ -40,7 +57,15 @@ data class TripDataContainer(
     @SerializedName("tripId") val tripId: String?,
     @SerializedName("_id") val mongoId: String?,
     @SerializedName("id") val simpleId: String?,
-    val status: String?
+    val status: String?,
+    val driverId: String? = null,
+    val vehicleType: String? = null,
+    val pickupLocation: LocationData? = null,
+    val dropoffLocation: LocationData? = null,
+    val fare: Double = 0.0,
+    val distance: Double = 0.0,
+    val duration: String? = null,
+    val discountAmount: Double? = 0.0
 )
 
 // --- ROUTE REQUEST ---
@@ -70,4 +95,40 @@ data class GeometryData(
 data class ValueText(
     val text: String,
     val value: Int
+)
+
+// --- DISCOUNT MODELS ---
+data class ClaimDiscountRequest(
+    val code: String
+)
+
+data class DiscountsResponse(
+    val success: Boolean,
+    val discounts: List<Promotion>
+)
+
+data class ClaimDiscountResponse(
+    val message: String,
+    val discount: Promotion?
+)
+
+data class PaymentRequest(
+    val method: String // "CASH" or "WALLET"
+)
+
+// --- PAYMENT & RATING MODELS ---
+data class PaymentQRResponse(
+    val qrUrl: String,
+    val amount: Double
+)
+
+data class RateTripRequest(
+    val driverRating: Float,
+    val tripRating: Float,
+    val comment: String?
+)
+
+data class RateTripResponse(
+    val success: Boolean,
+    val message: String?
 )

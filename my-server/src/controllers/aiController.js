@@ -68,7 +68,8 @@ class AIController {
      */
     async getQueryResponse(req, res) {
         try {
-            const { text } = req.body;
+            const { text, query } = req.body;
+            const userText = text || query;
             const userId = req.user?.uid;
 
             if (!userId) {
@@ -93,6 +94,8 @@ class AIController {
             return res.status(500).json({ success: false, message: "Lỗi xử lý câu hỏi." });
         }
     }
+
+
 }
 
 export default new AIController();

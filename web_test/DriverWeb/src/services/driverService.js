@@ -5,6 +5,16 @@ export const driverService = {
         return apiClient(`/drivers/${id}`);
     },
 
+    getDriverById: async (id) => {
+        try {
+            const res = await apiClient(`/drivers/${id}`); // apiClient is a function wrapper, not axios instance directly with .get
+            return (res && res.success) ? res.data : null;
+        } catch (error) {
+            console.error(`Failed to fetch driver ${id}`, error);
+            return null;
+        }
+    },
+
     updateDriver: async (id, driverData) => {
         // driverData: { vehicleType, licensePlate, etc. }
         return apiClient(`/drivers/${id}`, {

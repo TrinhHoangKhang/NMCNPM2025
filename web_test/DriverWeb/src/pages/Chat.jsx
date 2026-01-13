@@ -65,9 +65,12 @@ const Chat = () => {
         if (!socket) return;
 
         const handleReceiveMessage = (msg) => {
-            if (msg.senderId === activeFriendId || (msg.senderId === user.uid && msg.recipientId === activeFriendId)) {
+            // IGNORE echoes of my own messages to prevent duplicates with optimistic/API updates
+            if (msg.senderId === user.uid) return;
+
+            if (msg.senderId === activeFriendId) {
                 setMessages(prev => {
-                    // dedup just in case
+                    // dedup
                     if (prev.some(m => m.id === msg.id)) return prev;
                     return [...prev, msg];
                 });
@@ -76,11 +79,11 @@ const Chat = () => {
         };
 
         socket.on('receive_message', handleReceiveMessage);
-        socket.on('message_sent', handleReceiveMessage); // Listen to my own sent validation too
+        // socket.on('message_sent', handleReceiveMessage); // redundant if ignoring self
 
         return () => {
             socket.off('receive_message', handleReceiveMessage);
-            socket.off('message_sent', handleReceiveMessage);
+            // socket.off('message_sent', handleReceiveMessage);
         };
     }, [socket, activeFriendId, user]);
 
@@ -95,23 +98,27 @@ const Chat = () => {
         const text = inputText;
         setInputText('');
 
-        try {
-            // Optimistic update
-            const tempMsg = {
-                id: 'temp_' + Date.now(),
-                senderId: user.uid,
-                recipientId: activeFriendId,
-                text: text,
-                createdAt: new Date().toISOString()
-            };
-            setMessages(prev => [...prev, tempMsg]);
-            scrollToBottom();
+        // Optimistic update
+        const tempId = 'temp_' + Date.now();
+        const tempMsg = {
+            id: tempId,
+            senderId: user.uid,
+            recipientId: activeFriendId,
+            text: text,
+            createdAt: new Date().toISOString()
+        };
+        setMessages(prev => [...prev, tempMsg]);
+        scrollToBottom();
 
-            await sendMessage(activeFriendId, text);
-            // Real message comes via socket or we could replace tempMsg
+        try {
+            const realMsg = await sendMessage(activeFriendId, text);
+            // Replace temp msg with real one (updating ID, status, etc.)
+            setMessages(prev => prev.map(m => m.id === tempId ? realMsg : m));
         } catch (err) {
             console.error("Failed to send", err);
+            // Optionally mark error state on tempMsg
             alert("Message failed to send");
+            setMessages(prev => prev.filter(m => m.id !== tempId));
         }
     };
 

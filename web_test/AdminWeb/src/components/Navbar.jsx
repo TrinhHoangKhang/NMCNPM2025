@@ -5,6 +5,7 @@ import {
     LayoutDashboard,
     Package,
     Users,
+    Tag,
     LogOut
 } from 'lucide-react';
 
@@ -17,6 +18,7 @@ export default function Navbar() {
         { label: 'Riders', href: '/riders', icon: Users },
         { label: 'Drivers', href: '/drivers', icon: Users },
         { label: 'Admins', href: '/admins', icon: Users },
+        { label: 'Discounts', href: '/discounts', icon: Tag },
         { label: 'Trips', href: '/trips', icon: Package },
     ];
 
@@ -38,8 +40,8 @@ export default function Navbar() {
                                     <Link
                                         to={item.href}
                                         className={`flex items-center gap-1 py-2 pr-4 pl-3 rounded md:p-0 transition-colors ${isActive
-                                                ? 'text-blue-700 font-bold'
-                                                : 'text-gray-700 hover:text-blue-700'
+                                            ? 'text-blue-700 font-bold'
+                                            : 'text-gray-700 hover:text-blue-700'
                                             }`}
                                     >
                                         <Icon className="h-4 w-4" />
