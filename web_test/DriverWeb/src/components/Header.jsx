@@ -10,7 +10,8 @@ import {
 	Users,
 	Navigation,
 	Trophy,
-	MessageCircle
+	MessageCircle,
+	Wallet
 } from 'lucide-react';
 
 export default function Header() {
@@ -24,6 +25,7 @@ export default function Header() {
 		{ label: 'Find Jobs', href: '/jobs', icon: Package },
 		{ label: 'Ranking', href: '/ranking', icon: Trophy },
 		{ label: 'Trip History', href: '/history', icon: ShoppingCart },
+		{ label: 'Finance', href: '/finance', icon: Wallet },
 		{ label: 'Chat', href: '/chat', icon: MessageCircle },
 		{ label: 'Simulator', href: '/simulation', icon: Navigation },
 	];
