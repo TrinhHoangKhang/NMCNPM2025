@@ -94,6 +94,7 @@ data class GeometryData(
 
 data class ValueText(
     val text: String,
+    val value: Double // GraphHopper returns floating meters/seconds; use Double to avoid parse errors
     val value: Int
 )
 
