@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -100,6 +101,10 @@
 
         <activity
             android:name=".ui.profile.SupportActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.rating.AppRatingActivity"
             android:exported="false" />
 
         <activity

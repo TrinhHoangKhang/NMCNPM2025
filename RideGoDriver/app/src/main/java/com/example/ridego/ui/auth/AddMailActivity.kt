@@ -8,7 +8,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.ridego.data.AuthRepository
 import com.example.ridego.databinding.ActivityAddEmailBinding
-import com.example.ridegodriver.ui.driver.main.DriverMainActivity
+import com.example.ridego.ui.driver.home.DriverMainActivity
 import com.google.firebase.auth.FirebaseAuth
 
 class AddEmailActivity : AppCompatActivity() {
@@ -26,6 +26,11 @@ class AddEmailActivity : AppCompatActivity() {
     }
 
     private fun setupEvents() {
+        // Nút quay lại
+        binding.btnBack.setOnClickListener {
+            navigateToHome()
+        }
+        
         binding.btnAddEmail.setOnClickListener {
             val email = binding.edtEmail.text.toString().trim()
             val password = binding.edtPassword.text.toString().trim()

@@ -28,11 +28,9 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var binding: ActivityBookingBinding
     private val auth = FirebaseAuth.getInstance()
 
-    // Google Maps Variables
     private var mMap: GoogleMap? = null
     private var polyline: Polyline? = null
 
-    // Booking Data Variables
     private var pickupLat = 0.0
     private var pickupLng = 0.0
     private var dropoffLat = 0.0
@@ -41,10 +39,8 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
     private var dropoffAddress = ""
 
     private var currentDistanceKm = 0.0
-    private var selectedVehicleType = "RideGo Bike" // Tên hiển thị trên App
+    private var selectedVehicleType = "RideGo Bike"
     private var finalPrice = 0.0
-
-    // Lưu chuỗi đường đi để gửi sang màn hình sau
     private var currentPolylineString = ""
 
     // Discount variables
@@ -59,6 +55,7 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
 
         getDataFromIntent()
 
+        // Khớp ID mapFragment trong XML của bạn
         val mapFragment = supportFragmentManager.findFragmentById(R.id.mapFragment) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
@@ -129,24 +126,21 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
         pickupLat = intent.getDoubleExtra("PICKUP_LAT", 0.0)
         pickupLng = intent.getDoubleExtra("PICKUP_LNG", 0.0)
 
-        dropoffAddress = intent.getStringExtra("DROPOFF_ADDRESS") ?: ""
+        // Sửa lại cách nhận key cho khớp với SetLocationActivity gửi qua
+        dropoffAddress = intent.getStringExtra("DROPOFF_ADDRESS") ?: intent.getStringExtra("DEST_NAME") ?: ""
         dropoffLat = intent.getDoubleExtra("DROPOFF_LAT", 0.0)
         dropoffLng = intent.getDoubleExtra("DROPOFF_LNG", 0.0)
-        
-        // Nhận loại xe từ Chatbot (nếu có)
+        android.util.Log.d("CHECK_LOCATION", "Địa điểm: $dropoffAddress | Tọa độ: $dropoffLat, $dropoffLng")
+
         val vehicleExtra = intent.getStringExtra("VEHICLE_TYPE")
         if (!vehicleExtra.isNullOrEmpty()) {
-             // Mapping từ Server Code (MOTORBIKE/4_SEATS) sang App Name (RideGo Bike...)
-             // Vì Chatbot trả về Mapping code như "MOTORBIKE" hoặc "4_SEATS"
-             // Nhưng hàm selectVehicle cần "RideGo Bike"
-             selectedVehicleType = when (vehicleExtra) {
-                 "MOTORBIKE", "BIKE" -> "RideGo Bike"
-                 "4_SEATS", "CAR", "4 SEAT" -> "RideGo Car"
-                 "7_SEATS", "PREMIUM", "7 SEAT" -> "RideGo Premium"
-                 else -> "RideGo Bike"
-             }
-             // Cập nhật UI ngay lập tức
-             selectVehicle(selectedVehicleType)
+            selectedVehicleType = when (vehicleExtra) {
+                "MOTORBIKE", "BIKE" -> "RideGo Bike"
+                "4_SEATS", "CAR", "4 SEAT" -> "RideGo Car"
+                "7_SEATS", "PREMIUM", "7 SEAT" -> "RideGo Premium"
+                else -> "RideGo Bike"
+            }
+            selectVehicle(selectedVehicleType)
         }
 
         // Nhận mã giảm giá từ màn hình Ưu đãi
@@ -159,8 +153,6 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
-        // Bật hiển thị tình trạng giao thông
         try { mMap?.isTrafficEnabled = true } catch (e: Exception) {}
 
         if (pickupLat != 0.0 && dropoffLat != 0.0) {
@@ -198,26 +190,21 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun selectVehicle(type: String) {
         selectedVehicleType = type
-
-        // Reset background
         binding.layoutBike.setBackgroundResource(R.drawable.bg_item_vehicle_normal)
         binding.layoutCar.setBackgroundResource(R.drawable.bg_item_vehicle_normal)
         binding.layoutPremium.setBackgroundResource(R.drawable.bg_item_vehicle_normal)
 
-        // Highlight xe được chọn
         when (type) {
             "RideGo Bike" -> binding.layoutBike.setBackgroundResource(R.drawable.bg_item_vehicle_selected)
             "RideGo Car" -> binding.layoutCar.setBackgroundResource(R.drawable.bg_item_vehicle_selected)
             "RideGo Premium" -> binding.layoutPremium.setBackgroundResource(R.drawable.bg_item_vehicle_selected)
         }
-
         calculateRouteViaServer()
     }
 
     private fun calculateRouteViaServer() {
         if (pickupLat == 0.0 || dropoffLat == 0.0) return
 
-        binding.btnConfirmBooking.text = "Đang tính tiền..."
         binding.btnConfirmBooking.isEnabled = false
 
         val serverVehicleType = when (selectedVehicleType) {
@@ -355,7 +342,7 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
             polyline?.remove()
             val polylineOptions = PolylineOptions()
                 .addAll(path)
-                .color(Color.parseColor("#FF4081"))
+                .color(Color.BLUE) // Đổi lại màu xanh cho rõ
                 .width(12f)
                 .geodesic(true)
             polyline = mMap?.addPolyline(polylineOptions)
@@ -370,95 +357,82 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun calculatePriceLocally() {
         val formatter = DecimalFormat("#,###")
-        binding.tvPriceBike.text = "${formatter.format(12000 + currentDistanceKm * 5000)}đ"
-        binding.tvPriceCar.text = "${formatter.format(25000 + currentDistanceKm * 12000)}đ"
-        binding.tvPricePremium.text = "${formatter.format(50000 + currentDistanceKm * 20000)}đ"
-        
-        // Don't overwrite btnConfirmBooking here anymore, it's handled by updatePriceUI
+
+        // Tính giá hiển thị cho từng loại (giữ UI của bạn)
+        val priceBike = 12000.0 + (currentDistanceKm * 5000.0)
+        val priceCar = 25000.0 + (currentDistanceKm * 12000.0)
+        val pricePremium = 50000.0 + (currentDistanceKm * 20000.0)
+
+        binding.tvPriceBike.text = "${formatter.format(priceBike)}đ"
+        binding.tvPriceCar.text = "${formatter.format(priceCar)}đ"
+        binding.tvPricePremium.text = "${formatter.format(pricePremium)}đ"
+
+        finalPrice = when (selectedVehicleType) {
+            "RideGo Bike" -> priceBike
+            "RideGo Car" -> priceCar
+            else -> pricePremium
+        }
+        binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(finalPrice)}đ"
     }
 
     private fun createBookingViaServer() {
-        val user = auth.currentUser
-        if (user == null) {
-            Toast.makeText(this, "Vui lòng đăng nhập lại!", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        binding.btnConfirmBooking.text = "Đang đặt xe..."
+        val user = auth.currentUser ?: return
         binding.btnConfirmBooking.isEnabled = false
 
-        // 1. Chuẩn hóa dữ liệu gửi đi (SERVER CHỜ: MOTORBIKE / 4 SEAT / 7 SEAT)
         val serverVehicleType = when (selectedVehicleType) {
             "RideGo Bike" -> "MOTORBIKE"
             "RideGo Car" -> "4 SEAT"
-            "RideGo Premium" -> "7 SEAT"
-            else -> "MOTORBIKE"
+            else -> "7 SEAT"
         }
 
         val bookingRequest = TripRequest(
             pickupLocation = LocationData(pickupAddress, pickupLat, pickupLng),
             dropoffLocation = LocationData(dropoffAddress, dropoffLat, dropoffLng),
             vehicleType = serverVehicleType,
-            paymentMethod = "CASH", //  Mặc định là Tiền mặt
+            paymentMethod = "CASH",
             distance = currentDistanceKm,
             fare = finalPrice,
             discountId = selectedDiscountId
         )
 
-        // 2. Gọi API
         RetrofitClient.instance.createTrip(bookingRequest).enqueue(object : Callback<TripResponse> {
             override fun onResponse(call: Call<TripResponse>, response: Response<TripResponse>) {
-                // Chấp nhận cả 200 và 201 Created
                 if (response.isSuccessful) {
                     val body = response.body()
 
-                    // --- LOGIC TÌM ID THÔNG MINH ---
-                    // Ưu tiên 1: Tìm trong object "data" (tripId -> _id -> id)
-                    // Ưu tiên 2: Tìm ngay ở root (tripId -> _id -> id)
+                    // SỬA TẠI ĐÂY: Logic lấy ID linh hoạt từ mọi trường có thể có
                     val finalTripId = body?.data?.tripId
-                        ?: body?.data?.mongoId
-                        ?: body?.data?.simpleId
                         ?: body?.rootTripId
+                        ?: body?.data?.mongoId
                         ?: body?.rootMongoId
+                        ?: body?.data?.simpleId
                         ?: body?.rootSimpleId
 
                     if (!finalTripId.isNullOrEmpty()) {
-                        Log.d("BOOKING", "Thành công! ID: $finalTripId")
-
                         val nextIntent = Intent(this@BookingActivity, FindingDriverActivity::class.java)
-                        nextIntent.putExtra("TRIP_ID", finalTripId) // Gửi ID tìm được
+                        nextIntent.putExtra("TRIP_ID", finalTripId)
                         nextIntent.putExtra("PICKUP_ADDRESS", pickupAddress)
                         nextIntent.putExtra("DROPOFF_ADDRESS", dropoffAddress)
                         nextIntent.putExtra("PICKUP_LAT", pickupLat)
                         nextIntent.putExtra("PICKUP_LNG", pickupLng)
                         nextIntent.putExtra("DROPOFF_LAT", dropoffLat)
                         nextIntent.putExtra("DROPOFF_LNG", dropoffLng)
-                        nextIntent.putExtra("VEHICLE_TYPE", selectedVehicleType)
-                        nextIntent.putExtra("DISTANCE", currentDistanceKm)
-                        nextIntent.putExtra("PRICE", finalPrice)
                         nextIntent.putExtra("POLYLINE", currentPolylineString)
-
                         startActivity(nextIntent)
+                        finish() // Kết thúc màn hình booking sau khi chuyển sang tìm tài xế
                     } else {
-                        // Server trả về thành công nhưng Android không mò thấy ID
                         binding.btnConfirmBooking.isEnabled = true
-                        binding.btnConfirmBooking.text = "Thử lại"
-                        Log.e("API_ERROR", "Body: $body")
-                        Toast.makeText(this@BookingActivity, "Lỗi: Không đọc được Trip ID", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@BookingActivity, "Lỗi: Không tìm thấy mã chuyến đi", Toast.LENGTH_SHORT).show()
                     }
                 } else {
                     binding.btnConfirmBooking.isEnabled = true
-                    binding.btnConfirmBooking.text = "Thử lại"
-                    val errorStr = response.errorBody()?.string()
-                    Log.e("API_ERROR", "Lỗi ${response.code()}: $errorStr")
                     Toast.makeText(this@BookingActivity, "Lỗi Server: ${response.code()}", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onFailure(call: Call<TripResponse>, t: Throwable) {
                 binding.btnConfirmBooking.isEnabled = true
-                binding.btnConfirmBooking.text = "Thử lại"
-                Toast.makeText(this@BookingActivity, "Lỗi mạng: ${t.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@BookingActivity, "Lỗi kết nối: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
     }
@@ -466,14 +440,9 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun setupSocketListeners() {
         SocketManager.onTripAccepted { data ->
             runOnUiThread {
-                val driverId = data.optString("driverId")
-                Toast.makeText(this, "Tài xế $driverId đã nhận chuyến!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Tài xế đã nhận chuyến!", Toast.LENGTH_SHORT).show()
             }
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
     }
 
     private fun decodePoly(encoded: String): List<LatLng> {

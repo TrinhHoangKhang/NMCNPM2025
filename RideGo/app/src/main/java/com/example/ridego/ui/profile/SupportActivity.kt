@@ -31,8 +31,11 @@ class SupportActivity : AppCompatActivity() {
             showFeedbackDialog()
         }
         binding.btnOpenWebsite.setOnClickListener {
-            val url = "https://ridego-support.example.com" // Thay bằng link thật
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            // Mở website local từ assets
+            val url = "file:///android_asset/support_site/index.html"
+            val intent = Intent(this, com.example.ridego.ui.common.WebViewActivity::class.java)
+            intent.putExtra(com.example.ridego.ui.common.WebViewActivity.EXTRA_URL, url)
+            intent.putExtra(com.example.ridego.ui.common.WebViewActivity.EXTRA_TITLE, "Trung tâm Hỗ trợ")
             startActivity(intent)
         }
     }

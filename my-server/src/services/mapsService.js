@@ -18,12 +18,14 @@ class MapsService {
     }
 
     async calculateRoute(origin, destination, vehicleType) {
-        if (this.googleApiKey && this.googleApiKey.length > 0) {
+        // Ưu tiên Google Maps nếu có key hợp lệ
+        if (this.googleApiKey && this.googleApiKey.trim() !== "") {
             console.log(`Using Google Maps API (${vehicleType || 'Default'})...`);
             return this.calculateRouteGoogle(origin, destination, vehicleType);
         }
 
-        if (this.graphhopperApiKey && this.graphhopperApiKey.length > 0) {
+        // Chỉ dùng GraphHopper nếu key thực sự có giá trị
+        if (this.graphhopperApiKey && this.graphhopperApiKey.trim() !== "") {
             console.log("Using GraphHopper API for route calculation...");
             return this.calculateRouteGraphHopper(origin, destination);
         }

@@ -10,7 +10,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.example.ridego.data.AuthRepository
 import com.example.ridego.databinding.ActivityAddPhoneBinding
-import com.example.ridegodriver.ui.driver.main.DriverMainActivity
+import com.example.ridego.ui.driver.home.DriverMainActivity
 import com.google.firebase.FirebaseException
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions

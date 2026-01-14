@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:animateLayoutChanges="true">
+
+        <!-- Header (luôn hiện) -->
+        <LinearLayout
+            android:id="@+id/layoutHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:background="?attr/selectableItemBackground">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_help_icon"
+                app:tint="@color/purple_500" />
+
+            <TextView
+                android:id="@+id/tvQuestion"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="8dp"
+                tools:text="Làm sao để đặt xe?"
+                android:textColor="#212121"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/imgExpand"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_arrow_right"
+                app:tint="#757575" />
+        </LinearLayout>
+
+        <!-- Body (ẩn/hiện) -->
+        <LinearLayout
+            android:id="@+id/layoutAnswer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="16dp">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#EEEEEE"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:id="@+id/tvAnswer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:text="Để đặt xe, bạn chỉ cần mở ứng dụng, chọn điểm đón và điểm đến, sau đó chọn loại xe mong muốn."
+                android:textColor="#616161"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

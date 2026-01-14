@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RideGo - Trung tâm Hỗ trợ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <h1 class="logo">🚗 RideGo</h1>
+                <p class="tagline">Trung tâm Hỗ trợ & Thông tin</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+        <button class="tab-btn active" data-tab="home">🏠 Trang chủ</button>
+        <button class="tab-btn" data-tab="guide">📸 Hướng dẫn</button>
+        <button class="tab-btn" data-tab="pricing">💰 Bảng giá</button>
+        <button class="tab-btn" data-tab="promo">🎁 Khuyến mãi</button>
+        <button class="tab-btn" data-tab="features">📱 Tính năng</button>
+        <button class="tab-btn" data-tab="about">🌟 Về RideGo</button>
+        <button class="tab-btn" data-tab="faq">❓ FAQ</button>
+        <button class="tab-btn" data-tab="contact">📧 Liên hệ</button>
+    </nav>
+
+    <div class="container">
+
+        <!-- TAB 1: HOME -->
+        <div id="home" class="tab-content active">
+            <div class="hero-section">
+                <h2>Chào mừng đến RideGo! 👋</h2>
+                <p>Ứng dụng gọi xe công nghệ an toàn, tiện lợi, giá cả hợp lý</p>
+                
+                <div class="quick-links">
+                    <a href="#guide" class="quick-link-btn" onclick="switchTab('guide')">
+                        <span class="icon">📸</span>
+                        <span>Cách đặt xe</span>
+                    </a>
+                    <a href="#pricing" class="quick-link-btn" onclick="switchTab('pricing')">
+                        <span class="icon">💰</span>
+                        <span>Xem giá</span>
+                    </a>
+                    <a href="#promo" class="quick-link-btn" onclick="switchTab('promo')">
+                        <span class="icon">🎁</span>
+                        <span>Khuyến mãi</span>
+                    </a>
+                    <a href="#contact" class="quick-link-btn" onclick="switchTab('contact')">
+                        <span class="icon">📞</span>
+                        <span>Liên hệ</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="features-highlight">
+                <div class="highlight-item">
+                    <div class="icon">🛡️</div>
+                    <h3>An toàn</h3>
+                    <p>Xác minh 2 lớp, chia sẻ vị trí với người thân</p>
+                </div>
+                <div class="highlight-item">
+                    <div class="icon">⚡</div>
+                    <h3>Nhanh chóng</h3>
+                    <p>Đặt xe trong 5 giây, tài xế đến trong 2-5 phút</p>
+                </div>
+                <div class="highlight-item">
+                    <div class="icon">💵</div>
+                    <h3>Rẻ nhất</h3>
+                    <p>Giá minh bạch, không phụ phí ẩn, nhiều khuyến mãi</p>
+                </div>
+                <div class="highlight-item">
+                    <div class="icon">👥</div>
+                    <h3>Hỗ trợ 24/7</h3>
+                    <p>Đội ngũ hỗ trợ sẵn sàng giúp bạn mọi lúc</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: GUIDE -->
+        <div id="guide" class="tab-content">
+            <h2>📸 Hướng dẫn từng bước</h2>
+            <p class="subtitle">Cách đặt xe, thanh toán, hủy chuyến - một cách đơn giản nhất</p>
+            
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3>Đặt xe</h3>
+                    <ul>
+                        <li>Mở ứng dụng RideGo</li>
+                        <li>Nhập điểm đón & đến</li>
+                        <li>Chọn loại xe (Bike, Car, Premium)</li>
+                        <li>Bấm "Đặt xe ngay"</li>
+                    </ul>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3>Chọn thanh toán</h3>
+                    <ul>
+                        <li>Tiền mặt: trả tài xế</li>
+                        <li>Ví RideGo: trước khi đặt</li>
+                        <li>Xác nhận thanh toán</li>
+                        <li>Chờ tài xế chấp nhận</li>
+                    </ul>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3>Liên lạc tài xế</h3>
+                    <ul>
+                        <li>Gọi hoặc nhắn tin</li>
+                        <li>Xem vị trí trên bản đồ</li>
+                        <li>Chia sẻ hành trình với bạn bè</li>
+                        <li>Chờ tài xế đến</li>
+                    </ul>
+                </div>
+                
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <h3>Hoàn thành</h3>
+                    <ul>
+                        <li>Lên xe an toàn</li>
+                        <li>Hoàn thành chuyến</li>
+                        <li>Thanh toán (nếu tiền mặt)</li>
+                        <li>Đánh giá tài xế</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h4>💡 Mẹo:</h4>
+                <p>Bạn có thể hủy chuyến <strong>miễn phí trong 2 phút</strong> sau khi đặt. Hủy muộn hơn sẽ bị tính phí 5-10K VND.</p>
+            </div>
+        </div>
+
+        <!-- TAB 3: PRICING -->
+        <div id="pricing" class="tab-content">
+            <h2>💰 Bảng giá</h2>
+            <p class="subtitle">Giá cả minh bạch - bạn biết giá trước khi đặt!</p>
+
+            <div class="pricing-table-wrapper">
+                <table class="pricing-table">
+                    <thead>
+                        <tr>
+                            <th>Loại xe</th>
+                            <th>Khởi động</th>
+                            <th>Giá/km</th>
+                            <th>Chờ/phút</th>
+                            <th>Mô tả</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="bike-row">
+                            <td><strong>🚲 Bike</strong></td>
+                            <td>10,000đ</td>
+                            <td>5,000đ</td>
+                            <td>500đ</td>
+                            <td>Xe máy, 1 người</td>
+                        </tr>
+                        <tr class="car-row">
+                            <td><strong>🚗 Car</strong></td>
+                            <td>15,000đ</td>
+                            <td>12,000đ</td>
+                            <td>1,000đ</td>
+                            <td>Ô tô 4 chỗ</td>
+                        </tr>
+                        <tr class="premium-row">
+                            <td><strong>⭐ Premium</strong></td>
+                            <td>20,000đ</td>
+                            <td>18,000đ</td>
+                            <td>1,500đ</td>
+                            <td>Xe cao cấp</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="example-section">
+                <h3>📋 Ví dụ tính giá</h3>
+                <div class="example-cards">
+                    <div class="example-card">
+                        <p class="example-title">Chuyến Bike 5km</p>
+                        <div class="calculation">
+                            <span>Khởi động: 10,000đ</span>
+                            <span>5km × 5,000đ: 25,000đ</span>
+                            <span class="total">Tổng: 35,000đ</span>
+                        </div>
+                    </div>
+                    <div class="example-card">
+                        <p class="example-title">Chuyến Car 15km</p>
+                        <div class="calculation">
+                            <span>Khởi động: 15,000đ</span>
+                            <span>15km × 12,000đ: 180,000đ</span>
+                            <span class="total">Tổng: 195,000đ</span>
+                        </div>
+                    </div>
+                    <div class="example-card">
+                        <p class="example-title">Chuyến Premium 10km</p>
+                        <div class="calculation">
+                            <span>Khởi động: 20,000đ</span>
+                            <span>10km × 18,000đ: 180,000đ</span>
+                            <span class="total">Tổng: 200,000đ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: PROMO -->
+        <div id="promo" class="tab-content">
+            <h2>🎁 Khuyến mãi hiện tại</h2>
+            <p class="subtitle">Nhận ưu đãi hấp dẫn từ RideGo</p>
+
+            <div class="promo-cards">
+                <div class="promo-card featured">
+                    <div class="badge">🆕 Mới</div>
+                    <h3>Người dùng mới</h3>
+                    <p class="code">WELCOME50</p>
+                    <p class="desc">Giảm <strong>50%</strong> chuyến đầu tiên</p>
+                    <p class="limit">(tối đa 50,000đ)</p>
+                </div>
+
+                <div class="promo-card">
+                    <div class="badge">⏰ Giờ cao điểm</div>
+                    <h3>Đi vào đêm khuya</h3>
+                    <p class="code">OFFPEAK30</p>
+                    <p class="desc">Giảm <strong>30%</strong> từ 2-5h sáng</p>
+                    <p class="limit">Hàng ngày</p>
+                </div>
+
+                <div class="promo-card">
+                    <div class="badge">💳 Ví RideGo</div>
+                    <h3>Thanh toán ví</h3>
+                    <p class="code">WALLET10</p>
+                    <p class="desc">Giảm <strong>10%</strong> mọi lần</p>
+                    <p class="limit">Không giới hạn</p>
+                </div>
+
+                <div class="promo-card">
+                    <div class="badge">👥 Giới thiệu</div>
+                    <h3>Chia sẻ với bạn</h3>
+                    <p class="code">REFER20</p>
+                    <p class="desc">Cả 2 được <strong>20,000đ</strong></p>
+                    <p class="limit">Mỗi lần giới thiệu</p>
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <p>⚠️ Các mã có thể kết hợp. Hạn sử dụng có thể thay đổi. Vào "Khuyến mãi" trong app để xem danh sách mới nhất.</p>
+            </div>
+        </div>
+
+        <!-- TAB 5: FEATURES -->
+        <div id="features" class="tab-content">
+            <h2>📱 Tính năng nổi bật</h2>
+            <p class="subtitle">Những cập nhật mới để cải thiện trải nghiệm của bạn</p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🗺️</div>
+                    <h3>Ước tính giá chính xác</h3>
+                    <p>Thấy giá chi tiết trước khi đặt xe, với tất cả các yếu tố được liệt kê rõ ràng.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔔</div>
+                    <h3>Thông báo realtime</h3>
+                    <p>Nhận cập nhật tức thì: tài xế đã đến, sắp tới, hoàn thành chuyến.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⭐</div>
+                    <h3>Yêu thích tài xế</h3>
+                    <p>Đánh dấu tài xế bạn thích, yêu cầu họ cho chuyến tiếp theo.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <h3>Chat trực tiếp</h3>
+                    <p>Nhắn tin với tài xế nhanh chóng, có mẫu tin nhanh sẵn.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Lịch sử chi tiết</h3>
+                    <p>Xem toàn bộ lịch sử chuyến: hóa đơn, vị trí, tài xế, giá tiền.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Bảo mật nâng cao</h3>
+                    <p>Xác minh 2 lớp, mã PIN chuyến đi, chia sẻ thông tin an toàn.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: ABOUT -->
+        <div id="about" class="tab-content">
+            <h2>🌟 Về RideGo</h2>
+            
+            <div class="about-section">
+                <h3>Giới thiệu</h3>
+                <p>
+                    RideGo là ứng dụng gọi xe công nghệ được phát triển bởi một nhóm sinh viên đam mê công nghệ. 
+                    Chúng tôi hướng đến việc tạo ra một nền tảng giao thông <strong>an toàn, tiện lợi và giá cả hợp lý</strong> 
+                    cho người dùng Thành phố Hồ Chí Minh.
+                </p>
+            </div>
+
+            <div class="about-grid">
+                <div class="about-card">
+                    <h3>👥 Nhóm phát triển</h3>
+                    <div class="about-content">
+                        <p><strong>4 thành viên</strong></p>
+                        <p>📚 Sinh viên Khoa Khoa Học Tự Nhiên</p>
+                        <p>🎓 Đang học: Nhập môn Công Nghệ Phần Mềm</p>
+                        <p>📍 Trụ sở: Khoa Khoa Học Tự Nhiên, ĐH Thủ Dầu Một, Thủ Đức, TP.HCM</p>
+                    </div>
+                </div>
+
+                <div class="about-card">
+                    <h3>🎯 Sứ mệnh</h3>
+                    <div class="about-content">
+                        <ul>
+                            <li>🛡️ <strong>An toàn:</strong> Bảo vệ quyền lợi tất cả</li>
+                            <li>⚡ <strong>Tiện lợi:</strong> Dễ sử dụng, nhanh chóng</li>
+                            <li>💰 <strong>Công bằng:</strong> Giá minh bạch</li>
+                            <li>📞 <strong>Hỗ trợ:</strong> 24/7 sẵn sàng</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="about-card">
+                    <h3>💡 Tầm nhìn</h3>
+                    <div class="about-content">
+                        <p>Trở thành <strong>nền tảng gọi xe hàng đầu</strong> tại TP.HCM, mang lại trải nghiệm tốt nhất cho cả khách hàng và tài xế.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 7: FAQ -->
+        <div id="faq" class="tab-content">
+            <h2>❓ Câu hỏi thường gặp</h2>
+            <p class="subtitle">Những câu hỏi mà khách hàng thường gặp</p>
+
+            <div class="faq-accordion">
+                <div class="faq-item">
+                    <button class="faq-question">Làm sao để hủy chuyến?</button>
+                    <div class="faq-answer">
+                        <p>Bạn có thể hủy chuyến <strong>miễn phí trong 2 phút</strong> sau khi đặt. Nếu hủy muộn hơn hoặc khi tài xế đã đến, bạn sẽ bị tính phí 5-10K VND.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">Tôi quên mật khẩu, làm sao?</button>
+                    <div class="faq-answer">
+                        <p>Bấm "Quên mật khẩu" trên màn hình đăng nhập, nhập email hoặc SĐT. Chúng tôi sẽ gửi link đặt lại mật khẩu cho bạn.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">Ứng dụng không kết nối được?</button>
+                    <div class="faq-answer">
+                        <p>Hãy: 1) Kiểm tra WiFi/4G, 2) Tắt và bật lại app, 3) Tắt WiFi rồi bật 4G, 4) Khởi động lại điện thoại.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">Thanh toán bị lỗi?</button>
+                    <div class="faq-answer">
+                        <p>Kiểm tra: 1) Số dư Ví RideGo, 2) Thử thanh toán lại, 3) Liên hệ hotline nếu vẫn lỗi.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">Không thấy tài xế nhận chuyến?</button>
+                    <div class="faq-answer">
+                        <p>Có thể không có tài xế khả dụng. Hãy: 1) Đợi thêm vài phút, 2) Kiểm tra số dư, 3) Hủy và đặt lại từ vị trí khác.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">Cách chia sẻ vị trí với bạn bè?</button>
+                    <div class="faq-answer">
+                        <p>Sau khi đặt chuyến, bấm "Chia sẻ hành trình" để gửi link theo dõi thời gian thực cho bạn bè, gia đình.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 8: CONTACT -->
+        <div id="contact" class="tab-content">
+            <h2>📧 Liên hệ & Gửi phản hồi</h2>
+            <p class="subtitle">Chúng tôi luôn sẵn sàng lắng nghe ý kiến của bạn</p>
+
+            <div class="contact-grid">
+                <div class="contact-box">
+                    <div class="contact-icon">📞</div>
+                    <h3>Hotline 24/7</h3>
+                    <p class="contact-value">1900 1234</p>
+                    <p class="contact-desc">Gọi miễn phí từ mọi nơi</p>
+                </div>
+                <div class="contact-box">
+                    <div class="contact-icon">📧</div>
+                    <h3>Email hỗ trợ</h3>
+                    <p class="contact-value">support@ridego.vn</p>
+                    <p class="contact-desc">Phản hồi trong 24h</p>
+                </div>
+                <div class="contact-box">
+                    <div class="contact-icon">🏢</div>
+                    <h3>Văn phòng</h3>
+                    <p class="contact-value">Quận 1, TP.HCM</p>
+                    <p class="contact-desc">Giờ làm: 8h-22h</p>
+                </div>
+            </div>
+
+            <div class="feedback-form-section">
+                <h3>📝 Gửi phản hồi hoặc báo lỗi</h3>
+                <form id="feedbackForm" class="feedback-form">
+                    <div class="form-group">
+                        <label for="feedbackType">Loại phản hồi:</label>
+                        <select id="feedbackType" required>
+                            <option value="">-- Chọn --</option>
+                            <option value="bug">🐛 Báo lỗi</option>
+                            <option value="suggestion">💡 Góp ý</option>
+                            <option value="complaint">⚠️ Khiếu nại</option>
+                            <option value="other">❓ Khác</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="feedbackSubject">Tiêu đề:</label>
+                        <input type="text" id="feedbackSubject" placeholder="Tiêu đề phản hồi..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="feedbackMessage">Chi tiết:</label>
+                        <textarea id="feedbackMessage" placeholder="Mô tả chi tiết..." rows="4" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="feedbackEmail">Email hoặc SĐT (tùy chọn):</label>
+                        <input type="text" id="feedbackEmail" placeholder="Để chúng tôi liên hệ lại">
+                    </div>
+
+                    <button type="submit" class="btn-submit">Gửi phản hồi</button>
+                    <span id="feedbackMessage" class="feedback-message"></span>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>&copy; 2025 RideGo Technology. Phát triển bởi nhóm sinh viên Khoa Khoa Học Tự Nhiên.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

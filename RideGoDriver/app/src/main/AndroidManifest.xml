@@ -7,62 +7,62 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="RideGo Driver"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.RideGo">
-        <activity
-            android:name="com.example.ridegodriver.ui.driver.main.DriverMainActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustPan" />
+        android:theme="@style/Theme.RideGo"
+        android:usesCleartextTraffic="true">
+
         <activity
             android:name=".ui.splash.SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.RideGo.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".ui.onboarding.OnboardingActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.auth.LoginActivity"
-            android:exported="false" />
+
+        <activity android:name=".ui.onboarding.OnboardingActivity" android:exported="false" />
+        <activity android:name=".ui.auth.LoginActivity" android:exported="false" />
         <activity android:name=".ui.auth.OtpVerifyActivity" />
-        <activity android:name=".ui.auth.EmailVerificationActivity" />
+        <activity android:name=".ui.auth.EmailVerificationActivity"/>
         <activity android:name=".ui.auth.CompleteProfileActivity" />
-        <activity
-            android:name=".ui.auth.RegisterActivity"
-            android:exported="false" />
+        <activity android:name=".ui.auth.RegisterActivity" android:exported="false" />
         <activity android:name=".ui.auth.AddPhoneActivity" />
         <activity android:name=".ui.auth.AddEmailActivity" />
+        <activity android:name=".ui.auth.ForgotPasswordActivity" android:exported="false" />
+
+        <activity android:name=".ui.profile.ProfileActivity" android:exported="false"/>
+        <activity android:name=".ui.profile.PersonalInfoActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.profile.SecurityPrivacyActivity" android:exported="false"/>
+        <activity android:name=".ui.profile.DeviceManagementActivity" android:exported="false"/>
+        <activity android:name=".ui.legal.TermsActivity" android:exported="false"/>
+        <activity android:name=".ui.legal.PrivacyPolicyActivity" android:exported="false"/>
+        <activity android:name=".ui.profile.SupportActivity" android:exported="false" />
+
         <activity
-            android:name=".ui.auth.ForgotPasswordActivity"
+            android:name=".ui.driver.home.DriverMainActivity"
             android:exported="false" />
+
+        <service
+            android:name=".service.DriverService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCc0x9onR90vLG-u_xj_cK_YD69GYE2Y8I" />
-
-        <activity
-            android:name=".ui.history.HistoryActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.profile.ProfileActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.profile.PersonalInfoActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-
+            android:value="@string/google_maps_key" />
 
     </application>
 

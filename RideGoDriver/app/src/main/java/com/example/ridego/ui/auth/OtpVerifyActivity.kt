@@ -14,7 +14,7 @@ import com.google.firebase.auth.PhoneAuthProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import android.content.Intent
-import com.example.ridegodriver.ui.driver.main.DriverMainActivity
+import com.example.ridego.ui.driver.home.DriverMainActivity
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 

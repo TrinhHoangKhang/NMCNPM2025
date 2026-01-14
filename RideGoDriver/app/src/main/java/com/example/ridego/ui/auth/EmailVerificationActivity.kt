@@ -10,7 +10,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import com.example.ridego.data.AuthRepository
 import com.example.ridego.databinding.ActivityEmailVerificationBinding
-import com.example.ridegodriver.ui.driver.main.DriverMainActivity
+import com.example.ridego.ui.driver.home.DriverMainActivity
 import kotlinx.coroutines.launch
 
 class EmailVerificationActivity : AppCompatActivity() {

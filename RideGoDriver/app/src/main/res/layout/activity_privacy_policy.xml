@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:fitsSystemWindows="true">
+
+    <!-- Header -->
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:background="#FFFFFF"
+        android:elevation="4dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Quay lại"
+            app:tint="#212121" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:text="Chính sách bảo mật"
+            android:textColor="#212121"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:fitsSystemWindows="true"
+        app:layout_constraintTop_toBottomOf="@id/header"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- Cập nhật lần cuối -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cập nhật lần cuối: 01/01/2026"
+                android:textColor="#757575"
+                android:textSize="12sp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 1. Giới thiệu -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="1. Giới thiệu"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="RideGo là đồ án môn Nhập môn Công nghệ Phần mềm được thực hiện bởi 4 sinh viên Trường Đại học Khoa học Tự nhiên - ĐHQG TP.HCM. Chính sách này giải thích cách ứng dụng thu thập và sử dụng thông tin trong phạm vi demo và học tập."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 2. Thông tin thu thập -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="2. Thông tin chúng tôi thu thập"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Chúng tôi thu thập các loại thông tin sau:\n\n📋 Thông tin cá nhân:\n• Họ và tên\n• Số điện thoại\n• Địa chỉ email\n• Ảnh đại diện (nếu bạn cung cấp)\n\n📍 Thông tin vị trí:\n• Vị trí GPS khi sử dụng ứng dụng\n• Điểm đón và điểm đến\n• Lịch sử chuyến đi\n\n📱 Thông tin thiết bị:\n• Loại thiết bị, hệ điều hành\n• Mã định danh thiết bị\n• Địa chỉ IP\n\n💳 Thông tin thanh toán:\n• Phương thức thanh toán\n• Lịch sử giao dịch"
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 3. Mục đích sử dụng -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="3. Mục đích sử dụng thông tin"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Chúng tôi sử dụng thông tin của bạn để:\n\n• Cung cấp và cải thiện dịch vụ đặt xe.\n• Kết nối bạn với tài xế phù hợp.\n• Xử lý thanh toán và gửi hóa đơn.\n• Gửi thông báo về chuyến đi và khuyến mãi.\n• Hỗ trợ khách hàng và giải quyết khiếu nại.\n• Đảm bảo an toàn và phát hiện gian lận.\n• Phân tích và nghiên cứu để nâng cao trải nghiệm.\n• Tuân thủ các yêu cầu pháp lý."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 4. Chia sẻ thông tin -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="4. Chia sẻ thông tin"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Trong phạm vi đồ án học tập:\n\n👨‍✈️ Người dùng khác trong ứng dụng:\n• Tên, điểm đón/trả để thực hiện chức năng demo.\n\n🏫 Giảng viên hướng dẫn:\n• Dữ liệu có thể được xem xét trong quá trình chấm điểm.\n\n🔒 Dữ liệu KHÔNG được sử dụng cho mục đích thương mại.\n\n⚠️ Lưu ý: Đây là ứng dụng demo, không nên nhập thông tin nhạy cảm thực sự."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 5. Bảo mật dữ liệu -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="5. Bảo mật dữ liệu"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Chúng tôi áp dụng các biện pháp bảo mật nghiêm ngặt:\n\n🔐 Mã hóa:\n• Dữ liệu được mã hóa SSL/TLS khi truyền tải.\n• Mật khẩu được băm (hash) an toàn.\n\n🛡️ Kiểm soát truy cập:\n• Chỉ nhân viên được ủy quyền mới có quyền truy cập.\n• Xác thực đa yếu tố cho hệ thống nội bộ.\n\n🔍 Giám sát:\n• Theo dõi liên tục để phát hiện truy cập bất thường.\n• Đánh giá bảo mật định kỳ."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 6. Lưu trữ dữ liệu -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="6. Lưu trữ và xóa dữ liệu"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• Dữ liệu được lưu trữ trên Firebase (Google Cloud).\n• Thông tin tài khoản được giữ trong thời gian demo và học tập.\n• Dữ liệu có thể được xóa sau khi kết thúc môn học.\n• Bạn có thể yêu cầu xóa tài khoản bất cứ lúc nào.\n• Đây là môi trường thử nghiệm, không phải hệ thống production."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 7. Quyền của người dùng -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="7. Quyền của bạn"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Bạn có các quyền sau đối với dữ liệu cá nhân:\n\n✅ Quyền truy cập:\n• Xem thông tin cá nhân chúng tôi lưu trữ.\n\n✏️ Quyền chỉnh sửa:\n• Cập nhật thông tin không chính xác.\n\n🗑️ Quyền xóa:\n• Yêu cầu xóa tài khoản và dữ liệu.\n\n📥 Quyền xuất dữ liệu:\n• Nhận bản sao dữ liệu của bạn.\n\n🚫 Quyền từ chối:\n• Tắt thông báo khuyến mãi.\n• Giới hạn việc sử dụng vị trí."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 8. Cookie và theo dõi -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="8. Cookie và công nghệ theo dõi"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• Chúng tôi sử dụng cookie để cải thiện trải nghiệm.\n• Cookie giúp ghi nhớ tùy chọn và phiên đăng nhập.\n• Bạn có thể quản lý cookie trong cài đặt trình duyệt.\n• Chúng tôi sử dụng phân tích để hiểu cách bạn sử dụng ứng dụng."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 9. Trẻ em -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="9. Quyền riêng tư của trẻ em"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• RideGo không dành cho người dưới 18 tuổi.\n• Chúng tôi không cố ý thu thập thông tin từ trẻ em.\n• Nếu phát hiện tài khoản của trẻ em, chúng tôi sẽ xóa ngay.\n• Phụ huynh có thể liên hệ để yêu cầu xóa thông tin."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 10. Thay đổi chính sách -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="10. Thay đổi chính sách bảo mật"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• Chúng tôi có thể cập nhật chính sách này định kỳ.\n• Thông báo sẽ được gửi khi có thay đổi quan trọng.\n• Ngày cập nhật sẽ được hiển thị ở đầu trang.\n• Tiếp tục sử dụng = đồng ý với chính sách mới."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- 11. Liên hệ -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="11. Liên hệ về quyền riêng tư"
+                android:textColor="#9C27B0"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nếu bạn có câu hỏi về chính sách bảo mật, vui lòng liên hệ:\n\n📧 Email: ridego.hcmus@gmail.com\n🏫 Trường Đại học Khoa học Tự nhiên - ĐHQG TP.HCM\n📍 Địa chỉ: 227 Nguyễn Văn Cừ, Phường 4, Quận 5, TP. Hồ Chí Minh\n\nNhóm phát triển sẽ phản hồi trong thời gian sớm nhất."
+                android:textColor="#424242"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:layout_marginBottom="32dp" />
+
+            <!-- Footer -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="© 2025 RideGo - Đồ án NMCNPM\nTrường Đại học Khoa học Tự nhiên - ĐHQG TP.HCM"
+                android:textColor="#9E9E9E"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:layout_marginBottom="20dp" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
