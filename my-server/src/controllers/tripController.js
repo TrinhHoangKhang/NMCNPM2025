@@ -174,7 +174,7 @@ class TripController {
             // We can reuse the distance/duration from mainEstimate to save API calls 
             // if we trust mapsService returns same distance for all (approx true for driving)
             // Or we can recalculate. For performance, let's reuse distance if available.
-            const distKm = parseFloat(mainEstimate.distance);
+            const distKm = parseFloat(mainEstimate.distance) / 1000;
 
             for (const type of allTypes) {
                 const est = await tripService.estimateTrip(

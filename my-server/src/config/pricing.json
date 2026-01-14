@@ -1,17 +1,17 @@
 {
     "platformFeePercent": 0.1,
     "rates": {
-        "Motorbike": {
+        "MOTORBIKE": {
             "base": 12000,
             "perKm": 5000,
             "avgSpeedKmH": 35
         },
-        "Car 4-Seat": {
+        "4 SEAT": {
             "base": 25000,
             "perKm": 12000,
             "avgSpeedKmH": 25
         },
-        "Car 7-Seat": {
+        "7 SEAT": {
             "base": 30000,
             "perKm": 15000,
             "avgSpeedKmH": 20
