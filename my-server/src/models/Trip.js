@@ -10,6 +10,10 @@ class Trip {
         this.destination = data.destination || data.dropoffLocation || null;
         this.vehicleType = data.vehicleType;
         this.fare = data.fare || 0;
+        this.originalFare = data.originalFare || this.fare;
+        this.fareBreakdown = data.fareBreakdown || null;
+        this.discountId = data.discountId || null;
+        this.discountAmount = data.discountAmount || 0;
         this.distance = data.distance || 0; // in meters
         this.duration = data.duration || 0; // in seconds
         this.path = data.path || null; // GeoJSON-like LineString with {lat,lng} coordinates
@@ -24,6 +28,21 @@ class Trip {
         this.ratingDriver = data.ratingDriver || null;
         this.ratingTrip = data.ratingTrip || null;
         this.ratingComment = data.ratingComment || null;
+
+        // Populated fields (init to null)
+        this.driverName = null;
+        this.driverRating = null;
+        this.vehiclePlate = null;
+        this.vehicleModel = null;
+        this.vehicleColor = null;
+        this.driverPhone = null;
+        this.driverEmail = null;
+
+        this.riderName = null;
+        this.riderPhone = null;
+        this.riderRating = null;
+        this.riderAvatar = null;
+        this.riderEmail = null;
     }
 
     toJSON() {
@@ -37,6 +56,10 @@ class Trip {
             destination: this.destination,
             vehicleType: this.vehicleType,
             fare: this.fare,
+            originalFare: this.originalFare,
+            fareBreakdown: this.fareBreakdown,
+            discountId: this.discountId,
+            discountAmount: this.discountAmount,
             distance: this.distance,
             duration: this.duration,
             path: this.path,
@@ -57,7 +80,7 @@ class Trip {
             vehicleModel: this.vehicleModel,
             vehicleColor: this.vehicleColor,
             driverPhone: this.driverPhone,
-            driverEmail: this.driverEmail, // Added recently
+            driverEmail: this.driverEmail,
 
             // Rider populated fields
             riderName: this.riderName,

@@ -3,7 +3,9 @@ import { db } from '../config/firebaseConfig.js';
 import Driver from '../models/Driver.js';
 import onlineQueueService from './onlineQueueService.js';
 
-class DriverService {
+import { EventEmitter } from 'events';
+
+class DriverService extends EventEmitter {
 
     // 1. Register a new driver
     async registerDriver(uid, rawData) {
@@ -26,7 +28,11 @@ class DriverService {
         // }
 
         // Update DB
-        await db.collection('drivers').doc(driverId).update({ status: newStatus });
+        const now = new Date().toISOString();
+        await db.collection('drivers').doc(driverId).update({
+            status: newStatus,
+            lastActive: now
+        });
 
         // Update In-Memory Queue
         if (newStatus === 'ONLINE') {
@@ -34,6 +40,9 @@ class DriverService {
         } else {
             onlineQueueService.remove(driverId);
         }
+
+        // Emit local event for Server to pick up
+        this.emit('statusUpdate', { driverId, status: newStatus, lastActive: now });
 
         return { success: true, status: newStatus };
     }

@@ -314,6 +314,13 @@ router.patch('/:id/accept', checkRole(['DRIVER']), tripController.acceptTrip);
 // Input: Id của chuyến đi
 router.patch('/:id/pickup', checkRole(['DRIVER']), tripController.markTripPickup);
 
+// PATCH /api/trips/:id/finish_phase - Driver arrives, initiates completion (Status IN_PROGRESS -> ARRIVED)
+router.patch('/:id/finish_phase', checkRole(['DRIVER']), tripController.finishPhase);
+
+// POST /api/trips/:id/pay - Rider selects payment (Status ARRIVED -> PAYMENT_PROCESSING)
+// Input: { method: 'CASH' | 'WALLET' }
+router.post('/:id/pay', tripController.payTrip);
+
 // PATCH /api/trips/:id/complete - Driver hoàn thành chuyến đi, trạng thái 'IN_PROGRESS' -> 'COMPLETED'
 // Input: Id của chuyến đi
 router.patch('/:id/complete', checkRole(['DRIVER']), tripController.markTripComplete);

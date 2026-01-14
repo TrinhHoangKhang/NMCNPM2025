@@ -80,4 +80,13 @@ router.get('/:id', userController.getUser);
 // PATCH /api/users/:id - Update User Profile
 router.patch('/:id', userController.updateUser);
 
+// DELETE /api/users/:id - Delete User (ADMIN only)
+router.delete('/:id', checkRole(['ADMIN']), userController.deleteUser);
+
+// POST /api/users/:id/favorites - Add Favorite Location
+router.post('/:id/favorites', userController.addFavoriteLocation);
+
+// GET /api/users/:id/favorites - Get Favorite Locations
+router.get('/:id/favorites', userController.getFavoriteLocations);
+
 export default router;

@@ -17,8 +17,7 @@ object Config {
             return if (isEmulator()) {
                 "http://10.0.2.2:$LOCAL_PORT/"
             } else {
-                // Physical device uses ngrok HTTPS endpoint
-                NGROK_URL
+                "https://superingenious-outdated-lilia.ngrok-free.dev"
             }
         }
 

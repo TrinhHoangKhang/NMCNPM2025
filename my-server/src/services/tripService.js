@@ -4,27 +4,61 @@ import mapsService from './mapsService.js';
 import rankingService from './rankingService.js';
 import driverService from './driverService.js';
 import friendService from './friendService.js';
+import discountService from './discountService.js';
 //const { v4: uuidv4 } = require('uuid'); // Need to install uuid, or just use Firestore auto-ID
 
-// Pricing Config (could be a separate file)
-// Pricing Config (loaded from .env)
-const PRICING = {
-    'Motorbike': {
-        BASE: parseFloat(process.env.PRICE_BASE_MOTORBIKE || '1.00'),
-        PER_KM: parseFloat(process.env.PRICE_KM_MOTORBIKE || '0.50')
-    },
-    'Car 4-Seat': {
-        BASE: parseFloat(process.env.PRICE_BASE_4SEAT || '2.00'),
-        PER_KM: parseFloat(process.env.PRICE_KM_4SEAT || '1.00')
-    },
-    'Car 7-Seat': {
-        BASE: parseFloat(process.env.PRICE_BASE_7SEAT || '5.00'),
-        PER_KM: parseFloat(process.env.PRICE_KM_7SEAT || '2.00')
-    }
-};
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+// Load Pricing Config
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pricingConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/pricing.json'), 'utf-8'));
 
 class TripService {
+
+    // Helper: Calculate Fare with Dynamic Pricing
+    _calculateFare(vehicleType, distanceKm) {
+        const rates = pricingConfig.rates[vehicleType] || pricingConfig.rates['Car 4-Seat'];
+        const base = rates.base;
+        let distanceFare = distanceKm * rates.perKm;
+
+        // Check Traffic/Peak Multipliers
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinutes = currentHour * 60 + now.getMinutes();
+
+        let multiplier = 1.0;
+
+        // More granular traffic check
+        for (const window of pricingConfig.peakHours) {
+            const [startH, startM] = window.start.split(':').map(Number);
+            const [endH, endM] = window.end.split(':').map(Number);
+            const startTotal = startH * 60 + startM;
+            const endTotal = endH * 60 + endM;
+
+            if (currentMinutes >= startTotal && currentMinutes < endTotal) {
+                multiplier = Math.max(multiplier, window.multiplier);
+            }
+        }
+
+        // Additional traffic overhead for cars in city center during daytime
+        if (vehicleType.includes('Car') && currentHour >= 8 && currentHour <= 20) {
+            multiplier *= 1.2; // Extra 20% for car traffic
+        }
+
+        distanceFare *= multiplier;
+
+        const platformFee = (base + distanceFare) * (pricingConfig.platformFeePercent || 0.1);
+        const totalFare = base + distanceFare + platformFee;
+
+        return {
+            base: Math.round(base / 1000) * 1000,
+            distanceFare: Math.round(distanceFare / 1000) * 1000,
+            platformFee: Math.round(platformFee / 1000) * 1000,
+            total: Math.round(totalFare / 1000) * 1000
+        };
+    }
 
     // Helper: Fetch driver details and merge into trip
     async _populateDriverDetails(trip) {
@@ -52,17 +86,24 @@ class TripService {
                 trip.vehicleColor = dData.vehicle?.color || "White";
                 trip.driverPhone = dData.phone;
                 trip.driverEmail = dData.email;
+            } else {
+                trip.driverName = "Driver Not Found";
             }
         } catch (e) {
             console.error(`Failed to populate driver for trip ${trip.id}:`, e);
+            trip.driverName = "Error Loading Driver";
         }
         return trip;
     }
 
     // Helper: Fetch rider details
     async _populateRiderDetails(trip) {
-        if (!trip.riderId) return trip;
+        if (!trip.riderId) {
+            trip.riderName = "No Rider ID";
+            return trip;
+        }
         try {
+            // console.log(`DEBUG: Populating rider for trip ${trip.id} (RiderID: ${trip.riderId})`);
             const userDoc = await db.collection('users').doc(trip.riderId).get();
             if (userDoc.exists) {
                 const rData = userDoc.data();
@@ -71,9 +112,14 @@ class TripService {
                 trip.riderRating = rData.rating || 5.0; // Assuming riders have ratings
                 trip.riderAvatar = rData.avatar || null;
                 trip.riderEmail = rData.email;
+                // console.log(`DEBUG: Found rider ${trip.riderName}`);
+            } else {
+                console.warn(`DEBUG: Rider document not found for ID: ${trip.riderId}`);
+                trip.riderName = "Rider Not Found";
             }
         } catch (e) {
             console.error(`Failed to populate rider for trip ${trip.id}:`, e);
+            trip.riderName = "Error Loading Rider";
         }
         return trip;
     }
@@ -93,13 +139,12 @@ class TripService {
     }
 
     // 1. Create a Trip Request
-    async createTripRequest(riderId, pickup, dropoff, vehicleType, paymentMethod) {
+    async createTripRequest(riderId, pickup, dropoff, vehicleType, paymentMethod, discountId = null) {
         // ... (existing code omitted for brevity, assuming it's unchanged unless I am rewriting the whole file)
         // Check if user already has an active trip
         const existingTrip = await this.getCurrentTripForUser(riderId);
         if (existingTrip) {
             // throw new Error("Cant create new trip: existing active trip found");
-            // Allow for dev/testing ease or check status rigorously
         }
 
         const routeData = await mapsService.calculateRoute(pickup, dropoff);
@@ -107,12 +152,28 @@ class TripService {
         // Calculate the distance in KM
         const distanceKm = routeData.distance.value / 1000;
 
-        // B. Calculate Fare based on vehicle type
-        const rates = PRICING[vehicleType] || PRICING['Car 4-Seat'];
-        let fare = rates.BASE + (distanceKm * rates.PER_KM);
-        fare = Math.round(fare * 100) / 100;
+        // C. Calculate Price
+        const fareInfo = this._calculateFare(vehicleType, routeData.distance.value / 1000);
+        const fare = fareInfo.total;
+        let discountAmount = 0;
+        let finalFare = fare;
 
-        // C. Save to DB
+        if (discountId) {
+            const discount = await discountService.getDiscountById(discountId);
+            if (discount) {
+                if (!discount.isActive) {
+                    throw new Error("Mã giảm giá này hiện đã bị khóa và không thể sử dụng");
+                }
+                discountAmount = discount.calculateDiscount(fare);
+                finalFare = fare - discountAmount;
+            }
+        }
+
+        // Include discount in breakdown for reporting
+        fareInfo.discountAmount = discountAmount;
+        fareInfo.finalTotal = finalFare;
+
+        // D. Save to DB
         const tripRef = db.collection('trips').doc();
         const tripData = {
             riderId,
@@ -121,7 +182,11 @@ class TripService {
             vehicleType,
             paymentMethod,
             paymentStatus: 'PENDING',
-            fare,
+            originalFare: fare,
+            fareBreakdown: fareInfo,
+            discountId: discountId,
+            discountAmount: discountAmount,
+            fare: finalFare,
             distance: routeData.distance.value,
             duration: routeData.duration.value,
             path: routeData.geometry,
@@ -136,36 +201,63 @@ class TripService {
     }
 
     // 1b. Estimate Trip Price & Distance
-    async estimateTrip(pickup, dropoff, vehicleType, distanceOverride = null) {
+    async estimateTrip(pickup, dropoff, vehicleType, distanceOverride = null, discountId = null) {
         let distanceKm = 0;
         let durationMin = 0;
+        let routeData = null;
+
+        const rates = pricingConfig.rates[vehicleType] || pricingConfig.rates['Car 4-Seat'];
+        const avgSpeed = rates.avgSpeedKmH || 30;
 
         if (distanceOverride) {
-            // Use client-provided distance if verified/trusted logic allows
             distanceKm = parseFloat(distanceOverride);
-            // Estimate duration roughly if not provided (e.g. 30km/h avg)
-            durationMin = Math.round((distanceKm / 30) * 60);
         } else {
-            // Calculate route
-            const routeData = await mapsService.calculateRoute(pickup, dropoff);
-            // Distance in KM
+            routeData = await mapsService.calculateRoute(pickup, dropoff, vehicleType);
             distanceKm = routeData.distance.value / 1000;
-            durationMin = Math.round(routeData.duration.value / 60);
         }
 
-        // Calculate Fare
-        const rates = PRICING[vehicleType] || PRICING['Car 4-Seat'];
-        let fare = rates.BASE + (distanceKm * rates.PER_KM);
-        fare = Math.round(fare * 1000); // Standardize to integer VND (e.g. 15000)
+        // Calculate Duration based on vehicle average speed (as requested)
+        // distance / speed = hours. * 60 = minutes.
+        durationMin = Math.round((distanceKm / avgSpeed) * 60);
 
-        // Ensure minimum fare? (Optional logic, let's keep it simple)
-        if (fare < rates.BASE * 1000) fare = rates.BASE * 1000;
+        // Adjust duration for traffic if in peak hours
+        const now = new Date();
+        const currentHour = now.getHours();
+        if ((currentHour >= 7 && currentHour <= 9) || (currentHour >= 17 && currentHour <= 19)) {
+            const trafficFactor = vehicleType === 'Motorbike' ? 1.2 : 1.5;
+            durationMin = Math.round(durationMin * trafficFactor);
+        }
+
+        // Calculate Fare (Dynamic Pricing)
+        const fareInfo = this._calculateFare(vehicleType, distanceKm);
+        const fare = fareInfo.total;
+
+        // Calculate Discount
+        let discountAmount = 0;
+        let finalPrice = fare;
+        if (discountId) {
+            const discount = await discountService.getDiscountById(discountId);
+            if (discount && discount.isActive) {
+                discountAmount = discount.calculateDiscount(fare);
+                finalPrice = fare - discountAmount;
+            }
+        }
+
+        // Include discount in breakdown for reporting
+        fareInfo.discountAmount = discountAmount;
+        fareInfo.finalTotal = finalPrice;
 
         return {
             distance: distanceKm.toFixed(1), // km string
             duration: durationMin, // min
-            price: fare,
-            currency: 'VND'
+            originalFare: fare,
+            fare: finalPrice,
+            fareBreakdown: fareInfo,
+            vehicleType: vehicleType,
+            discountAmount: discountAmount,
+            discountApplied: discountAmount > 0,
+            currency: 'VND',
+            path: distanceOverride ? null : (routeData?.geometry || null)
         };
     }
 
@@ -220,7 +312,7 @@ class TripService {
         // 1. Check if user is a DRIVER
         const driverQuery = db.collection('trips')
             .where('driverId', '==', userId)
-            .where('status', 'in', ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS'])
+            .where('status', 'in', ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS', 'ARRIVED', 'PAYMENT_PROCESSING'])
             .limit(1);
 
         const driverSnap = await driverQuery.get();
@@ -232,7 +324,7 @@ class TripService {
         // 2. Check if user is a RIDER
         const riderQuery = db.collection('trips')
             .where('riderId', '==', userId)
-            .where('status', 'in', ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS'])
+            .where('status', 'in', ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS', 'ARRIVED', 'PAYMENT_PROCESSING'])
             .limit(1);
 
         const riderSnap = await riderQuery.get();
@@ -383,6 +475,68 @@ class TripService {
         return await this._populateAll(trip);
     }
 
+    // NEW: Phase 1 of Completion - Driver arrives at destination
+    async finishPhase(tripId, driverId) {
+        const tripRef = db.collection('trips').doc(tripId);
+        const doc = await tripRef.get();
+        if (!doc.exists) throw new Error('Trip not found');
+        const data = doc.data();
+
+        if (data.driverId !== driverId) throw new Error('Unauthorized');
+        if (data.status !== 'IN_PROGRESS') throw new Error(`Invalid status transition from ${data.status}`);
+
+        await tripRef.update({
+            status: 'ARRIVED',
+            arrivedAt: new Date().toISOString()
+        });
+
+        const updated = await tripRef.get();
+        const trip = new Trip(tripId, updated.data());
+        return await this._populateAll(trip);
+    }
+
+    // NEW: Phase 2 - Rider pays
+    async processPayment(tripId, userId, method) {
+        const tripRef = db.collection('trips').doc(tripId);
+        const doc = await tripRef.get();
+        if (!doc.exists) throw new Error('Trip not found');
+        const data = doc.data();
+
+        // Validate Rider
+        // if (data.riderId !== userId) throw new Error('Unauthorized'); // Optional strict check
+
+        if (data.status !== 'ARRIVED' && data.status !== 'PAYMENT_PENDING') {
+            // Allow retry if already pending?
+            throw new Error(`Invalid status for payment: ${data.status}`);
+        }
+
+        let newStatus = 'PAYMENT_PROCESSING';
+        let paymentStatus = 'PENDING';
+
+        if (method === 'WALLET') {
+            // TODO: Implement Wallet Deduction
+            // For now, mock success
+            paymentStatus = 'PAID'; // Assume wallet is instant
+            // newStatus = 'PAYMENT_VERIFIED'; // Or keep processing until driver confirms?
+            // Requirement says "server will verify... with driver confirm again".
+            // So state -> PAYMENT_PROCESSING -> Driver Confirms
+        } else {
+            // Cash
+            paymentStatus = 'PENDING_CASH';
+        }
+
+        await tripRef.update({
+            status: newStatus,
+            paymentMethod: method,
+            paymentStatus: paymentStatus,
+            paymentUpdatedAt: new Date().toISOString()
+        });
+
+        const updated = await tripRef.get();
+        const trip = new Trip(tripId, updated.data());
+        return await this._populateAll(trip);
+    }
+
     async markTripComplete(tripId, driverId, paymentStatusOverride = null) {
         const tripRef = db.collection('trips').doc(tripId);
         // ... validation
@@ -408,10 +562,16 @@ class TripService {
             // 2. Redis Ranking
             await rankingService.updateScore(driverId, 1);
 
+            // 3. Increment Trip Count for Rider (Active User)
+            if (data.riderId) {
+                const riderRef = db.collection('users').doc(data.riderId);
+                await riderRef.update({
+                    tripCount: admin.firestore.FieldValue.increment(1)
+                });
+            }
+
         } catch (err) {
-            console.error(`Failed to update stats for driver ${driverId}:`, err);
-            // Non-blocking error
-            // Non-blocking error
+            console.error(`Failed to update stats for trip ${tripId}:`, err);
         }
 
         // Revert Driver Status to ONLINE
@@ -441,9 +601,19 @@ class TripService {
         const data = doc.data();
 
         // Validation
-        if (data.riderId !== userId) throw new Error("Unauthorized to rate this trip");
-        if (data.status !== 'COMPLETED') throw new Error("Can only rate completed trips");
-        if (data.ratingDriver || data.ratingTrip) throw new Error("Trip already rated");
+        // Validation
+        if (data.riderId !== userId) {
+            console.warn(`[RateTrip] Unauthorized: RiderID ${data.riderId} !== UserID ${userId}`);
+            throw new Error("Unauthorized to rate this trip");
+        }
+        if (data.status !== 'COMPLETED' && data.status !== 'CANCELLED') {
+            console.warn(`[RateTrip] Invalid Status: ${data.status}`);
+            throw new Error("Can only rate completed or cancelled trips");
+        }
+        if (data.ratingDriver || data.ratingTrip) {
+            console.warn(`[RateTrip] Already Rated: ${data.ratingDriver}, ${data.ratingTrip}`);
+            throw new Error("Trip already rated");
+        }
 
         const driverRatingVal = parseFloat(driverRating);
         const tripRatingVal = parseFloat(tripRating);

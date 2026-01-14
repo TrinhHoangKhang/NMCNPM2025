@@ -5,13 +5,17 @@ import { ToastProvider } from './context/ToastContext';
 import { LocaleProvider } from './context/LocaleContext';
 import router from './routes';
 
+import { SocketProvider } from './context/SocketContext';
+
 function App() {
   return (
     <LocaleProvider>
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <RouterProvider router={router} />
+            <SocketProvider>
+              <RouterProvider router={router} />
+            </SocketProvider>
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

@@ -16,6 +16,18 @@ import retrofit2.http.POST
 // CHỈ GIỮ LẠI INTERFACE NÀY
 interface RideGoApiService {
 
+    @GET("api/discounts")
+    fun getDiscounts(): Call<List<Promotion>> // SỬA: Chấp nhận Array [] thay vì Object {}
+
+    @POST("api/discounts/claim")
+    fun claimDiscount(@Body request: ClaimDiscountRequest): Call<ClaimDiscountResponse>
+
+    @GET("api/trips/history")
+    fun getTripHistory(): Call<List<RideHistory>>
+    
+    @POST("api/trips/estimate")
+    fun estimateTrip(@Body request: TripEstimateRequest): Call<TripEstimateResponse>
+
     @POST("api/maps/calculate-route")
     fun calculateRoute(@Body request: RouteRequest): Call<RouteResponse>
 
@@ -27,6 +39,35 @@ interface RideGoApiService {
 
     @POST("api/ai/command")
     fun chatCommand(@Body request: ChatRequest): Call<ChatCommandResponse>
+
+    @PATCH("api/trips/cancel")
+    fun cancelTrip(@Body request: CancelTripRequest): Call<TripResponse>
+
+    @GET("api/trips/{id}")
+    fun getTripDetails(@Path("id") id: String): Call<TripResponse>
+
+    @GET("api/trips/current")
+    fun getCurrentTrip(): Call<TripResponse>
+
+    @POST("api/trips/{id}/pay")
+    fun submitPayment(@Path("id") id: String, @Body request: PaymentRequest): Call<TripResponse>
+
+    // --- NEW: Driver Profile & Chat ---
+    @GET("api/drivers/{id}")
+    fun getDriver(@Path("id") id: String): Call<DriverProfileResponse>
+
+    @GET("api/chat/history/{partnerId}")
+    fun getChatHistory(@Path("partnerId") partnerId: String): Call<List<ChatHistoryItem>>
+
+    @GET("api/payments/{id}/pay")
+    fun getPaymentQR(@Path("id") id: String): Call<PaymentQRResponse>
+
+    @POST("api/chat/send")
+    fun sendChatMessage(@Body request: SendMessageRequest): Call<ChatHistoryItem>
+
+    @POST("api/trips/{id}/rate")
+    fun rateTrip(@Path("id") id: String, @Body request: RateTripRequest): Call<RateTripResponse>
+}
 
     @GET("api/trips/history")
     fun getTripHistory(): Call<List<TripHistoryResponse>>

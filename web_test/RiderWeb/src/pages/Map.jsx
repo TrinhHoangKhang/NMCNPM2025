@@ -1,12 +1,21 @@
 import BookingForm from "@/components/BookingForm";
 import MapComponent from "@/components/MapComponent";
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 
 export default function Map() {
-  const [pickupLocation, setPickupLocation] = useState({ lat: 10.762622, lng: 106.660172, address: "University of Science" });
-  const [dropoffLocation, setDropoffLocation] = useState({ lat: 10.7769, lng: 106.7009, address: "Ben Thanh Market" });
+  const location = useLocation();
+  const initialData = location.state?.tripInfo || {};
+
+  const [pickupLocation, setPickupLocation] = useState(
+    initialData.pickupLocation || { lat: 10.762622, lng: 106.660172, address: "University of Science" }
+  );
+  const [dropoffLocation, setDropoffLocation] = useState(
+    initialData.dropoffLocation || { lat: 10.7769, lng: 106.7009, address: "Ben Thanh Market" }
+  );
   const [selectionMode, setSelectionMode] = useState(null); // 'PICKUP' or 'DROPOFF' or null
   const [routePath, setRoutePath] = useState(null);
+
 
   const handleCreatePath = (path) => {
     if (path) {
@@ -31,6 +40,7 @@ export default function Map() {
           selectionMode={selectionMode}
           setSelectionMode={setSelectionMode}
           onCreatePath={handleCreatePath}
+          initialData={initialData}
         />
       </div>
 

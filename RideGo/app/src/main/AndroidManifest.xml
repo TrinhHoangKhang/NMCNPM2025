@@ -124,6 +124,23 @@
             android:name=".ui.booking.FindingDriverActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".ui.booking.TripDetailsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.chat.ChatActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.profile.OtherUserProfileActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ui.favorite.FavoriteLocationsActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

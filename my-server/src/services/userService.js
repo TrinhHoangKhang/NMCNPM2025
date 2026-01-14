@@ -1,4 +1,4 @@
-import { db } from '../config/firebaseConfig.js';
+import { db, admin } from '../config/firebaseConfig.js';
 
 class UserService {
 
@@ -7,6 +7,20 @@ class UserService {
         const doc = await db.collection('users').doc(userId).get();
         if (!doc.exists) throw new Error("User not found");
         return doc.data();
+    }
+
+    async createUser(userId, userData) {
+        const userRef = db.collection('users').doc(userId);
+        const data = {
+            name: userData.name || 'User',
+            email: userData.email || '',
+            phone: userData.phone || '',
+            role: userData.role || 'RIDER',
+            createdAt: new Date().toISOString(),
+            ...userData
+        };
+        await userRef.set(data);
+        return { id: userId, ...data };
     }
 
     // 1.5 Get All Users with Filter
@@ -22,9 +36,32 @@ class UserService {
 
         const snapshot = await query.get();
         let users = [];
+        const driverFetches = [];
+
         snapshot.forEach(doc => {
-            users.push({ id: doc.id, ...doc.data() });
+            const userData = { id: doc.id, ...doc.data() };
+            users.push(userData);
+
+            // If user is a driver, prepare to fetch their status from 'drivers' collection
+            if (userData.role === 'DRIVER') {
+                driverFetches.push(
+                    db.collection('drivers').doc(doc.id).get()
+                        .then(driverDoc => {
+                            if (driverDoc.exists) {
+                                userData.status = driverDoc.data().status || 'OFFLINE';
+                            } else {
+                                userData.status = 'OFFLINE';
+                            }
+                        })
+                        .catch(() => { userData.status = 'OFFLINE'; })
+                );
+            }
         });
+
+        // Wait for all driver status fetches to complete
+        if (driverFetches.length > 0) {
+            await Promise.all(driverFetches);
+        }
 
         // Basic In-memory Search (Firestore doesn't support native partial text search easily)
         if (filters.search) {
@@ -81,6 +118,43 @@ class UserService {
         });
 
         return result;
+    }
+
+    async deleteUser(userId) {
+        const batch = db.batch();
+
+        // 1. Delete user from 'users' collection
+        const userRef = db.collection('users').doc(userId);
+        batch.delete(userRef);
+
+        // 2. Also attempt to delete from 'drivers' if they have a driver profile
+        const driverRef = db.collection('drivers').doc(userId);
+        batch.delete(driverRef);
+
+        // Execute batch delete
+        await batch.commit();
+        return true;
+    }
+
+    // 5. Add Favorite Location
+    async addFavoriteLocation(userId, locationData) {
+        // locationData: { name, address, lat, lng, type (optional: home, work) }
+        const userRef = db.collection('users').doc(userId);
+
+        // Use arrayUnion to append to the list
+        await userRef.update({
+            favoriteLocations: admin.firestore.FieldValue.arrayUnion(locationData)
+        });
+
+        const updatedDoc = await userRef.get();
+        return updatedDoc.data().favoriteLocations;
+    }
+
+    // 6. Get Favorite Locations
+    async getFavoriteLocations(userId) {
+        const doc = await db.collection('users').doc(userId).get();
+        if (!doc.exists) throw new Error("User not found");
+        return doc.data().favoriteLocations || [];
     }
 }
 

@@ -9,8 +9,8 @@ import org.json.JSONObject
 
 object SocketManager {
     private var mSocket: Socket? = null
-    // Use Config.BASE_URL for ngrok tunnel
-    private val SOCKET_URL = Config.BASE_URL.trimEnd('/')
+    // IP của bạn (nhớ giữ nguyên IP 192.168.1.5 và port 3001 như bạn đã sửa)
+    private const val SOCKET_URL = "https://superingenious-outdated-lilia.ngrok-free.dev"
 
     // Hàm connect KHÔNG nhận tham số (tự lấy Token)
     fun connect() {
