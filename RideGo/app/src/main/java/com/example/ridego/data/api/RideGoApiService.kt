@@ -1,8 +1,17 @@
 package com.example.ridego.data.api
 
-import com.example.ridego.data.model.*
+import com.example.ridego.data.model.RouteRequest
+import com.example.ridego.data.model.RouteResponse
+import com.example.ridego.data.model.TripRequest
+import com.example.ridego.data.model.TripResponse
+import com.example.ridego.data.model.ChatRequest
+import com.example.ridego.data.model.ChatResponse
+import com.example.ridego.data.model.ChatCommandResponse
+import com.example.ridego.data.model.TripHistoryResponse
 import retrofit2.Call
-import retrofit2.http.*
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
 
 // CHỈ GIỮ LẠI INTERFACE NÀY
 interface RideGoApiService {
@@ -63,4 +72,6 @@ interface RideGoApiService {
     fun getConversations(): Call<List<ConversationResponse>>
 }
 
-// --- NẾU THẤY object RetrofitClient Ở ĐÂY THÌ XÓA NÓ ĐI NHÉ! ---
+    @GET("api/trips/history")
+    fun getTripHistory(): Call<List<TripHistoryResponse>>
+}
