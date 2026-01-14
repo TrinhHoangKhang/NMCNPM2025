@@ -15,8 +15,9 @@ class PaymentController {
             const tripData = tripDoc.data();
 
             // Kiểm tra trạng thái chuyến đi
-            if (tripData.status !== 'COMPLETED') {
-                return res.status(400).json({ success: false, message: "Chuyến đi chưa hoàn thành" });
+            // [FIX] Allow ARRIVED state for payment (previously resulted in 400 because it required COMPLETED)
+            if (tripData.status !== 'ARRIVED' && tripData.status !== 'COMPLETED' && tripData.status !== 'PAYMENT_PROCESSING') {
+                return res.status(400).json({ success: false, message: "Chuyến đi chưa đến đích (Status: " + tripData.status + ")" });
             }
 
             if (tripData.paymentMethod !== 'WALLET') {

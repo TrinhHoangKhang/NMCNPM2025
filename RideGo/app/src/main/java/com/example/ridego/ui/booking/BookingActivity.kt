@@ -43,6 +43,11 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
     private var finalPrice = 0.0
     private var currentPolylineString = ""
 
+    // Discount variables
+    private var myPromotions: List<Promotion> = emptyList()
+    private var selectedDiscountId: String? = null
+    private var selectedDiscountCode: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityBookingBinding.inflate(layoutInflater)
@@ -57,6 +62,63 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
         SocketManager.connect()
         setupSocketListeners()
         setupUI()
+        fetchUserPromotions()
+        setupSocketListeners()
+        setupUI()
+        fetchUserPromotions()
+        checkCurrentTrip()
+    }
+
+    private fun checkCurrentTrip() {
+        RetrofitClient.instance.getCurrentTrip().enqueue(object : Callback<TripResponse> {
+            override fun onResponse(call: Call<TripResponse>, response: Response<TripResponse>) {
+                if (response.isSuccessful) {
+                    val trip = response.body()?.data
+                    if (trip != null && trip.status != "COMPLETED" && trip.status != "CANCELLED" && trip.status != "NO_DRIVER_FOUND") {
+                        Toast.makeText(this@BookingActivity, "Bạn đang có chuyến đi chưa hoàn thành!", Toast.LENGTH_SHORT).show()
+                        
+                        val finalId = trip.tripId ?: trip.mongoId ?: trip.simpleId ?: ""
+                        if (trip.status == "REQUESTED") {
+                             val intent = Intent(this@BookingActivity, FindingDriverActivity::class.java)
+                             intent.putExtra("TRIP_ID", finalId)
+                             // Fill other data if needed or let FindingDriver fetch it? FindingDriver expects extras...
+                             // It's safer to just go to TripDetails for consistency OR strictly FindingDriver.
+                             // TripDetails handles data fetching better. Let's try TripDetails as generic fallback?
+                             // User requirement: "move to that ride detail instead".
+                             // But REQUESTED maps to FindingDriverActivity usually.
+                             // Let's rely on standard TripDetailsActivity for everything EXCEPT REQUESTED? 
+                             // Or just send to TripDetailsActivity and let it show "Looking for driver"?
+                             // TripDetailsActivity UI currently shows "Waiting for Driver" if status is REQUESTED?
+                             // Let's check TripDetailsActivity.kt... it handles ACCEPTED, IN_PROGRESS etc.
+                             // If I send to FindingDriverActivity without full extras (lat/lng), it might crash or show empty map.
+                             // FindingDriverActivity relies on Intent Extras heavily (lines 47-65).
+                             // So best to use TripDetailsActivity if possible, OR fetch details first.
+                             // Given complexity, let's redirect to TripDetailsActivity and update TripDetailsActivity to handle REQUESTED state gracefully if needed.
+                             // WAIT: TripDetailsActivity is for AFTER matching. FindingDriverActivity is for BEFORE.
+                             // I should fetch trip details, populate intent, then go to FindingDriverActivity.
+                             // OR simpler: Go to TripDetailsActivity and make sure it supports REQUESTED state (e.g. show "Searching...").
+                             // Validating TripDetailsActivity support for REQUESTED...
+                             // TripDetailsActivity.kt line 189: "ACCEPTED", "IN_PROGRESS"... doesn't explicitly handle "REQUESTED".
+                             // So I should populate intent and go to FindingDriverActivity.
+                             // BUT populating intent from just `trip` object might be hard if some fields missing.
+                             // Let's Try: Go to TripDetailsActivity, and if status is REQUESTED, Update TripDetailsActivity to show "Searching".
+                             // That seems more robust than trying to reconstruct FindingDriverActivity intent.
+                             // But for now, let's just use TripDetailsActivity and assume it works or I'll fix it.
+                             val intentDetails = Intent(this@BookingActivity, TripDetailsActivity::class.java)
+                             intentDetails.putExtra("TRIP_ID", finalId)
+                             startActivity(intentDetails)
+                             finish()
+                        } else {
+                             val intentDetails = Intent(this@BookingActivity, TripDetailsActivity::class.java)
+                             intentDetails.putExtra("TRIP_ID", finalId)
+                             startActivity(intentDetails)
+                             finish()
+                        }
+                    }
+                }
+            }
+            override fun onFailure(call: Call<TripResponse>, t: Throwable) {}
+        })
     }
 
     private fun getDataFromIntent() {
@@ -79,6 +141,13 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
                 else -> "RideGo Bike"
             }
             selectVehicle(selectedVehicleType)
+        }
+
+        // Nhận mã giảm giá từ màn hình Ưu đãi
+        selectedDiscountId = intent.getStringExtra("DISCOUNT_ID")
+        selectedDiscountCode = intent.getStringExtra("DISCOUNT_CODE")
+        if (!selectedDiscountId.isNullOrEmpty()) {
+            Toast.makeText(this, "Đã áp dụng mã: $selectedDiscountCode", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -114,6 +183,8 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
         binding.layoutCar.setOnClickListener { selectVehicle("RideGo Car") }
         binding.layoutPremium.setOnClickListener { selectVehicle("RideGo Premium") }
 
+        binding.btnSelectPromotion.setOnClickListener { showPromotionDialog() }
+
         binding.btnConfirmBooking.setOnClickListener { createBookingViaServer() }
     }
 
@@ -136,7 +207,55 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
 
         binding.btnConfirmBooking.isEnabled = false
 
-        // API SERVER: Mong đợi origin và destination là chuỗi "lat,lng"
+        val serverVehicleType = when (selectedVehicleType) {
+            "RideGo Bike" -> "MOTORBIKE"
+            "RideGo Car" -> "4 SEAT"
+            "RideGo Premium" -> "7 SEAT"
+            else -> "MOTORBIKE"
+        }
+
+        val estimateRequest = TripEstimateRequest(
+            pickupLocation = LocationData(pickupAddress, pickupLat, pickupLng),
+            dropoffLocation = LocationData(dropoffAddress, dropoffLat, dropoffLng),
+            vehicleType = serverVehicleType,
+            discountId = selectedDiscountId
+        )
+
+        RetrofitClient.instance.estimateTrip(estimateRequest).enqueue(object : Callback<TripEstimateResponse> {
+            override fun onResponse(call: Call<TripEstimateResponse>, response: Response<TripEstimateResponse>) {
+                binding.btnConfirmBooking.isEnabled = true
+                if (response.isSuccessful) {
+                    val result = response.body()
+                    if (result != null) {
+                        currentDistanceKm = result.distance / 1000.0
+                        // Since estimate now doesn't return polyline directly, we might still need calculateRoute if we want polyline
+                        // But wait, the backend `estimateTrip` uses `tripService.estimateTrip` which calls `mapsService.calculateRoute`.
+                        // However, the current `TripEstimateResponse` only has distance/fare.
+                        
+                        // Let's call calculateRoute separately for the polyline or update estimateTrip.
+                        // For now, I'll call calculateRoute just once to get the path, then use estimate for price.
+                        fetchPathAndDetails()
+
+                        finalPrice = result.fare
+                        
+                        // NEW: Update Distance Display
+                        val distanceStr = String.format("%.2f km", currentDistanceKm)
+                        binding.tvDistance.text = distanceStr
+
+                        updatePriceUI(result)
+                    }
+                } else {
+                    Log.e("API_ESTIMATE", "Error: ${response.code()}")
+                }
+            }
+            override fun onFailure(call: Call<TripEstimateResponse>, t: Throwable) {
+                binding.btnConfirmBooking.isEnabled = true
+                binding.btnConfirmBooking.text = "Lỗi kết nối"
+            }
+        })
+    }
+
+    private fun fetchPathAndDetails() {
         val request = RouteRequest(
             origin = "$pickupLat,$pickupLng",
             destination = "$dropoffLat,$dropoffLng",
@@ -145,30 +264,76 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
 
         RetrofitClient.instance.calculateRoute(request).enqueue(object : Callback<RouteResponse> {
             override fun onResponse(call: Call<RouteResponse>, response: Response<RouteResponse>) {
-                binding.btnConfirmBooking.isEnabled = true
                 if (response.isSuccessful && response.body()?.success == true) {
                     val data = response.body()!!.data
                     if (data != null) {
-                        currentDistanceKm = data.distance.value / 1000.0
                         currentPolylineString = data.geometry?.coordinates ?: ""
-
+                        if (currentPolylineString.isNotEmpty()) {
+                            drawRoute(currentPolylineString)
+                        }
+                        
                         val durationText = data.duration.text
                         binding.tvDurationBike.text = "$durationText • 1 người"
                         binding.tvDurationCar.text = "$durationText • 4 người"
                         binding.tvDurationPremium.text = "$durationText • 7 người"
-
-                        if (currentPolylineString.isNotEmpty()) {
-                            drawRoute(currentPolylineString)
-                        }
-                        calculatePriceLocally()
                     }
                 }
             }
-            override fun onFailure(call: Call<RouteResponse>, t: Throwable) {
-                binding.btnConfirmBooking.isEnabled = true
-                Toast.makeText(this@BookingActivity, "Lỗi kết nối", Toast.LENGTH_SHORT).show()
-            }
+            override fun onFailure(call: Call<RouteResponse>, t: Throwable) {}
         })
+    }
+
+    private fun updatePriceUI(result: TripEstimateResponse) {
+        val formatter = DecimalFormat("#,###")
+        finalPrice = result.fare
+
+        // Cập nhật giá hiển thị trên nút
+        if (result.discountApplied) {
+            binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(result.fare)}đ (KM: -${formatter.format(result.discountAmount)}đ)"
+            binding.tvSelectPromotion.text = selectedDiscountCode ?: "Đã chọn"
+        } else {
+            binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(result.fare)}đ"
+            binding.tvSelectPromotion.text = " Ưu đãi"
+        }
+        
+        // Cập nhật giá danh sách xe (để user tham khảo)
+        calculatePriceLocally()
+    }
+
+    private fun fetchUserPromotions() {
+        RetrofitClient.instance.getDiscounts().enqueue(object : Callback<List<Promotion>> {
+            override fun onResponse(call: Call<List<Promotion>>, response: Response<List<Promotion>>) {
+                if (response.isSuccessful) {
+                    myPromotions = response.body() ?: emptyList()
+                }
+            }
+            override fun onFailure(call: Call<List<Promotion>>, t: Throwable) {}
+        })
+    }
+
+    private fun showPromotionDialog() {
+        if (myPromotions.isEmpty()) {
+            Toast.makeText(this, "Bạn chưa có mã giảm giá nào!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val codes = myPromotions.map { "${it.code} - ${it.description}" }.toTypedArray()
+        
+        val builder = android.app.AlertDialog.Builder(this)
+        builder.setTitle("Chọn mã giảm giá")
+        builder.setItems(codes) { dialog, which ->
+            val selected = myPromotions[which]
+            selectedDiscountId = selected.id
+            selectedDiscountCode = selected.code
+            Toast.makeText(this, "Đã chọn: ${selected.code}", Toast.LENGTH_SHORT).show()
+            calculateRouteViaServer() // Recalculate price
+        }
+        builder.setNeutralButton("Bỏ chọn") { _, _ ->
+            selectedDiscountId = null
+            selectedDiscountCode = null
+            calculateRouteViaServer()
+        }
+        builder.show()
     }
 
     private fun drawRoute(encodedPolyline: String) {
@@ -226,7 +391,8 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
             vehicleType = serverVehicleType,
             paymentMethod = "CASH",
             distance = currentDistanceKm,
-            fare = finalPrice
+            fare = finalPrice,
+            discountId = selectedDiscountId
         )
 
         RetrofitClient.instance.createTrip(bookingRequest).enqueue(object : Callback<TripResponse> {

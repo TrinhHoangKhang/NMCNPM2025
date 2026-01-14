@@ -10,7 +10,8 @@ import {
 	Package,
 	Users,
 	MessageCircle,
-	Bot
+	Bot,
+	Tag
 } from 'lucide-react';
 
 export default function Header() {
@@ -25,6 +26,7 @@ export default function Header() {
 		{ label: 'Trip History', href: '/history', icon: Package },
 		{ label: 'Chat', href: '/chat', icon: MessageCircle },
 		{ label: 'AI Assistant', href: '/chatbot', icon: Bot },
+		{ label: 'Discounts', href: '/discounts', icon: Tag },
 	];
 
 	const getInitials = (name) => {

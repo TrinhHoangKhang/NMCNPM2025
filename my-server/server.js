@@ -8,7 +8,7 @@ import redis from './src/config/redisConfig.js';
 // Load environment variables
 // dotenv.config(); // Removed (loaded at top)
 
-import { admin } from './src/config/firebaseConfig.js';
+import { admin, db } from './src/config/firebaseConfig.js';
 import jwt from 'jsonwebtoken';
 import driverService from './src/services/driverService.js';
 import presenceService from './src/services/presenceService.js';
@@ -24,6 +24,33 @@ export const io = new Server(server, {
     cors: {
         origin: "*", // Allow all origins for dev
         methods: ["GET", "POST"]
+    }
+});
+
+// LISTEN FOR DRIVER STATUS UPDATES
+// LISTEN FOR DRIVER STATUS UPDATES
+driverService.on('statusUpdate', (data) => {
+    // data = { driverId, status, lastActive }
+    console.log(`Broadcasting Driver Status: ${data.driverId} -> ${data.status}`);
+    io.to('admin').emit('driver_status_update', data);
+});
+
+// LISTEN FOR CHAT MESSAGES
+import chatService from './src/services/chatService.js';
+chatService.on('messageSent', async (msg) => {
+    // msg = { id, text, senderId, recipientId, createdAt, ... }
+    try {
+        const socketIds = await presenceService.getUserSocketIds(msg.recipientId);
+        if (socketIds && socketIds.length > 0) {
+            console.log(`Broadcasting Chat to ${msg.recipientId} (Sockets: ${socketIds.length})`);
+            socketIds.forEach(socketId => {
+                io.to(socketId).emit('receive_message', msg);
+            });
+        } else {
+            console.log(`Chat Recipient ${msg.recipientId} is OFFLINE. Message stored.`);
+        }
+    } catch (err) {
+        console.error("Chat Broadcast Error:", err.message);
     }
 });
 
@@ -66,7 +93,27 @@ io.use(async (socket, next) => {
         }
 
         const decoded = await verifySocketToken(token);
-        socket.user = decoded; // Attach user data to socket
+
+        // FETCH USER FROM DB TO GET ROLE
+        let role = 'USER';
+        let name = decoded.name;
+        try {
+            const userDoc = await db.collection('users').doc(decoded.uid).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                role = userData.role || 'USER';
+                name = userData.name || name || "User";
+            }
+        } catch (dbError) {
+            console.error("Socket DB Fetch Error:", dbError.message);
+        }
+
+        socket.user = {
+            uid: decoded.uid,
+            email: decoded.email,
+            name: name,
+            role: role
+        };
         next();
     } catch (err) {
         console.error("Socket Auth Error:", err.message);
@@ -76,7 +123,19 @@ io.use(async (socket, next) => {
 
 // Socket.io Events
 io.on('connection', async (socket) => {
+    console.log('--------------------------------------------------');
     console.log('New client connected:', socket.id);
+    if (socket.user) {
+        console.log(`User Details: 
+        - Name: ${socket.user.name}
+        - Email: ${socket.user.email}
+        - Role: ${socket.user.role}
+        - UID: ${socket.user.uid}`);
+    } else {
+        console.log('User Details: Unauthenticated / No Token');
+    }
+    console.log('--------------------------------------------------');
+
 
     if (socket.user) {
         console.log(`User Online: ${socket.user.email} (${socket.user.uid})`);
@@ -102,7 +161,7 @@ io.on('connection', async (socket) => {
                 }
 
                 if (driverProfile && driverProfile.vehicle && driverProfile.vehicle.type) {
-                    const vehicleRoom = `drivers_${driverProfile.vehicle.type}`;
+                    const vehicleRoom = `drivers_${driverProfile.vehicle.type.toUpperCase()}`;
                     socket.join(vehicleRoom);
                     console.log(`DEBUG: Driver ${socket.user.email} auto-joined room '${vehicleRoom}'`);
                 }
@@ -138,6 +197,12 @@ io.on('connection', async (socket) => {
 
 
 
+        // Admin Joining 'admin' room
+        if (socket.user.role === 'ADMIN') {
+            socket.join('admin');
+            console.log(`Admin ${socket.user.email} joined 'admin' room`);
+        }
+
         socket.on('join_room', (room) => {
             socket.join(room);
             console.log(`User ${socket.id} joined room ${room}`);
@@ -169,7 +234,7 @@ io.on('connection', async (socket) => {
                 });
 
                 // Join new vehicle room
-                const newRoom = `drivers_${vehicleType}`;
+                const newRoom = `drivers_${vehicleType.toUpperCase()}`;
                 socket.join(newRoom);
                 console.log(`Driver ${socket.user.email} switched to '${newRoom}'`);
 

@@ -160,7 +160,7 @@ const Dashboard = () => {
                 <TableRow>
                   <TableHead>Trip ID</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Pickup</TableHead>
+                  <TableHead>Route</TableHead>
                   <TableHead>Price</TableHead>
                 </TableRow>
               </TableHeader>
@@ -171,8 +171,8 @@ const Dashboard = () => {
                   </TableRow>
                 ) : (
                   stats.recentTrips.map((trip, index) => (
-                    <TableRow key={trip._id || index}>
-                      <TableCell className="font-mono text-xs">{trip?._id?.substring ? trip._id.substring(0, 8) : 'N/A'}...</TableCell>
+                    <TableRow key={trip.id || trip._id || index}>
+                      <TableCell className="font-mono text-xs">{(trip.id || trip._id || '').substring(0, 8)}...</TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
@@ -185,10 +185,15 @@ const Dashboard = () => {
                           {trip.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="max-w-[200px] truncate" title={trip.pickup?.address || trip.pickup}>
-                        {trip.pickup?.address || trip.pickup}
+                      <TableCell className="max-w-[300px]">
+                        <div className="text-blue-600 text-xs truncate" title={trip.pickupLocation?.address || trip.pickup?.address || trip.pickup}>
+                          <span className="font-semibold">From:</span> {trip.pickupLocation?.address || trip.pickup?.address || trip.pickup || 'N/A'}
+                        </div>
+                        <div className="text-orange-600 text-xs truncate" title={trip.dropoffLocation?.address || trip.destination?.address || trip.destination}>
+                          <span className="font-semibold">To:</span> {trip.dropoffLocation?.address || trip.destination?.address || trip.destination || 'N/A'}
+                        </div>
                       </TableCell>
-                      <TableCell>{trip.price?.toLocaleString()} VND</TableCell>
+                      <TableCell>{(trip.fare || trip.price || 0).toLocaleString()} VND</TableCell>
                     </TableRow>
                   ))
                 )}

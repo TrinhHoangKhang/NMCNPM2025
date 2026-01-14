@@ -22,8 +22,10 @@ import userRoutes from './routes/userRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import rankingRoutes from './routes/rankingRoutes.js';
 import friendRoutes from './routes/friendRoutes.js';
+import discountRoutes from './routes/discountRoutes.js';
 
 import paymentRoutes from './routes/paymentRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 // ==========================================
 // 1. CONFIGURATION & SETUP
 // ==========================================
@@ -74,7 +76,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/ranks', rankingRoutes);
 app.use('/api/friends', friendRoutes);
+app.use('/api/discounts', discountRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health Check
 app.get('/', (req, res) => {

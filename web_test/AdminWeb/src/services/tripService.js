@@ -5,7 +5,7 @@ export const tripService = {
         // tripData: { pickupLocation, dropoffLocation, vehicleType, paymentMethod }
         return apiClient('/trips/request', {
             method: 'POST',
-            body: JSON.stringify(tripData)
+            body: tripData
         });
     },
 
@@ -17,7 +17,7 @@ export const tripService = {
         // estimateData: { pickupLocation, dropoffLocation, vehicleType }
         return apiClient('/trips/estimate', {
             method: 'POST',
-            body: JSON.stringify(estimateData)
+            body: estimateData
         });
     },
 
