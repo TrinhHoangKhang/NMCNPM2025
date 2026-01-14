@@ -21,10 +21,6 @@ object RetrofitClient {
             val originalRequest = chain.request()
             val builder = originalRequest.newBuilder()
 
-            // *** FIX: Thêm header để bypass ngrok warning page ***
-            builder.addHeader("ngrok-skip-browser-warning", "true")
-            builder.addHeader("User-Agent", "RideGoApp")
-
             // Lấy User hiện tại từ Firebase
             val user = FirebaseAuth.getInstance().currentUser
 

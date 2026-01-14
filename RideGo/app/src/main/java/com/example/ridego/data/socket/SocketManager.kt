@@ -10,7 +10,7 @@ import io.socket.emitter.Emitter
 
 object SocketManager {
     private var mSocket: Socket? = null
-    private val SOCKET_URL = Config.BASE_URL.trimEnd('/')
+    private val SOCKET_URL = Config.BASE_URL
 
     // 1. Kết nối với Server
     fun connect() {
