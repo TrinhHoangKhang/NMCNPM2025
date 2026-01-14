@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Loader2, Car, Plus, Trash2, Star, ShieldCheck, TrendingUp, Clock, Calendar, MapPin, CheckCircle } from 'lucide-react';
+import { Loader2, Car, Plus, Trash2, Star, ShieldCheck, TrendingUp, Clock, Calendar, MapPin, CheckCircle, CreditCard } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/useToast';
 import { tripService } from '@/services/tripService';
+import { userService } from '@/services/userService';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -37,10 +38,17 @@ export default function Profile() {
   // Detail View State
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [vehicleToDelete, setVehicleToDelete] = useState(null);
+  const [extendedUser, setExtendedUser] = useState(user || {});
 
-
-
-
+  useEffect(() => {
+    if (user?.uid) {
+      userService.getUser(user.uid).then(res => {
+        if (res && res.success) {
+          setExtendedUser(prev => ({ ...prev, ...res.data }));
+        }
+      });
+    }
+  }, [user]);
 
   // Stats State
   const [stats, setStats] = useState({
@@ -613,6 +621,43 @@ export default function Profile() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Payment Gateway Section */}
+      <Card className="border-0 shadow-md">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-emerald-600" /> Payment Gateway
+            </CardTitle>
+            <CardDescription>Manage how you receive your earnings</CardDescription>
+          </div>
+          <Button variant="outline" onClick={() => window.location.href = '/settings'}>
+            Manage Settings
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="p-4 bg-slate-50 border rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">
+                  {extendedUser.bankName ? `${extendedUser.bankName} - ${extendedUser.bankAccount}` : "No Bank Account Connected"}
+                </h3>
+                <p className="text-sm text-slate-500">
+                  {extendedUser.bankOwnerName ? `Owner: ${extendedUser.bankOwnerName}` : "Setup your banking information to receive payouts"}
+                </p>
+              </div>
+            </div>
+            {extendedUser.bankName && (
+              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
+                Connected
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }

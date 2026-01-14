@@ -211,6 +211,16 @@ class TripService {
         const newTrip = new Trip(tripRef.id, tripData);
         await tripRef.set(newTrip.toJSON());
 
+        // CONSUME DISCOUNT: Remove from user's collection
+        if (discountId && discountAmount > 0) {
+            try {
+                await discountService.markDiscountAsUsed(riderId, discountId);
+            } catch (err) {
+                console.error("Failed to remove used discount from user:", err);
+                // Non-blocking error, trip is still created
+            }
+        }
+
         return newTrip;
     }
 

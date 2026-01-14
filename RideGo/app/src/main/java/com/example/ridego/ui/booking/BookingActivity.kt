@@ -232,7 +232,7 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
                     if (result != null) {
                         // Use server distance if reasonable, else rely on Route API
                         if (result.distance > 0) {
-                            currentDistanceKm = result.distance / 1000.0
+                            currentDistanceKm = result.distance // Backend returns km, no need to divide
                             val distanceStr = String.format("%.2f km", currentDistanceKm)
                             binding.tvDistance.text = distanceStr
                         }
@@ -372,7 +372,7 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
         // Tính giá hiển thị cho từng loại (giữ UI của bạn)
         val priceBike = 12000.0 + (currentDistanceKm * 5000.0)
         val priceCar = 25000.0 + (currentDistanceKm * 12000.0)
-        val pricePremium = 50000.0 + (currentDistanceKm * 20000.0)
+        val pricePremium = 30000.0 + (currentDistanceKm * 15000.0) // Updated to match server config
 
         binding.tvPriceBike.text = "${formatter.format(priceBike)}đ"
         binding.tvPriceCar.text = "${formatter.format(priceCar)}đ"
@@ -383,7 +383,35 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
             "RideGo Car" -> priceCar
             else -> pricePremium
         }
-        binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(finalPrice)}đ"
+
+        // Apply Discount Locally
+        var discountAmount = 0.0
+        if (!selectedDiscountId.isNullOrEmpty()) {
+            val promo = myPromotions.find { it.id == selectedDiscountId }
+            if (promo != null) {
+                if (promo.type == "PERCENT") {
+                    discountAmount = finalPrice * (promo.value / 100.0)
+                    if (promo.maxDiscount > 0 && discountAmount > promo.maxDiscount) {
+                        discountAmount = promo.maxDiscount
+                    }
+                } else {
+                    discountAmount = promo.value
+                }
+                
+                // Ensure non-negative
+                if (discountAmount > finalPrice) discountAmount = finalPrice
+            }
+        }
+        
+        finalPrice -= discountAmount
+
+        if (discountAmount > 0) {
+            binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(finalPrice)}đ (KM: -${formatter.format(discountAmount)}đ)"
+            binding.tvSelectPromotion.text = selectedDiscountCode ?: "Đã chọn"
+        } else {
+            binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(finalPrice)}đ"
+            binding.tvSelectPromotion.text = " Ưu đãi"
+        }
     }
 
     private fun createBookingViaServer() {
@@ -429,6 +457,12 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
                         nextIntent.putExtra("DROPOFF_LAT", dropoffLat)
                         nextIntent.putExtra("DROPOFF_LNG", dropoffLng)
                         nextIntent.putExtra("POLYLINE", currentPolylineString)
+                        
+                        // Pass pricing and vehicle info
+                        nextIntent.putExtra("DISTANCE", currentDistanceKm)
+                        nextIntent.putExtra("PRICE", finalPrice)
+                        nextIntent.putExtra("VEHICLE_TYPE", selectedVehicleType)
+                        
                         startActivity(nextIntent)
                         finish() // Kết thúc màn hình booking sau khi chuyển sang tìm tài xế
                     } else {

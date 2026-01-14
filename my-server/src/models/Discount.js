@@ -4,9 +4,9 @@ class Discount {
         this.code = data.code;
         this.description = data.description;
         this.type = data.type; // 'PERCENT' or 'FIXED'
-        this.value = data.value;
-        this.maxDiscount = data.maxDiscount || 0;
-        this.minOrderValue = data.minOrderValue || 0;
+        this.value = parseFloat(data.value);
+        this.maxDiscount = parseFloat(data.maxDiscount || 0);
+        this.minOrderValue = parseFloat(data.minOrderValue || 0);
         this.expiryDate = data.expiryDate;
         this.isActive = data.isActive !== undefined ? data.isActive : true;
         this.count = data.count || 0; // NEW: Number of remaining redemptions
