@@ -1,5 +1,6 @@
 {
     "platformFeePercent": 0.1,
+    "commissionPercent": 0.2,
     "rates": {
         "MOTORBIKE": {
             "base": 12000,
