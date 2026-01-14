@@ -209,10 +209,15 @@ Authorization: Bearer <token>
 *   **Request Body:** `{ "receiverId": "...", "message": "Hello!" }`
 *   **Response:** `200 OK`
 
-### Get Chat History
+### Get Chat History List (Conversations)
+*   **Method:** `GET`
+*   **URL:** `/api/chat/history`
+*   **Response:** `200 OK` Returns list of conversation partners.
+
+### Get Chat Messages
 *   **Method:** `GET`
 *   **URL:** `/api/chat/history/:friendId`
-*   **Response:** `200 OK`
+*   **Response:** `200 OK` Returns messages with a specific friend.
 
 ---
 
