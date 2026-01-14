@@ -304,22 +304,24 @@ Output:
      * @returns {string}
      */
     buildHistoryPrompt(historyText, currentDate, userQuestion) {
-        return `Bạn là Trợ lý Phân tích Dữ liệu của RideGo. Hôm nay là ngày ${currentDate}.
-Dưới đây là lịch sử chuyến đi của người dùng trong 3 tháng qua (tối đa).
+        return `Bạn là trợ lý AI của RideGo. Hôm nay là ${currentDate}.
 
-### CẤU TRÚC DỮ LIỆU LỊCH SỬ:
-[Thời gian (DD/MM/YYYY HH:mm) | Loại xe | Điểm đón -> Điểm đến | Giá tiền | Thanh toán | Trạng thái]
+LỊCH SỬ CHUYẾN ĐI:
+${historyText === "KHÔNG CÓ DỮ LIỆU (Người dùng chưa đi chuyến nào)" ? "Chưa có chuyến đi nào." : historyText}
 
-### DỮ LIỆU:
-${historyText}
+HƯỚNG DẪN:
+- Chào hỏi: Trả lời ngắn gọn, thân thiện (1-2 câu). VD: "Chào bạn! Tôi có thể giúp gì?"
+- Hỏi về app: Giải thích đơn giản, dễ hiểu
+- Hỏi thống kê chuyến đi: Phân tích dữ liệu lịch sử ở trên, đưa ra con số cụ thể
+- Không liên quan: Nói ngắn gọn rằng bạn chỉ hỗ trợ về RideGo
 
-### NHIỆM VỤ:
-1. Trả lời các câu hỏi về thống kê (tổng tiền, số chuyến, tháng này đi mấy chuyến), thói quen (giờ hay đi, loại xe hay dùng).
-2. Nếu người dùng hỏi về thời gian (hôm qua, tuần trước), hãy đối chiếu với ngày hiện tại (${currentDate}).
-3. Nếu không có dữ liệu, hãy trả lời: "Tôi không tìm thấy thông tin chuyến đi nào trong khoảng thời gian này".
-4. Câu trả lời cần ngắn gọn, thân thiện và trả về dạng VĂN BẢN THUẦN (TEXT), không trả về JSON.
+QUY TẮC:
+- Trả lời TỐI ĐA 2-3 câu, ngắn gọn
+- Giọng điệu tự nhiên, bình thường, không hoa mỹ
+- Dùng emoji vừa phải (1-2 emoji/câu trả lời)
+- Trả về text thuần, KHÔNG dùng JSON
 
-### CÂU HỎI CỦA NGƯỜI DÙNG:
+CÂU HỎI:
 ${userQuestion}`;
     }
 
@@ -330,41 +332,61 @@ ${userQuestion}`;
      * @returns {Promise<string>}
      */
     async answerTripHistoryQuery(userId, userQuestion) {
-        // Fetch trips: completed in last 3 months
-        const now = new Date();
+        try {
+            // Fetch trips: completed in last 3 months
+            const now = new Date();
 
-        const recentCompleted = await tripService.getUserCompletedTripsWithinMonths(userId, 3, 200);
+            const recentCompleted = await tripService.getUserCompletedTripsWithinMonths(userId, 1, 200);
 
-        if (recentCompleted.length === 0) {
-            return 'Tôi không tìm thấy thông tin chuyến đi nào trong khoảng thời gian này';
+            let historyText = "KHÔNG CÓ DỮ LIỆU (Người dùng chưa đi chuyến nào)";
+
+            if (recentCompleted.length > 0) {
+                // Limit to avoid long prompts
+                const limitedTrips = recentCompleted
+                    .sort((a, b) => {
+                        const da = this.parseTripDate(a.completedAt || a.createdAt)?.getTime() || 0;
+                        const db = this.parseTripDate(b.completedAt || b.createdAt)?.getTime() || 0;
+                        return db - da;
+                    })
+                    .slice(0, 100);
+
+                historyText = this.compressTripHistory(limitedTrips);
+            }
+
+            const currentDateStr = this.formatDate(now);
+            const prompt = this.buildHistoryPrompt(historyText, currentDateStr, userQuestion);
+
+            console.log("--> [AI Service] Query mode - Sending to Groq...");
+            console.log("--> [AI Service] User question:", userQuestion);
+            console.log("--> [AI Service] Trip history data:");
+            console.log(historyText);
+            console.log("--> [AI Service] ====== END OF TRIP HISTORY ======");
+
+            // --- Groq (current) ---
+            const completion = await this.groq.chat.completions.create({
+                model: this.modelName,
+                messages: [
+                    { role: 'system', content: 'Bạn là trợ lý AI của RideGo. Trả lời ngắn gọn, tự nhiên, không hoa mỹ.' },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.4,
+                max_tokens: 256
+            });
+
+            console.log("--> [AI Service] Groq response received");
+            const text = completion.choices?.[0]?.message?.content?.trim();
+            console.log("--> [AI Service] AI response:", text);
+            
+            if (!text || text.length === 0) {
+                console.warn("--> [AI Service] Empty response from AI, using fallback");
+                return 'Xin lỗi, tôi không thể trả lời lúc này. Vui lòng thử lại! 😊';
+            }
+            
+            return text;
+        } catch (error) {
+            console.error('--> [AI Service] Error in answerTripHistoryQuery:', error);
+            return 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau! 😊';
         }
-
-        // Limit to avoid long prompts
-        const limitedTrips = recentCompleted
-            .sort((a, b) => {
-                const da = this.parseTripDate(a.completedAt || a.createdAt)?.getTime() || 0;
-                const db = this.parseTripDate(b.completedAt || b.createdAt)?.getTime() || 0;
-                return db - da;
-            })
-            .slice(0, 100);
-
-        const historyText = this.compressTripHistory(limitedTrips);
-        const currentDateStr = this.formatDate(now);
-        const prompt = this.buildHistoryPrompt(historyText, currentDateStr, userQuestion);
-
-        // --- Groq (current) ---
-        const completion = await this.groq.chat.completions.create({
-            model: this.modelName,
-            messages: [
-                { role: 'system', content: 'Bạn là Trợ lý Phân tích Dữ liệu của RideGo.' },
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.2,
-            max_tokens: 512
-        });
-
-        const text = completion.choices?.[0]?.message?.content?.trim();
-        return text || 'Tôi không tìm thấy thông tin chuyến đi nào trong khoảng thời gian này';
 
         // --- Legacy Gemini (commented out, kept for reference) ---
         // const result = await this.model.generateContent({

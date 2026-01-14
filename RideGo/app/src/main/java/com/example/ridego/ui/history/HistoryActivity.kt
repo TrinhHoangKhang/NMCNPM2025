@@ -2,18 +2,23 @@ package com.example.ridego.ui.history
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.ridego.databinding.ActivityHistoryBinding
-import com.example.ridego.data.model.RideHistory
+import com.example.ridego.model.RideHistory
 import com.example.ridego.data.api.RetrofitClient
+import com.example.ridego.data.model.TripHistoryResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class HistoryActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHistoryBinding
+    private val TAG = "HistoryActivity"
     private var originalList: List<RideHistory> = emptyList()
     private var currentFilter = "ALL" // ALL, COMPLETED, CANCELLED
     private var currentSort = "TIME_DESC" // TIME_DESC, TIME_ASC, PRICE_DESC, PRICE_ASC, DISTANCE_DESC, DISTANCE_ASC

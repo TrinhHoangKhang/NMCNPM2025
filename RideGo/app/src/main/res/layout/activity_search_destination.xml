@@ -49,7 +49,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Mục đã lưu"
                 android:textColor="#E91E63"
                 android:textStyle="bold"
                 android:layout_marginStart="4dp"/>
@@ -72,7 +71,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Bản đồ"
                 android:textColor="#2196F3"
                 android:textStyle="bold"
                 android:layout_marginStart="4dp"/>
