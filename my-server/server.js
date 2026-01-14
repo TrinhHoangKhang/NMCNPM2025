@@ -144,7 +144,7 @@ io.on('connection', async (socket) => {
         presenceService.addUserSocket(socket.user.uid, socket.id);
 
         // NEW: Auto-join 'drivers' room for broadcasting job requests
-        if (true || socket.user.role === 'DRIVER') {
+        if (socket.user.role === 'DRIVER') {
             socket.join('drivers');
 
             // Join Vehicle-Specific Room

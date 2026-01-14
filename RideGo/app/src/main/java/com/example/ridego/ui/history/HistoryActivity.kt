@@ -19,6 +19,9 @@ import java.util.Locale
 class HistoryActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHistoryBinding
     private val TAG = "HistoryActivity"
+    private var originalList: List<RideHistory> = emptyList()
+    private var currentFilter = "ALL" // ALL, COMPLETED, CANCELLED
+    private var currentSort = "TIME_DESC" // TIME_DESC, TIME_ASC, PRICE_DESC, PRICE_ASC, DISTANCE_DESC, DISTANCE_ASC
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,120 +30,123 @@ class HistoryActivity : AppCompatActivity() {
 
         binding.btnBack.setOnClickListener { finish() }
 
-        loadTripHistory()
+        setupRecyclerView()
+        setupFilters()
+        setupSort()
+        fetchHistory()
     }
 
-    private fun loadTripHistory() {
-        binding.rvHistory.visibility = View.GONE
-        // Show loading if you have a progress bar: binding.progressBar?.visibility = View.VISIBLE
+    private fun setupFilters() {
+        binding.filterAll.setOnClickListener { updateFilter("ALL") }
+        binding.filterCompleted.setOnClickListener { updateFilter("COMPLETED") }
+        binding.filterCancelled.setOnClickListener { updateFilter("CANCELLED") }
+    }
+    
+    private fun updateFilter(filter: String) {
+        currentFilter = filter
+        updateFilterUI()
+        applyFilterAndSort()
+    }
+    
+    private fun updateFilterUI() {
+        val selectedBg = com.example.ridego.R.drawable.bg_purple_rounded
+        val unselectedBg = com.example.ridego.R.drawable.bg_white_rounded_border
+        val selectedColor = android.graphics.Color.WHITE
+        val unselectedColor = android.graphics.Color.parseColor("#757575")
 
-        RetrofitClient.instance.getTripHistory().enqueue(object : Callback<List<TripHistoryResponse>> {
-            override fun onResponse(
-                call: Call<List<TripHistoryResponse>>,
-                response: Response<List<TripHistoryResponse>>
-            ) {
-                // binding.progressBar?.visibility = View.GONE
-                
-                if (response.isSuccessful && response.body() != null) {
-                    val trips = response.body()!!
-                    Log.d(TAG, "Loaded ${trips.size} trips")
-                    
-                    if (trips.isEmpty()) {
-                        Toast.makeText(this@HistoryActivity, "Bạn chưa có chuyến đi nào", Toast.LENGTH_SHORT).show()
-                        binding.rvHistory.visibility = View.VISIBLE
-                        return
-                    }
-                    
-                    val historyList = trips
-                        .filter { it.status == "COMPLETED" }
-                        .map { convertToRideHistory(it) }
-                    
-                    setupRecyclerView(historyList)
-                    binding.rvHistory.visibility = View.VISIBLE
-                } else {
-                    Log.e(TAG, "Error loading trips: ${response.code()}")
-                    Toast.makeText(this@HistoryActivity, "Lỗi tải dữ liệu: ${response.code()}", Toast.LENGTH_SHORT).show()
-                    binding.rvHistory.visibility = View.VISIBLE
-                }
-            }
-
-            override fun onFailure(call: Call<List<TripHistoryResponse>>, t: Throwable) {
-                // binding.progressBar?.visibility = View.GONE
-                Log.e(TAG, "Failed to load trips", t)
-                Toast.makeText(this@HistoryActivity, "Lỗi kết nối: ${t.message}", Toast.LENGTH_SHORT).show()
-                binding.rvHistory.visibility = View.VISIBLE
-            }
-        })
+        binding.filterAll.setBackgroundResource(if (currentFilter == "ALL") selectedBg else unselectedBg)
+        binding.filterAll.setTextColor(if (currentFilter == "ALL") selectedColor else unselectedColor)
+        
+        binding.filterCompleted.setBackgroundResource(if (currentFilter == "COMPLETED") selectedBg else unselectedBg)
+        binding.filterCompleted.setTextColor(if (currentFilter == "COMPLETED") selectedColor else unselectedColor)
+        
+        binding.filterCancelled.setBackgroundResource(if (currentFilter == "CANCELLED") selectedBg else unselectedBg)
+        binding.filterCancelled.setTextColor(if (currentFilter == "CANCELLED") selectedColor else unselectedColor)
     }
 
-    private fun convertToRideHistory(trip: TripHistoryResponse): RideHistory {
-        // Get vehicle name
-        val serviceName = when (trip.vehicleType) {
-            "MOTORBIKE", "BIKE" -> "RideGo Bike"
-            "4_SEATS" -> "RideGo Car"
-            "7_SEATS" -> "RideGo Premium"
-            else -> "RideGo"
+    private fun setupSort() {
+        binding.btnSort.setOnClickListener {
+            showSortDialog()
+        }
+    }
+
+    private fun showSortDialog() {
+        val options = arrayOf(
+            "Mới nhất", "Cũ nhất",
+            "Giá cao nhất", "Giá thấp nhất", 
+            "Xa nhất", "Gần nhất"
+        )
+        // Map index to internal sort key
+        val sortKeys = arrayOf(
+            "TIME_DESC", "TIME_ASC",
+            "PRICE_DESC", "PRICE_ASC",
+            "DISTANCE_DESC", "DISTANCE_ASC"
+        )
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Sắp xếp theo")
+            .setItems(options) { _, which ->
+                currentSort = sortKeys[which]
+                applyFilterAndSort()
+            }
+            .show()
+    }
+
+    private fun applyFilterAndSort() {
+        var list = originalList
+        
+        // Filter
+        if (currentFilter != "ALL") {
+            list = list.filter { it.status == currentFilter }
         }
         
-        // Format price
-        val price = String.format("%,.0fđ", trip.fare)
+        // Sort
+        list = when(currentSort) {
+            "TIME_DESC" -> list.sortedByDescending { it.createdAt }
+            "TIME_ASC" -> list.sortedBy { it.createdAt }
+            "PRICE_DESC" -> list.sortedByDescending { it.fare }
+            "PRICE_ASC" -> list.sortedBy { it.fare }
+            "DISTANCE_DESC" -> list.sortedByDescending { it.distance }
+            "DISTANCE_ASC" -> list.sortedBy { it.distance }
+            else -> list.sortedByDescending { it.createdAt }
+        }
         
-        // Get addresses
-        val pickupAddress = trip.pickup?.address ?: trip.pickupLocation?.address ?: "Không rõ điểm đón"
-        val dropoffAddress = trip.destination?.address ?: trip.dropoffLocation?.address ?: "Không rõ điểm đến"
-        
-        // Parse date and time from completedAt or createdAt
-        val dateTimeStr = trip.completedAt ?: trip.createdAt
-        val (date, time) = parseDateTime(dateTimeStr)
-        
-        // Format distance and duration
-        val distanceKm = String.format("%.1f km", trip.distance / 1000.0)
-        val durationMin = String.format("%d phút", (trip.duration / 60).toInt())
-        
-        // Driver name (mock for now as it's not in the response)
-        val driverName = "Tài xế"
-        
-        // Rating
-        val rating = trip.ratingDriver ?: 0f
-        
-        // Is car?
-        val isCar = trip.vehicleType in listOf("4_SEATS", "7_SEATS")
-        
-        return RideHistory(
-            serviceName = serviceName,
-            price = price,
-            status = "Hoàn thành",
-            pickupAddress = pickupAddress,
-            dropoffAddress = dropoffAddress,
-            date = date,
-            time = time,
-            distance = distanceKm,
-            duration = durationMin,
-            driverName = driverName,
-            rating = rating,
-            isCar = isCar
+        updateAdapter(list)
+    }
+
+    private fun updateAdapter(list: List<RideHistory>) {
+        binding.rvHistory.adapter = HistoryAdapter(list, 
+            onItemClick = { trip ->
+                 val intent = android.content.Intent(this@HistoryActivity, com.example.ridego.ui.booking.TripDetailsActivity::class.java)
+                 intent.putExtra("TRIP_ID", trip.id)
+                 startActivity(intent)
+            },
+            onReorderClick = { trip ->
+                val intent = android.content.Intent(this@HistoryActivity, com.example.ridego.ui.booking.BookingActivity::class.java)
+                intent.putExtra("IS_BOOKING_FLOW", true)
+                intent.putExtra("PICKUP_ADDRESS", trip.pickupLocation?.address)
+                intent.putExtra("PICKUP_LAT", trip.pickupLocation?.lat)
+                intent.putExtra("PICKUP_LNG", trip.pickupLocation?.lng)
+                intent.putExtra("DROPOFF_ADDRESS", trip.dropoffLocation?.address)
+                intent.putExtra("DROPOFF_LAT", trip.dropoffLocation?.lat)
+                intent.putExtra("DROPOFF_LNG", trip.dropoffLocation?.lng)
+                            
+                val vehicleType = when (trip.vehicleType) {
+                    "MOTORBIKE", "BIKE" -> "RideGo Bike"
+                    "4 SEAT", "CAR", "4_SEATS" -> "RideGo Car"
+                    "7 SEAT", "PREMIUM", "7_SEATS" -> "RideGo Premium"
+                    else -> "RideGo Bike"
+                }
+                intent.putExtra("VEHICLE_TYPE", vehicleType)
+                startActivity(intent)
+            },
+            onGetBillClick = { trip ->
+                showBillDialog(trip)
+            }
         )
     }
 
-    private fun parseDateTime(isoString: String): Pair<String, String> {
-        return try {
-            val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-            val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-            
-            val date = inputFormat.parse(isoString)
-            if (date != null) {
-                Pair(dateFormat.format(date), timeFormat.format(date))
-            } else {
-                Pair("N/A", "N/A")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error parsing date: $isoString", e)
-            Pair("N/A", "N/A")
-        }
-    }
-
-    private fun setupRecyclerView(list: List<RideHistory>) {
+    private fun setupRecyclerView() {
         binding.rvHistory.layoutManager = LinearLayoutManager(this)
         binding.rvHistory.adapter = HistoryAdapter(emptyList(), {}, {}, {})
     }
@@ -149,37 +155,8 @@ class HistoryActivity : AppCompatActivity() {
         RetrofitClient.instance.getTripHistory().enqueue(object : Callback<List<RideHistory>> {
             override fun onResponse(call: Call<List<RideHistory>>, response: Response<List<RideHistory>>) {
                 if (response.isSuccessful) {
-                    val list = response.body() ?: emptyList()
-                    val sortedList = list.sortedByDescending { it.createdAt }
-                    binding.rvHistory.adapter = HistoryAdapter(sortedList, 
-                        onItemClick = { trip ->
-                            val intent = android.content.Intent(this@HistoryActivity, com.example.ridego.ui.booking.TripDetailsActivity::class.java)
-                            intent.putExtra("TRIP_ID", trip.id)
-                            startActivity(intent)
-                        },
-                        onReorderClick = { trip ->
-                            val intent = android.content.Intent(this@HistoryActivity, com.example.ridego.ui.booking.BookingActivity::class.java)
-                            intent.putExtra("IS_BOOKING_FLOW", true)
-                            intent.putExtra("PICKUP_ADDRESS", trip.pickupLocation?.address)
-                            intent.putExtra("PICKUP_LAT", trip.pickupLocation?.lat)
-                            intent.putExtra("PICKUP_LNG", trip.pickupLocation?.lng)
-                            intent.putExtra("DROPOFF_ADDRESS", trip.dropoffLocation?.address)
-                            intent.putExtra("DROPOFF_LAT", trip.dropoffLocation?.lat)
-                            intent.putExtra("DROPOFF_LNG", trip.dropoffLocation?.lng)
-                            
-                            val vehicleType = when (trip.vehicleType) {
-                                "MOTORBIKE", "BIKE" -> "RideGo Bike"
-                                "4 SEAT", "CAR", "4_SEATS" -> "RideGo Car"
-                                "7 SEAT", "PREMIUM", "7_SEATS" -> "RideGo Premium"
-                                else -> "RideGo Bike"
-                            }
-                            intent.putExtra("VEHICLE_TYPE", vehicleType)
-                            startActivity(intent)
-                        },
-                        onGetBillClick = { trip ->
-                            showBillDialog(trip)
-                        }
-                    )
+                    originalList = response.body() ?: emptyList()
+                    applyFilterAndSort()
                 } else {
                     Toast.makeText(this@HistoryActivity, "Lỗi tải lịch sử: ${response.code()}", Toast.LENGTH_SHORT).show()
                 }

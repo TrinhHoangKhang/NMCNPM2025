@@ -12,8 +12,8 @@ export const SocketProvider = ({ children }) => {
     const connectSocket = () => {
         if (!user || socketRef.current) return;
 
-        // Ensure VITE_API_URL is parsed correctly
-        const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001';
+        // Ensure VITE_API_URL is parsed correctly or use ngrok fallback
+        const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://superingenious-outdated-lilia.ngrok-free.dev';
 
         const newSocket = io(socketUrl, {
             auth: {

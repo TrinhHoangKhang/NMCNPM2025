@@ -141,6 +141,10 @@
             android:name=".ui.favorite.FavoriteLocationsActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".ui.chat.ChatListActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

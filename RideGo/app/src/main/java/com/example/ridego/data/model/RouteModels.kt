@@ -65,7 +65,8 @@ data class TripDataContainer(
     val fare: Double = 0.0,
     val distance: Double = 0.0,
     val duration: String? = null,
-    val discountAmount: Double? = 0.0
+    val discountAmount: Double? = 0.0,
+    val path: GeometryData? = null
 )
 
 // --- ROUTE REQUEST ---

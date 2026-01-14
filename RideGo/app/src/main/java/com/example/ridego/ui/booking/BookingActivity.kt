@@ -207,6 +207,9 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
 
         binding.btnConfirmBooking.isEnabled = false
 
+        // 1. Fetch Route (Polyline & Distance) Independently
+        fetchPathAndDetails()
+
         val serverVehicleType = when (selectedVehicleType) {
             "RideGo Bike" -> "MOTORBIKE"
             "RideGo Car" -> "4 SEAT"
@@ -227,30 +230,27 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (response.isSuccessful) {
                     val result = response.body()
                     if (result != null) {
-                        currentDistanceKm = result.distance / 1000.0
-                        // Since estimate now doesn't return polyline directly, we might still need calculateRoute if we want polyline
-                        // But wait, the backend `estimateTrip` uses `tripService.estimateTrip` which calls `mapsService.calculateRoute`.
-                        // However, the current `TripEstimateResponse` only has distance/fare.
+                        // Use server distance if reasonable, else rely on Route API
+                        if (result.distance > 0) {
+                            currentDistanceKm = result.distance // Backend returns km, no need to divide
+                            val distanceStr = String.format("%.2f km", currentDistanceKm)
+                            binding.tvDistance.text = distanceStr
+                        }
                         
-                        // Let's call calculateRoute separately for the polyline or update estimateTrip.
-                        // For now, I'll call calculateRoute just once to get the path, then use estimate for price.
-                        fetchPathAndDetails()
-
                         finalPrice = result.fare
-                        
-                        // NEW: Update Distance Display
-                        val distanceStr = String.format("%.2f km", currentDistanceKm)
-                        binding.tvDistance.text = distanceStr
-
                         updatePriceUI(result)
                     }
                 } else {
                     Log.e("API_ESTIMATE", "Error: ${response.code()}")
+                    // Fallback to local calculation using Route distance (if Route API succeeded)
+                     calculatePriceLocally()
                 }
             }
             override fun onFailure(call: Call<TripEstimateResponse>, t: Throwable) {
                 binding.btnConfirmBooking.isEnabled = true
-                binding.btnConfirmBooking.text = "Lỗi kết nối"
+                // binding.btnConfirmBooking.text = "Lỗi kết nối" // Don't block button, use fallback
+                Toast.makeText(this@BookingActivity, "Lỗi báo giá: ${t.message}. Dùng giá tạm tính.", Toast.LENGTH_SHORT).show()
+                calculatePriceLocally()
             }
         })
     }
@@ -291,10 +291,22 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
                             binding.btnConfirmBooking.text = "Lỗi kết nối"
                             Toast.makeText(this@BookingActivity, "Không nhận được dữ liệu từ server", Toast.LENGTH_SHORT).show()
                         }
-                    } else {
-                        Log.e("ROUTE_API", "HTTP error: ${response.code()}")
-                        binding.btnConfirmBooking.text = "Lỗi kết nối"
-                        Toast.makeText(this@BookingActivity, "Lỗi Server: ${response.code()}", Toast.LENGTH_SHORT).show()
+                        
+                        val durationText = data.duration.text
+                        binding.tvDurationBike.text = "$durationText • 1 người"
+                        binding.tvDurationCar.text = "$durationText • 4 người"
+                        binding.tvDurationPremium.text = "$durationText • 7 người"
+
+                        // NEW: Update Distance from Route API as redundant source
+                        if (data.distance.value > 0) {
+                            currentDistanceKm = data.distance.value / 1000.0
+                            binding.tvDistance.text = String.format("%.2f km", currentDistanceKm)
+                            
+                            // Trigger local recalc if price is 0 (i.e. estimate hasn't finished yet or failed)
+                            if (finalPrice == 0.0) {
+                                calculatePriceLocally()
+                            }
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e("ROUTE_API", "Exception parsing response: ${e.javaClass.simpleName}: ${e.message}", e)
@@ -384,7 +396,7 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
         // Tính giá hiển thị cho từng loại (giữ UI của bạn)
         val priceBike = 12000.0 + (currentDistanceKm * 5000.0)
         val priceCar = 25000.0 + (currentDistanceKm * 12000.0)
-        val pricePremium = 50000.0 + (currentDistanceKm * 20000.0)
+        val pricePremium = 30000.0 + (currentDistanceKm * 15000.0) // Updated to match server config
 
         binding.tvPriceBike.text = "${formatter.format(priceBike)}đ"
         binding.tvPriceCar.text = "${formatter.format(priceCar)}đ"
@@ -395,7 +407,35 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
             "RideGo Car" -> priceCar
             else -> pricePremium
         }
-        binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(finalPrice)}đ"
+
+        // Apply Discount Locally
+        var discountAmount = 0.0
+        if (!selectedDiscountId.isNullOrEmpty()) {
+            val promo = myPromotions.find { it.id == selectedDiscountId }
+            if (promo != null) {
+                if (promo.type == "PERCENT") {
+                    discountAmount = finalPrice * (promo.value / 100.0)
+                    if (promo.maxDiscount > 0 && discountAmount > promo.maxDiscount) {
+                        discountAmount = promo.maxDiscount
+                    }
+                } else {
+                    discountAmount = promo.value
+                }
+                
+                // Ensure non-negative
+                if (discountAmount > finalPrice) discountAmount = finalPrice
+            }
+        }
+        
+        finalPrice -= discountAmount
+
+        if (discountAmount > 0) {
+            binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(finalPrice)}đ (KM: -${formatter.format(discountAmount)}đ)"
+            binding.tvSelectPromotion.text = selectedDiscountCode ?: "Đã chọn"
+        } else {
+            binding.btnConfirmBooking.text = "Đặt xe • ${formatter.format(finalPrice)}đ"
+            binding.tvSelectPromotion.text = " Ưu đãi"
+        }
     }
 
     private fun createBookingViaServer() {
@@ -441,6 +481,12 @@ class BookingActivity : AppCompatActivity(), OnMapReadyCallback {
                         nextIntent.putExtra("DROPOFF_LAT", dropoffLat)
                         nextIntent.putExtra("DROPOFF_LNG", dropoffLng)
                         nextIntent.putExtra("POLYLINE", currentPolylineString)
+                        
+                        // Pass pricing and vehicle info
+                        nextIntent.putExtra("DISTANCE", currentDistanceKm)
+                        nextIntent.putExtra("PRICE", finalPrice)
+                        nextIntent.putExtra("VEHICLE_TYPE", selectedVehicleType)
+                        
                         startActivity(nextIntent)
                         finish() // Kết thúc màn hình booking sau khi chuyển sang tìm tài xế
                     } else {

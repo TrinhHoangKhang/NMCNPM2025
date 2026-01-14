@@ -80,6 +80,7 @@ class ProfileActivity : AppCompatActivity() {
         super.onResume()
         // Reload thông tin user khi quay lại (sau khi đổi ảnh đại diện)
         loadUserInfo()
+        fetchRealStats()
     }
 
     private fun loadUserInfo() {
@@ -106,6 +107,20 @@ class ProfileActivity : AppCompatActivity() {
                                 binding.tvUserName.text = name
                                 binding.tvUserPhone.text = phone
                                 
+                                // NEW: Bind Real Stats
+                                val rating = document.getDouble("rating") ?: 5.0
+                                val tripCount = document.getLong("tripCount") ?: 0
+                                val points = document.getLong("points") ?: 0
+                                val voucherCount = document.getLong("voucherCount") ?: 0
+
+                                binding.tvRating.text = String.format("★ %.1f", rating)
+                                binding.tvRideCount.text = "$tripCount"
+                                binding.tvPoints.text = java.text.DecimalFormat("#,###").format(points)
+                                binding.tvVoucherCount.text = "$voucherCount"
+
+                                // Update Promo Option text too
+                                setupOption(binding.optPromo, "Ưu đãi của tôi", R.drawable.ic_gift_icon_profile, "$voucherCount")
+                                
                                 // Hiển thị chữ cái đầu làm avatar
                                 binding.tvUserAvatar.text = name.first().uppercase()
                                 
@@ -130,6 +145,12 @@ class ProfileActivity : AppCompatActivity() {
                                 binding.tvUserName.text = name
                                 binding.tvUserPhone.text = phone
                                 binding.tvUserAvatar.text = name.first().uppercase()
+                                
+                                // Default Stats for new/missing users
+                                binding.tvRating.text = "★ 5.0"
+                                binding.tvRideCount.text = "0"
+                                binding.tvPoints.text = "0"
+                                binding.tvVoucherCount.text = "0"
                             }
                         }
                         .addOnFailureListener {
@@ -140,6 +161,11 @@ class ProfileActivity : AppCompatActivity() {
                             binding.tvUserName.text = name
                             binding.tvUserPhone.text = phone
                             binding.tvUserAvatar.text = name.first().uppercase()
+                            
+                            binding.tvRating.text = "★ 5.0"
+                            binding.tvRideCount.text = "0"
+                            binding.tvPoints.text = "0"
+                            binding.tvVoucherCount.text = "0"
                         }
                 }
                 .addOnFailureListener {
@@ -356,5 +382,34 @@ class ProfileActivity : AppCompatActivity() {
             messages.add(com.example.ridego.data.model.ChatMessage(errorMsg, false))
             adapter.notifyItemInserted(messages.size - 1)
         }
+    }
+    private fun fetchRealStats() {
+        if (auth.currentUser == null) return
+
+        // 1. Fetch Trip Count
+        com.example.ridego.data.api.RetrofitClient.instance.getTripHistory().enqueue(object : retrofit2.Callback<List<com.example.ridego.data.model.RideHistory>> {
+            override fun onResponse(call: retrofit2.Call<List<com.example.ridego.data.model.RideHistory>>, response: retrofit2.Response<List<com.example.ridego.data.model.RideHistory>>) {
+                if (response.isSuccessful) {
+                    val list = response.body() ?: emptyList()
+                    val count = list.size
+                    binding.tvRideCount.text = "$count"
+                }
+            }
+            override fun onFailure(call: retrofit2.Call<List<com.example.ridego.data.model.RideHistory>>, t: Throwable) {}
+        })
+
+        // 2. Fetch Voucher Count
+        com.example.ridego.data.api.RetrofitClient.instance.getDiscounts().enqueue(object : retrofit2.Callback<List<com.example.ridego.data.model.Promotion>> {
+            override fun onResponse(call: retrofit2.Call<List<com.example.ridego.data.model.Promotion>>, response: retrofit2.Response<List<com.example.ridego.data.model.Promotion>>) {
+                if (response.isSuccessful) {
+                    val list = response.body() ?: emptyList()
+                    val count = list.size
+                    binding.tvVoucherCount.text = "$count"
+                    // Update the option row as well
+                    setupOption(binding.optPromo, "Ưu đãi của tôi", R.drawable.ic_gift_icon_profile, "$count")
+                }
+            }
+            override fun onFailure(call: retrofit2.Call<List<com.example.ridego.data.model.Promotion>>, t: Throwable) {}
+        })
     }
 }

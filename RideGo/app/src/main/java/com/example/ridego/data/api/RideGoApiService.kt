@@ -67,6 +67,9 @@ interface RideGoApiService {
 
     @POST("api/trips/{id}/rate")
     fun rateTrip(@Path("id") id: String, @Body request: RateTripRequest): Call<RateTripResponse>
+
+    @GET("api/chat/conversations")
+    fun getConversations(): Call<List<ConversationResponse>>
 }
 
     @GET("api/trips/history")

@@ -129,6 +129,14 @@ class DiscountService {
         return new Discount(doc.id, doc.data());
     }
 
+    // Delete discount from user collection after use
+    async markDiscountAsUsed(userId, discountId) {
+        if (!userId || !discountId) return;
+        const ref = db.collection('users').doc(userId).collection('claimedDiscounts').doc(discountId);
+        await ref.delete();
+        console.log(`Removed used discount ${discountId} from user ${userId}`);
+    }
+
     // New: Seed 12 default discount types
     async seedDefaults() {
         console.log("Checking and seeding default discounts...");

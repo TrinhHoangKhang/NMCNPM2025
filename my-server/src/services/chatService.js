@@ -68,6 +68,44 @@ class ChatService extends EventEmitter {
 
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
+
+    // 4. Get All Conversations for User
+    async getConversations(userId) {
+        // Query "conversations" where "participants" array-contains userId
+        const snapshot = await db.collection('conversations')
+            .where('participants', 'array-contains', userId)
+            .orderBy('updatedAt', 'desc') // Ensure composite index exists or remove order
+            .limit(20)
+            .get();
+
+        if (snapshot.empty) return [];
+
+        const conversations = [];
+        for (const doc of snapshot.docs) {
+            const data = doc.data();
+            const partnerId = data.participants.find(p => p !== userId);
+
+            // Get Partner Name
+            let partnerName = "Unknown";
+            let avatar = null;
+            if (partnerId) {
+                const userDoc = await db.collection('users').doc(partnerId).get();
+                if (userDoc.exists) {
+                    partnerName = userDoc.data().name || "Unknown";
+                    avatar = userDoc.data().avatarUrl || null;
+                }
+            }
+
+            conversations.push({
+                partnerId: partnerId || "",
+                partnerName: partnerName,
+                lastMessage: data.lastMessage || "",
+                lastMessageTime: data.updatedAt || "",
+                avatar: avatar
+            });
+        }
+        return conversations;
+    }
 }
 
 export default new ChatService();

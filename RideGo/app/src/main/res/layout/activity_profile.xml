@@ -142,6 +142,7 @@
                     android:orientation="horizontal">
 
                     <TextView
+                        android:id="@+id/tvRating"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="★ 4.9"
@@ -200,9 +201,10 @@
                             android:src="@drawable/ic_car_logo"/> </FrameLayout>
 
                     <TextView
+                        android:id="@+id/tvRideCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="142"
+                        android:text="0"
                         android:textStyle="bold"
                         android:textColor="@color/black"
                         android:layout_marginTop="8dp"
@@ -232,7 +234,7 @@
                     android:gravity="center"
                     android:orientation="vertical">
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⭐" android:textSize="24sp"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1,250" android:textStyle="bold" android:textColor="@color/black" android:layout_marginTop="4dp" android:textSize="16sp"/>
+                    <TextView android:id="@+id/tvPoints" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textStyle="bold" android:textColor="@color/black" android:layout_marginTop="4dp" android:textSize="16sp"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Điểm\ntích lũy" android:gravity="center" android:textColor="#757575" android:textSize="12sp" android:layout_marginTop="4dp"/>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
@@ -251,7 +253,7 @@
                     android:gravity="center"
                     android:orientation="vertical">
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="🎫" android:textSize="24sp"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="5" android:textStyle="bold" android:textColor="@color/black" android:layout_marginTop="4dp" android:textSize="16sp"/>
+                    <TextView android:id="@+id/tvVoucherCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textStyle="bold" android:textColor="@color/black" android:layout_marginTop="4dp" android:textSize="16sp"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Voucher" android:textColor="#757575" android:textSize="12sp" android:layout_marginTop="4dp"/>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>

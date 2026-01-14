@@ -11,6 +11,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import android.content.Intent
 import com.example.ridego.ui.rider.location.SetLocationActivity
 import com.example.ridego.ui.rider.location.SearchDestinationActivity
+import androidx.recyclerview.widget.RecyclerView
+import android.widget.ImageView
+import android.widget.TextView
+import com.example.ridego.R
+import com.example.ridego.ui.chat.ChatActivity
+import com.example.ridego.ui.chat.ChatListActivity
 
 class HomeFragment : Fragment() {
 
@@ -52,6 +58,42 @@ class HomeFragment : Fragment() {
         binding.tvSeeAllLocations.setOnClickListener {
             val intent = Intent(requireContext(), com.example.ridego.ui.favorite.FavoriteLocationsActivity::class.java)
             startActivity(intent)
+        }
+        
+        setupMessagesSection()
+    }
+    
+    private fun setupMessagesSection() {
+        val mockMessages = mutableListOf<MessagePreview>() // Will fill with real data
+        val adapter = MessagePreviewAdapter(mockMessages) { item ->
+            val intent = Intent(requireContext(), ChatActivity::class.java)
+            intent.putExtra("PARTNER_ID", item.id)
+            intent.putExtra("PARTNER_NAME", item.name)
+            startActivity(intent)
+        }
+        binding.rvRecentMessages.adapter = adapter
+        
+        com.example.ridego.data.api.RetrofitClient.instance.getConversations().enqueue(object : retrofit2.Callback<List<com.example.ridego.data.model.ConversationResponse>> {
+             override fun onResponse(call: retrofit2.Call<List<com.example.ridego.data.model.ConversationResponse>>, response: retrofit2.Response<List<com.example.ridego.data.model.ConversationResponse>>) {
+                 if (response.isSuccessful && response.body() != null) {
+                     mockMessages.clear()
+                     val list = response.body()!!
+                     val limit = if (list.size > 3) 3 else list.size
+                     for (i in 0 until limit) {
+                         val item = list[i]
+                         mockMessages.add(MessagePreview(item.partnerId, item.partnerName))
+                     }
+                     adapter.notifyDataSetChanged()
+                 }
+             }
+
+             override fun onFailure(call: retrofit2.Call<List<com.example.ridego.data.model.ConversationResponse>>, t: Throwable) {
+                 // Handle failure silently
+             }
+        })
+        
+        binding.tvSeeAllMessages.setOnClickListener {
+            startActivity(Intent(requireContext(), ChatListActivity::class.java))
         }
     }
     
@@ -257,4 +299,31 @@ class HomeFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+}
+
+data class MessagePreview(val id: String, val name: String)
+
+class MessagePreviewAdapter(
+    private val items: List<MessagePreview>,
+    private val onClick: (MessagePreview) -> Unit
+) : RecyclerView.Adapter<MessagePreviewAdapter.ViewHolder>() {
+
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val tvName: TextView = view.findViewById(R.id.tvName)
+        val imgAvatar: ImageView = view.findViewById(R.id.imgAvatar)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_message_preview, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val item = items[position]
+        holder.tvName.text = item.name
+        holder.itemView.setOnClickListener { onClick(item) }
+    }
+
+    override fun getItemCount() = items.size
 }

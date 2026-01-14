@@ -157,14 +157,47 @@ class TripController {
     async getTripEstimate(req, res) {
         try {
             const { pickupLocation, dropoffLocation, vehicleType, distance } = req.body;
-            const estimate = await tripService.estimateTrip(
+
+            // Calculate for the specific requested type first (backward compatibility)
+            const mainEstimate = await tripService.estimateTrip(
                 pickupLocation,
                 dropoffLocation,
                 vehicleType,
                 distance,
-                req.body.discountId // Pass discountId if present
+                req.body.discountId
             );
-            res.status(200).json(estimate);
+
+            // NEW: Calculate for all types for comparison
+            const allTypes = ['MOTORBIKE', '4 SEAT', '7 SEAT'];
+            const estimates = [];
+
+            // We can reuse the distance/duration from mainEstimate to save API calls 
+            // if we trust mapsService returns same distance for all (approx true for driving)
+            // Or we can recalculate. For performance, let's reuse distance if available.
+            const distKm = parseFloat(mainEstimate.distance) / 1000;
+
+            for (const type of allTypes) {
+                const est = await tripService.estimateTrip(
+                    pickupLocation,
+                    dropoffLocation,
+                    type,
+                    distKm, // Pass override so we don't call Google Maps 3 times
+                    req.body.discountId
+                );
+                estimates.push({
+                    vehicleType: type,
+                    fare: est.fare,
+                    originalFare: est.originalFare
+                });
+            }
+
+            // Merge estimates into response
+            const response = {
+                ...mainEstimate,
+                allEstimates: estimates
+            };
+
+            res.status(200).json(response);
         } catch (error) {
             res.status(400).json({ error: error.message });
         }

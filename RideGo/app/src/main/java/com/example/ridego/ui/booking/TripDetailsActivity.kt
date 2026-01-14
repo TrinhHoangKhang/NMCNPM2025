@@ -129,6 +129,7 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
                             
                             val formatter = DecimalFormat("#,###")
                             binding.tvPrice.text = "${formatter.format(trip.fare)}đ"
+                            currentFare = trip.fare
                             
                             // Map bounds
                             val pickup = LatLng(trip.pickupLocation?.lat ?: 0.0, trip.pickupLocation?.lng ?: 0.0)
@@ -136,6 +137,12 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
                             
                             if (pickup.latitude != 0.0 && dropoff.latitude != 0.0) {
                                 updateMap(pickup, dropoff)
+                            }
+                            
+                            // DRAW ROUTE
+                            val polyline = trip.path?.coordinates
+                            if (!polyline.isNullOrEmpty()) {
+                                drawRoute(polyline)
                             }
                             
                             // BUG FIX: Update status UI immediately based on fetched data
@@ -237,9 +244,21 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
         })
     }
 
+    private var currentFare: Double = 0.0
+
+    // ... (Inside onCreate or setupUI) ...
+    // Add logic to save fare when setting price text
+    
     private fun updateStatusUI(status: String) {
         val btnChat = binding.root.findViewById<android.view.View>(R.id.btnChat)
         val btnCall = binding.root.findViewById<android.view.View>(R.id.btnCall)
+        val btnPay = binding.root.findViewById<android.widget.Button>(R.id.btnPay)
+
+        // Reset Visibilities
+        binding.btnCancelTrip.visibility = android.view.View.GONE
+        binding.btnRateTrip.visibility = android.view.View.GONE
+        binding.root.findViewById<android.view.View>(R.id.btnGetBill)?.visibility = android.view.View.GONE
+        btnPay?.visibility = android.view.View.GONE
 
         when(status) {
             "REQUESTED" -> {
@@ -259,27 +278,29 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
             "IN_PROGRESS" -> {
                  binding.tvTripStatus.text = "Đang trong chuyến đi"
                  binding.tvTripStatus.setTextColor(Color.parseColor("#2196F3")) // Blue
-                 binding.btnCancelTrip.visibility = android.view.View.GONE // Cannot cancel during trip usually
                  btnChat?.visibility = android.view.View.VISIBLE
                  btnCall?.visibility = android.view.View.VISIBLE
             }
             "ARRIVED" -> {
                  binding.tvTripStatus.text = "Đã đến nơi - Vui lòng thanh toán"
                  binding.tvTripStatus.setTextColor(Color.parseColor("#FF9800")) // Orange
-                 binding.btnCancelTrip.visibility = android.view.View.GONE
                  btnChat?.visibility = android.view.View.VISIBLE
                  btnCall?.visibility = android.view.View.VISIBLE
+                 // Show Pay Button
+                 btnPay?.visibility = android.view.View.VISIBLE
+                 btnPay?.setOnClickListener { 
+                     showPaymentDialog(currentFare) 
+                 }
             }
             "PAYMENT_PROCESSING" -> {
                  binding.tvTripStatus.text = "Đang xử lý thanh toán..."
                  binding.tvTripStatus.setTextColor(Color.parseColor("#FF9800"))
-                 binding.btnCancelTrip.visibility = android.view.View.GONE
                  btnChat?.visibility = android.view.View.VISIBLE
+                 btnPay?.visibility = android.view.View.GONE
             }
             "COMPLETED" -> {
                  binding.tvTripStatus.text = "Chuyến đi hoàn tất"
                  binding.tvTripStatus.setTextColor(Color.parseColor("#4CAF50"))
-                 binding.btnCancelTrip.visibility = android.view.View.GONE
                  binding.btnRateTrip.visibility = android.view.View.VISIBLE
                  binding.btnRateTrip.setOnClickListener { showRatingDialog() }
                  
@@ -289,18 +310,10 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                  btnChat?.visibility = android.view.View.GONE
                  btnCall?.visibility = android.view.View.GONE
-                 
-                 // Check if we should auto-show rating (e.g. valid timestamp or flag). 
-                 // For now, simple call is fine, but maybe verify if not already rated?
-                 // Current API rateTrip doesn't block re-rating in UI, backend might.
-                 // We'll rely on user click mostly, or auto-show ONCE if we tracked it.
-                 // The 'trip_completed' event calls this, so it auto-shows on real-time completion.
-                 // On re-open (fetchTripDetails), it will just show button. That's good behavior.
             }
             "CANCELLED" -> {
                  binding.tvTripStatus.text = "Đã hủy"
                  binding.tvTripStatus.setTextColor(Color.RED)
-                 binding.btnCancelTrip.visibility = android.view.View.GONE
                  binding.btnRateTrip.visibility = android.view.View.VISIBLE
                  binding.btnRateTrip.setOnClickListener { showRatingDialog() }
                  
@@ -467,5 +480,60 @@ class TripDetailsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
             override fun onFailure(call: Call<TripResponse>, t: Throwable) {}
         })
+    }
+    private fun drawRoute(encodedPolyline: String) {
+        if (mMap == null || encodedPolyline.isEmpty()) return
+        
+        try {
+            val polyList = decodePoly(encodedPolyline)
+            val polyOptions = com.google.android.gms.maps.model.PolylineOptions()
+                .addAll(polyList)
+                .width(10f)
+                .color(Color.BLUE)
+                .geodesic(true)
+            
+            mMap?.addPolyline(polyOptions)
+            
+            // Adjust camera to fit route if needed, currently done by updateMap markers
+            // But if path is long, bounds should theoretically include the path.
+            // For now, start/end bounds is usually sufficient.
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun decodePoly(encoded: String): List<LatLng> {
+        val poly = ArrayList<LatLng>()
+        var index = 0
+        val len = encoded.length
+        var lat = 0
+        var lng = 0
+
+        while (index < len) {
+            var b: Int
+            var shift = 0
+            var result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lat += dlat
+
+            shift = 0
+            result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lng += dlng
+
+            val p = LatLng(lat.toDouble() / 1E5, lng.toDouble() / 1E5)
+            poly.add(p)
+        }
+        return poly
     }
 }

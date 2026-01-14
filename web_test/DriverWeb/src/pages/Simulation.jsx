@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { useSocket } from "@/context";
 import { tripService } from "@/services/tripService";
 import { useDriver } from "@/context";
-import { Play, Pause, Square, MapPin, RotateCcw, Navigation, CheckCircle2 } from "lucide-react";
+import { Play, Pause, Square, MapPin, RotateCcw, Navigation, CheckCircle2, Send } from "lucide-react";
 
 // --- Leaflet Icon Fix ---
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -136,16 +136,20 @@ export default function Simulation() {
         } else if (mode === 'SET_DRIVER') {
             const newLoc = { lat: latlng.lat, lng: latlng.lng };
             setDriverLoc(newLoc);
-
-            // Immediately emit location update
-            if (socket && currentTrip) {
-                socket.emit('update_location', {
-                    tripId: currentTrip.id,
-                    lat: newLoc.lat,
-                    lng: newLoc.lng
-                });
-            }
+            // Removed auto-emit. User must click "Update Location" manually.
             setMode(null);
+        }
+    };
+
+    const sendLocationUpdate = () => {
+        if (socket && currentTrip && driverLoc) {
+            socket.emit('update_location', {
+                tripId: currentTrip.id,
+                lat: driverLoc.lat,
+                lng: driverLoc.lng
+            });
+            // Show a simple alert or console log for now, since we don't have a toast lib setup in this file context visible
+            console.log("Location manual update sent");
         }
     };
 
@@ -284,9 +288,19 @@ export default function Simulation() {
                                 onClick={() => setMode(mode === 'SET_DRIVER' ? null : 'SET_DRIVER')}
                             >
                                 <Navigation className="h-4 w-4" />
-                                Set Current Location
+                                Set Proposed Location
                             </Button>
-                            <p className="text-xs text-slate-500">Click map to instantly jump to location</p>
+
+                            <Button
+                                variant="destructive"
+                                className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700"
+                                onClick={sendLocationUpdate}
+                                disabled={!driverLoc}
+                            >
+                                <Send className="h-4 w-4" />
+                                Update Position to Server
+                            </Button>
+                            <p className="text-xs text-slate-500">1. Click "Set Proposed". 2. Click Map. 3. Click "Update Position"</p>
                         </div>
 
                         <Button onClick={fetchRoute} disabled={!startLoc || !endLoc} className="w-full mt-2">

@@ -19,7 +19,19 @@ class TripService {
 
     // Helper: Calculate Fare with Dynamic Pricing
     _calculateFare(vehicleType, distanceKm) {
-        const rates = pricingConfig.rates[vehicleType] || pricingConfig.rates['Car 4-Seat'];
+        // RELOAD CONFIG DYNAMICALLY TO ENSURE UPDATES APPLY
+        const pricingConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/pricing.json'), 'utf-8'));
+
+        console.log(`DEBUG: Calculating fare for ${vehicleType}, dist=${distanceKm}`);
+        console.log(`DEBUG: Available keys: ${Object.keys(pricingConfig.rates).join(', ')}`);
+
+        const rates = pricingConfig.rates[vehicleType] || pricingConfig.rates['4 SEAT'];
+
+        if (!rates) {
+            console.error(`ERROR: No rates found for ${vehicleType} and fallback '4 SEAT' failed.`);
+            return { base: 0, distanceFare: 0, platformFee: 0, total: 0 };
+        }
+
         const base = rates.base;
         let distanceFare = distanceKm * rates.perKm;
 
@@ -51,6 +63,8 @@ class TripService {
 
         const platformFee = (base + distanceFare) * (pricingConfig.platformFeePercent || 0.1);
         const totalFare = base + distanceFare + platformFee;
+
+        console.log(`DEBUG: Result for ${vehicleType}: ${totalFare}`);
 
         return {
             base: Math.round(base / 1000) * 1000,
@@ -197,6 +211,16 @@ class TripService {
         const newTrip = new Trip(tripRef.id, tripData);
         await tripRef.set(newTrip.toJSON());
 
+        // CONSUME DISCOUNT: Remove from user's collection
+        if (discountId && discountAmount > 0) {
+            try {
+                await discountService.markDiscountAsUsed(riderId, discountId);
+            } catch (err) {
+                console.error("Failed to remove used discount from user:", err);
+                // Non-blocking error, trip is still created
+            }
+        }
+
         return newTrip;
     }
 
@@ -206,8 +230,10 @@ class TripService {
         let durationMin = 0;
         let routeData = null;
 
-        const rates = pricingConfig.rates[vehicleType] || pricingConfig.rates['Car 4-Seat'];
-        const avgSpeed = rates.avgSpeedKmH || 30;
+        // RELOAD CONFIG
+        const pricingConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/pricing.json'), 'utf-8'));
+        const rates = pricingConfig.rates[vehicleType] || pricingConfig.rates['4 SEAT'];
+        const avgSpeed = rates?.avgSpeedKmH || 30;
 
         if (distanceOverride) {
             distanceKm = parseFloat(distanceOverride);

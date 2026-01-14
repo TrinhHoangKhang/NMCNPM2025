@@ -25,6 +25,8 @@ class ChatActivity : AppCompatActivity() {
     private val messages = mutableListOf<ChatMessage>()
     private lateinit var adapter: ChatAdapter
     private val currentUserId = FirebaseAuth.getInstance().uid
+    private var partnerName: String? = null
+    private val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +34,8 @@ class ChatActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         partnerId = intent.getStringExtra("PARTNER_ID")
+        partnerName = intent.getStringExtra("PARTNER_NAME") // Try to get name if passed
+        
         if (partnerId.isNullOrEmpty()) {
             Toast.makeText(this, "Error: No user to chat with", Toast.LENGTH_SHORT).show()
             finish()
@@ -42,6 +46,47 @@ class ChatActivity : AppCompatActivity() {
         setupListeners()
         loadHistory()
         setupSocketListener()
+        
+        // Fetch name if missing, then save to Firestore
+        if (partnerName == null) {
+            fetchPartnerName()
+        } else {
+             saveChatPartnerToFirestore(partnerName!!, "Đã xem", System.currentTimeMillis())
+        }
+    }
+    
+    private fun fetchPartnerName() {
+         com.example.ridego.data.api.RetrofitClient.instance.getDriver(partnerId!!).enqueue(object : Callback<com.example.ridego.data.model.DriverProfileResponse> {
+             override fun onResponse(call: Call<com.example.ridego.data.model.DriverProfileResponse>, response: Response<com.example.ridego.data.model.DriverProfileResponse>) {
+                 if (response.isSuccessful && response.body() != null) {
+                     partnerName = response.body()!!.name
+                     saveChatPartnerToFirestore(partnerName!!, "Đã xem", System.currentTimeMillis())
+                 }
+             }
+             override fun onFailure(call: Call<com.example.ridego.data.model.DriverProfileResponse>, t: Throwable) {
+                 // Ignore
+             }
+         })
+    }
+    
+    private fun saveChatPartnerToFirestore(name: String, lastMsg: String, timestamp: Long) {
+        if (currentUserId == null) return
+        
+        db.collection("uid_mapping").document(currentUserId).get().addOnSuccessListener { mapping ->
+             val targetId = mapping.getString("customUserId") ?: currentUserId
+             
+             val chatData = mapOf(
+                 "partnerId" to partnerId,
+                 "partnerName" to name,
+                 "lastMessage" to lastMsg,
+                 "lastMessageTime" to timestamp,
+                 "avatarUrl" to "" // Can be added later
+             )
+             
+             db.collection("users").document(targetId)
+                 .collection("chatPartners").document(partnerId!!)
+                 .set(chatData, com.google.firebase.firestore.SetOptions.merge())
+        }
     }
 
     private fun setupRecyclerView() {
@@ -94,6 +139,10 @@ class ChatActivity : AppCompatActivity() {
         adapter.notifyItemInserted(messages.size - 1)
         scrollToBottom()
         binding.etMessage.text.clear()
+        
+        // Update Last Message in Firestore
+        val nameToSave = partnerName ?: "Người dùng"
+        saveChatPartnerToFirestore(nameToSave, text, System.currentTimeMillis())
 
         val request = SendMessageRequest(partnerId!!, text)
         RetrofitClient.instance.sendChatMessage(request).enqueue(object : Callback<ChatHistoryItem> {
