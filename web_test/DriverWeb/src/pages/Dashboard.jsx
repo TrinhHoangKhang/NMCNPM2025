@@ -143,7 +143,7 @@ export default function Dashboard() {
           {/* SECTION 1: CURRENT ACTIVITY (Active Trip OR None) */}
           <section className="space-y-4">
             <h2 className="text-xl font-bold text-slate-900">Current Activity</h2>
-            {currentTrip ? (
+            {currentTrip && currentTrip.id ? (
               <Card className="border-l-4 border-l-blue-500 shadow-md">
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-start">
@@ -151,7 +151,7 @@ export default function Dashboard() {
                       <CardTitle className="text-xl text-blue-700 flex items-center gap-2">
                         {currentTrip.status === 'ACCEPTED' ? 'Heading to Pickup' : (currentTrip.status === 'IN_PROGRESS' ? 'Trip in Progress' : currentTrip.status)}
                       </CardTitle>
-                      <CardDescription>Trip ID: #{currentTrip.id.slice(0, 8)}</CardDescription>
+                      <CardDescription>Trip ID: #{currentTrip?.id?.slice(0, 8)}</CardDescription>
                     </div>
                     <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
                       {currentTrip.vehicleType}

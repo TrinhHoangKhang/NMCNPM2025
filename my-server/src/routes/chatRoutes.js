@@ -56,7 +56,8 @@ router.use(checkAuth);
  *       200:
  *         description: Chat history
  */
-router.post('/send', chatController.sendMessage);
+router.get('/history', chatController.getConversations);
 router.get('/history/:friendId', chatController.getHistory);
+router.post('/send', chatController.sendMessage);
 
 export default router;

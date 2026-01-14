@@ -228,6 +228,7 @@
         app:layout_constraintTop_toBottomOf="@+id/layoutInfo">
 
         <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnReorder"
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
@@ -240,6 +241,7 @@
             android:textStyle="bold"/>
 
         <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnGetBill"
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"

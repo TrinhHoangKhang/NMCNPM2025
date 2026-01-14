@@ -1,0 +1,33 @@
+{
+    "platformFeePercent": 0.1,
+    "commissionPercent": 0.2,
+    "rates": {
+        "MOTORBIKE": {
+            "base": 12000,
+            "perKm": 5000,
+            "avgSpeedKmH": 35
+        },
+        "4 SEAT": {
+            "base": 25000,
+            "perKm": 12000,
+            "avgSpeedKmH": 25
+        },
+        "7 SEAT": {
+            "base": 30000,
+            "perKm": 15000,
+            "avgSpeedKmH": 20
+        }
+    },
+    "peakHours": [
+        {
+            "start": "06:00",
+            "end": "08:00",
+            "multiplier": 1.5
+        },
+        {
+            "start": "18:00",
+            "end": "20:00",
+            "multiplier": 1.5
+        }
+    ]
+}

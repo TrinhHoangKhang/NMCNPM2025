@@ -1,4 +1,5 @@
 import driverService from '../services/driverService.js';
+import userService from '../services/userService.js';
 
 export const getDriver = async (req, res) => {
     try {
@@ -6,8 +7,23 @@ export const getDriver = async (req, res) => {
         if (id === 'me' && req.user) {
             id = req.user.uid;
         }
-        const driver = await driverService.getDriver(id);
-        res.status(200).json({ success: true, data: driver });
+
+        try {
+            const driver = await driverService.getDriver(id);
+            res.status(200).json({ success: true, data: driver });
+        } catch (driverError) {
+            // Fallback: Try fetching as a regular user
+            // This handles cases where they are in the ranking/auth but missing driver doc
+            try {
+                const user = await userService.getUser(id);
+                // Return user data but maybe indicate they are not a full driver?
+                // For now, just return what we have so profile works
+                res.status(200).json({ success: true, data: { ...user, vehicle: null, isPartial: true } });
+            } catch (userError) {
+                // Determine which error to return (likely the original one is more relevant if neither found)
+                res.status(404).json({ success: false, error: "Driver not found" });
+            }
+        }
     } catch (error) {
         res.status(404).json({ success: false, error: error.message });
     }

@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
+    <!-- Map Full Screen -->
+    <fragment
+        android:id="@+id/mapFragment"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Top Bar: Back & Status -->
+    <RelativeLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:paddingHorizontal="16dp">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_white_rounded_32dp"
+            android:padding="8dp"
+            android:src="@drawable/abc_ic_ab_back_material"
+            app:tint="#000000"
+            android:elevation="4dp"/>
+
+       <TextView
+           android:id="@+id/tvTripStatus"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:text="Tài xế đang đến"
+           android:layout_centerHorizontal="true"
+           android:layout_centerVertical="true"
+           android:paddingHorizontal="16dp"
+           android:paddingVertical="8dp"
+           android:background="@drawable/bg_white_rounded_border"
+           android:elevation="4dp"
+           android:textStyle="bold"
+           android:textColor="#4CAF50"/>
+    </RelativeLayout>
+
+    <!-- Driver & Trip Info Bottom Sheet -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Driver Info -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingBottom="16dp"
+                android:background="@drawable/bg_border_bottom">
+
+                <ImageView
+                    android:id="@+id/imgDriverAvatar"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/ic_driver_placeholder"
+                    android:background="@drawable/bg_circle_gray"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:orientation="vertical">
+                    
+                    <TextView
+                        android:id="@+id/tvDriverName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Đang tải..."
+                        android:textStyle="bold"
+                        android:textSize="16sp"
+                        android:textColor="#000000"/>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="⭐ 4.9"
+                            android:textSize="12sp"
+                            android:textColor="#FFC107"
+                            android:textStyle="bold"/>
+                        <TextView
+                            android:id="@+id/tvVehicleInfo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=" • Honda Vision 59-X1"
+                            android:textSize="12sp"
+                            android:textColor="#757575"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Call/Chat Buttons -->
+                <ImageView
+                    android:id="@+id/btnChat"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/stat_notify_chat"
+                    app:tint="#4CAF50"
+                    android:background="@drawable/bg_circle_light_green"
+                    android:padding="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:clickable="true"
+                    android:focusable="true"/>
+                <ImageView
+                    android:id="@+id/btnCall"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@android:drawable/stat_sys_phone_call"
+                    app:tint="#2196F3"
+                    android:background="@drawable/bg_circle_light_blue"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"/>
+            </LinearLayout>
+
+            <!-- Trip Route Info -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_target_circle"
+                        app:tint="#4CAF50"/>
+                    <TextView
+                        android:id="@+id/tvPickup"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Điểm đón..."
+                        android:textSize="14sp"
+                        android:textColor="#333333"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:layout_marginStart="8dp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_location_pin"
+                        app:tint="#F44336"/>
+                    <TextView
+                        android:id="@+id/tvDropoff"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Điểm đến..."
+                        android:textSize="14sp"
+                        android:textColor="#333333"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:layout_marginStart="8dp"/>
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Price & Button -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="24dp"
+                android:gravity="center_vertical">
+                
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Thanh toán tiền mặt"
+                        android:textSize="12sp"
+                        android:textColor="#757575"/>
+                    <TextView
+                        android:id="@+id/tvPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0đ"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#000000"/>
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnCancelTrip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hủy chuyến"
+                    android:backgroundTint="#FFEBEE"
+                    android:textColor="#D32F2F"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"/>
+                
+                <Button
+                    android:id="@+id/btnGetBill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Chi tiết hóa đơn"
+                    android:backgroundTint="#2196F3"
+                    android:textColor="#FFFFFF"
+                    android:visibility="gone"
+                    android:layout_marginEnd="8dp"
+                    style="@style/Widget.MaterialComponents.Button"/>
+
+                <Button
+                    android:id="@+id/btnPay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Thanh toán"
+                    android:backgroundTint="#4CAF50"
+                    android:textColor="#FFFFFF"
+                    android:visibility="gone"
+                    android:layout_marginEnd="8dp"
+                    style="@style/Widget.MaterialComponents.Button"/>
+
+                <Button
+                    android:id="@+id/btnRateTrip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Đánh giá"
+                    android:backgroundTint="#FFC107"
+                    android:textColor="#FFFFFF"
+                    android:visibility="gone"
+                    style="@style/Widget.MaterialComponents.Button"/>
+            </LinearLayout>
+            
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+</RelativeLayout>

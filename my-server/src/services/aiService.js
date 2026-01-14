@@ -1,551 +1,217 @@
-// Legacy (Gemini) import kept for reference:
-// import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
 import tripService from './tripService.js';
 import Groq from 'groq-sdk';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 class AIService {
     constructor() {
-        // --- Legacy Gemini setup (commented out, kept for reference) ---
-        // if (!process.env.GEMINI_API_KEY) {
-        //     throw new Error('GEMINI_API_KEY is not set');
-        // }
-        // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        // this.model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-        // --- Current Groq setup ---
+        // --- Cấu hình Groq (Giữ nguyên con chat cũ) ---
         if (!process.env.GROQ_API_KEY) {
-            throw new Error('GROQ_API_KEY is not set');
+            throw new Error('GROQ_API_KEY is not set in .env');
         }
         this.groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
         this.modelName = 'llama-3.3-70b-versatile';
-        this.geocodingApiKey = process.env.GRAPHHOPPER_API_KEY;
-        this.geocodingBaseUrl = 'https://graphhopper.com/api/1/geocode';
+
+        // --- Cấu hình Google Maps Geocoding (Thay thế GraphHopper) ---
+        this.googleApiKey = process.env.GOOGLE_MAPS_API_KEY; // Dùng key này
+        this.geocodingBaseUrl = 'https://maps.googleapis.com/maps/api/geocode/json';
     }
 
     /**
-     * Geocode a location name to get coordinates
-     * @param {string} locationName - The name of the location to geocode
-     * @returns {Promise<{lat: number, lng: number}>} Coordinates
+     * Tìm tọa độ bằng Google Maps API
+     * @param {string} locationName - Tên địa điểm
+     * @param {Object} userLocation - Vị trí hiện tại {lat, lng} để tìm chính xác hơn
      */
-    async geocodeLocation(locationName) {
-        // Try GraphHopper first if API key exists
-        if (this.geocodingApiKey) {
-            try {
-                const response = await axios.get(this.geocodingBaseUrl, {
-                    params: {
-                        q: locationName,
-                        locale: 'vi',
-                        key: this.geocodingApiKey,
-                        limit: 1
-                    },
-                    timeout: 5000
-                });
-
-                const hits = response.data?.hits;
-                if (hits && hits.length > 0) {
-                    const point = hits[0].point;
-                    return { lat: point.lat, lng: point.lng };
-                }
-            } catch (error) {
-                console.warn('GraphHopper geocoding failed, trying Google Maps fallback:', error.message);
-            }
-        }
-
-        // Fallback to Google Maps Geocoding
-        const googleApiKey = process.env.GOOGLE_MAPS_API_KEY;
-        if (!googleApiKey) {
-            throw new Error('Both GRAPHHOPPER_API_KEY and GOOGLE_MAPS_API_KEY are missing');
+    async geocodeLocation(locationName, userLocation = null) {
+        if (!this.googleApiKey) {
+            throw new Error('GOOGLE_MAPS_API_KEY is missing in .env');
         }
 
         try {
-            const googleUrl = 'https://maps.googleapis.com/maps/api/geocode/json';
-            const response = await axios.get(googleUrl, {
-                params: {
-                    address: locationName,
-                    key: googleApiKey,
-                    language: 'vi'
-                },
-                timeout: 5000
-            });
+            const params = {
+                address: locationName,
+                key: this.googleApiKey,
+                language: 'vi',
+                region: 'vn' // Ưu tiên kết quả tại Việt Nam
+            };
 
-            if (response.data.status === 'OK' && response.data.results.length > 0) {
-                const { lat, lng } = response.data.results[0].geometry.location;
-                return { lat, lng };
+            // Nếu có tọa độ GPS người dùng, ưu tiên tìm trong bán kính 50km
+            if (userLocation && userLocation.lat && userLocation.lng) {
+                params.location = `${userLocation.lat},${userLocation.lng}`;
+                params.radius = 50000;
+            }
+
+            const response = await axios.get(this.geocodingBaseUrl, { params, timeout: 5000 });
+
+            if (response.data.status === 'OK') {
+                const result = response.data.results[0];
+                return {
+                    lat: result.geometry.location.lat,
+                    lng: result.geometry.location.lng,
+                    address: result.formatted_address // Trả về địa chỉ chuẩn từ Google
+                };
             } else {
-                throw new Error(`Google Geocoding failed: ${response.data.status}`);
+                console.error(`⚠️ Google Geocoding Status: ${response.data.status}`);
+                return null;
             }
         } catch (error) {
-            console.error('All geocoding methods failed:', error.message);
-            throw new Error(`Failed to geocode location: ${locationName}`);
+            console.error('❌ [GOOGLE GEOCODING ERROR]:', error.message);
+            return null;
         }
     }
 
     /**
-     * Parse user command using AI and return structured JSON
-     * @param {string} userText - User's command text
-     * @returns {Promise<Object>} Structured response with intent and steps
+     * Phân tích câu lệnh bằng Groq
      */
     async parseUserCommand(userText) {
-        const systemPrompt = `Bạn là Trợ lý Điều hướng AI của ứng dụng RideGo. 
-Nhiệm vụ của bạn là phân tích câu lệnh của người dùng và chuyển đổi chúng thành cấu trúc lệnh JSON chính xác để ứng dụng Mobile thực thi.
+        const systemPrompt = `Bạn là Trợ lý AI cấp cao của RideGo. Nhiệm vụ của bạn là chuyển đổi ngôn ngữ tự nhiên thành JSON để điều khiển ứng dụng.
 
-### DANH SÁCH INTENT VÀ CÔNG VIỆC HỢP LỆ:
+### CHIẾN THUẬT TRÍCH XUẤT ĐỊA ĐIỂM (CỰC KỲ QUAN TRỌNG):
+- KHÔNG ĐƯỢC rút gọn tên địa danh. Phải giữ nguyên văn các từ chỉ cơ sở, chi nhánh, quận huyện (Ví dụ: "ĐH Khoa học Tự nhiên cơ sở Thủ Đức" -> Giữ nguyên, KHÔNG được viết thành "Khoa học Tự nhiên").
+- Nếu người dùng nói "đến [tên địa điểm]", hãy lấy toàn bộ phần nằm sau chữ "đến".
+- Ưu tiên các thực thể địa lý có độ chi tiết cao.
 
-1. Intent "BOOK_TRIP" (Đặt chuyến xe):
-   - Các lệnh đi kèm: SET_DESTINATION (bắt buộc), SET_VEHICLE, SET_PAYMENT_METHOD.
-   - Quy tắc SET_VEHICLE: "xe máy" -> "BIKE", "ô tô/xe hơi/4 chỗ" -> "4_SEATS", "7 chỗ" -> "7_SEATS". Không nhắc đến thì để trống.
-   - Quy tắc SET_PAYMENT_METHOD: "tiền mặt" -> "CASH", "ví/chuyển khoản" -> "WALLET". Không nhắc đến thì để trống
+### QUY TẮC MÃ HÓA PHƯƠNG TIỆN & THANH TOÁN:
+1. SET_VEHICLE: 
+   - "xe máy", "moto", "2 bánh" -> "BIKE"
+   - "4 chỗ", "ô tô", "xe hơi", "taxi" -> "4_SEATS"
+   - "7 chỗ", "xe lớn", "cao cấp" -> "7_SEATS"
+2. SET_PAYMENT_METHOD:
+   - "tiền mặt", "trả sau" -> "CASH"
+   - "ví", "chuyển khoản", "thẻ", "momo", "zalopay" -> "WALLET"
 
-2. Intent "ADD_FAVORITE_LOCATION" (Thêm địa điểm yêu thích):
-   - Lệnh đi kèm: SET_LOCATION (bắt buộc).
+### CẤU TRÚC ĐẦU RA:
+- CHỈ TRẢ VỀ JSON. KHÔNG giải thích. KHÔNG chào hỏi.
+- "message": Viết một câu phản hồi xác nhận đầy đủ thông tin (Ví dụ: "Đang đặt xe 4 chỗ đưa bạn đến ĐH Khoa học Tự nhiên Thủ Đức...").
 
-3. Intent "OPEN_TRIP_HISTORY" (Mở lịch sử chuyến đi):
-   - Không có lệnh đi kèm trong "steps".
-
-4. Intent "GENERAL_CHAT" (Chào hỏi hoặc hội thoại thông thường):
-   - Sử dụng cho các câu chào hỏi (xin chào, hi, hello) hoặc các câu nói không phải lệnh thực thi.
-   - Không có lệnh đi kèm trong "steps".
-
-### QUY TẮC ĐẦU RA (CHỈ TRẢ VỀ JSON):
-- KHÔNG giải thích, KHÔNG chào hỏi. Luôn trả về JSON hợp lệ.
-- Trường "message" là câu phản hồi ngắn gọn cho người dùng.
-- Đối với các lệnh SET_DESTINATION hoặc SET_LOCATION: Phải cung cấp tên địa điểm ("value"). KHÔNG thêm trường lat, lng vào đây.
-
-### CẤU TRÚC JSON MẪU:
-{
-  "success": true,
-  "response_type": "ACTION",
-  "message": "Thông báo ngắn gọn",
-  "data": {
-    "intent": "TÊN_INTENT",
-    "steps": [
-      { "cmd": "TÊN_LỆNH", "value": "Giá trị"}
-    ]
-  }
-}
-
-### VÍ DỤ:
-User: "Lấy cho tôi một cái ô tô 4 chỗ đi sân bay Tân Sơn Nhất trả bằng tiền mặt"
+### VÍ DỤ CHUẨN:
+User: "đặt xe máy đi khoa học tự nhiên thủ đức trả bằng ví"
 Output:
 {
   "success": true,
   "response_type": "ACTION",
-  "message": "Đang chuẩn bị xe ô tô đưa bạn đến sân bay Tân Sơn Nhất...",
+  "message": "Đang tìm xe máy đưa bạn đến Khoa học Tự nhiên Thủ Đức, thanh toán qua ví...",
   "data": {
     "intent": "BOOK_TRIP",
     "steps": [
-      { "cmd": "SET_DESTINATION", "value": "Sân bay Tân Sơn Nhất"},
-      { "cmd": "SET_VEHICLE", "value": "4_SEATS" },
-      { "cmd": "SET_PAYMENT_METHOD", "value": "CASH" }
+      { "cmd": "SET_DESTINATION", "value": "Khoa học Tự nhiên Thủ Đức" },
+      { "cmd": "SET_VEHICLE", "value": "BIKE" },
+      { "cmd": "SET_PAYMENT_METHOD", "value": "WALLET" }
     ]
-  }
-}
-
-User: "Lưu địa chỉ Chợ Bến Thành vào danh sách yêu thích của tôi"
-Output:
-{
-  "success": true,
-  "response_type": "ACTION",
-  "message": "Đang thêm Chợ Bến Thành vào địa điểm yêu thích...",
-  "data": {
-    "intent": "ADD_FAVORITE_LOCATION",
-    "steps": [
-      { "cmd": "SET_LOCATION", "value": "Chợ Bến Thành"}
-    ]
-  }
-}
-
-User: "Cho tôi xem mấy chuyến xe tôi đã đi trước đây"
-Output:
-{
-  "success": true,
-  "response_type": "ACTION",
-  "message": "Đang mở lịch sử chuyến đi của bạn...",
-  "data": {
-    "intent": "OPEN_TRIP_HISTORY",
-    "steps": []
-  }
-}
-
-User: "Xin chào bạn"
-Output:
-{
-  "success": true,
-  "response_type": "ACTION",
-  "message": "Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?",
-  "data": {
-    "intent": "GENERAL_CHAT",
-    "steps": []
   }
 }`;
-        try {
-            console.log("--> [AI Service] Sending request to Groq SDK...");
-            console.log("--> [AI Service] Model:", this.modelName);
 
-            // --- Groq (current) ---
+        try {
             const completion = await this.groq.chat.completions.create({
                 model: this.modelName,
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userText }
                 ],
-                temperature: 0.2,
+                temperature: 0.1,
                 max_tokens: 512
             });
 
-            console.log("--> [AI Service] Groq response received.");
             const responseText = completion.choices?.[0]?.message?.content || '';
-            console.log("--> [AI Service] Raw content:", responseText);
-
-            // Clean the response (remove markdown code blocks if present)
-            let cleanedText = responseText.trim();
-            if (cleanedText.startsWith('```json')) {
-                cleanedText = cleanedText.replace(/```json\s*/, '').replace(/```\s*$/, '');
-            } else if (cleanedText.startsWith('```')) {
-                cleanedText = cleanedText.replace(/```\s*/, '').replace(/```\s*$/, '');
-            }
-
-            const parsed = JSON.parse(cleanedText);
-
-            // Validate the response structure
-            if (!parsed.success || !parsed.data || !parsed.data.intent) {
-                throw new Error('Invalid AI response structure');
-            }
-
-            return parsed;
-
-            // --- Legacy Gemini (commented out, kept for reference) ---
-            // const result = await this.model.generateContent({
-            //     contents: [{
-            //         role: 'user',
-            //         parts: [{ text: `${systemPrompt}\n\nUser: ${userText}` }]
-            //     }]
-            // });
-            // const legacyText = result.response.text();
-            // let legacyClean = legacyText.trim();
-            // if (legacyClean.startsWith('```json')) {
-            //     legacyClean = legacyClean.replace(/```json\s*/, '').replace(/```\s*$/, '');
-            // } else if (legacyClean.startsWith('```')) {
-            //     legacyClean = legacyClean.replace(/```\s*/, '').replace(/```\s*$/, '');
-            // }
-            // const legacyParsed = JSON.parse(legacyClean);
-            // return legacyParsed;
+            let cleanedText = responseText.trim().replace(/```json\s?|```/g, '');
+            return JSON.parse(cleanedText);
         } catch (error) {
-            console.error('--> [AI Service] Parsing/Groq Error:', error.message);
-            console.error('--> [AI Service] Stack Trace:', error.stack);
+            console.error('❌ [GROQ PARSING ERROR]:', error.message);
             throw new Error(`Failed to parse user command: ${error.message}`);
         }
     }
 
     /**
-     * Parse various date formats from Firestore or strings
-     * @param {any} value - Timestamp, Date, or string
-     * @returns {Date|null}
-     */
-    parseTripDate(value) {
-        try {
-            if (!value) return null;
-            if (value.toDate) return value.toDate(); // Firestore Timestamp
-            if (value instanceof Date) return value;
-            if (typeof value === 'string') {
-                // Normalize common Firestore string format: "January 3, 2026 at 9:56:58 AM UTC+7"
-                const cleaned = value
-                    .replace(' at ', ' ')
-                    .replace(/\u202f/g, ' ')
-                    .replace(/UTC\+(\d+)/, '+$1:00');
-                const parsed = new Date(cleaned);
-                if (!isNaN(parsed.getTime())) return parsed;
-            }
-            const parsed = new Date(value);
-            return isNaN(parsed.getTime()) ? null : parsed;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    /**
-     * Format date as DD/MM/YYYY HH:mm
-     * @param {Date} date
-     * @returns {string}
-     */
-    formatDateTime(date) {
-        if (!date) return '';
-        const dd = String(date.getDate()).padStart(2, '0');
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const yyyy = date.getFullYear();
-        const hh = String(date.getHours()).padStart(2, '0');
-        const min = String(date.getMinutes()).padStart(2, '0');
-        return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
-    }
-
-    /**
-     * Format date as DD/MM/YYYY
-     * @param {Date} date
-     * @returns {string}
-     */
-    formatDate(date) {
-        if (!date) return '';
-        const dd = String(date.getDate()).padStart(2, '0');
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const yyyy = date.getFullYear();
-        return `${dd}/${mm}/${yyyy}`;
-    }
-
-    /**
-     * Format number to VND string
-     * @param {number} amount
-     * @returns {string}
-     */
-    formatCurrency(amount) {
-        if (typeof amount !== 'number') return '';
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-            maximumFractionDigits: 0
-        }).format(amount);
-    }
-
-    /**
-     * Compress trip history into compact lines for LLM prompt
-     * @param {Array} trips
-     * @returns {string}
-     */
-    compressTripHistory(trips) {
-        return trips.map((trip) => {
-            const tripDate = this.parseTripDate(trip.completedAt || trip.createdAt);
-            const timeStr = this.formatDateTime(tripDate);
-            const vehicle = trip.vehicleType || trip.vehicle_type || trip.vehicle || 'N/A';
-
-            // Support multiple field names + common typos from DB
-            const pickup = trip.pickup?.address
-                || trip.pickup?.adrress
-                || trip.pickupLocation?.address
-                || trip.pickupLocation?.name
-                || trip.pickup?.name
-                || 'Không rõ điểm đón';
-
-            const dropoff = trip.destination?.address
-                || trip.destination?.adrress
-                || trip.dropoffLocation?.address
-                || trip.dropoffLocation?.name
-                || trip.destination?.name
-                || 'Không rõ điểm đến';
-
-            const price = this.formatCurrency(trip.fare || 0);
-            const payment = (trip.paymentMethod || 'UNKNOWN').toUpperCase();
-
-            return `[Date ${timeStr} | ${vehicle} | ${pickup} -> ${dropoff} | ${price} | ${payment}]`;
-        }).join('\n');
-    }
-
-    /**
-     * Build prompt for trip history analysis
-     * @param {string} historyText
-     * @param {string} currentDate
-     * @param {string} userQuestion
-     * @returns {string}
-     */
-    buildHistoryPrompt(historyText, currentDate, userQuestion) {
-        return `Bạn là Trợ lý Phân tích Dữ liệu của RideGo. Hôm nay là ngày ${currentDate}.
-Dưới đây là lịch sử chuyến đi của người dùng trong 3 tháng qua (tối đa).
-
-### CẤU TRÚC DỮ LIỆU LỊCH SỬ:
-[Thời gian (DD/MM/YYYY HH:mm) | Loại xe | Điểm đón -> Điểm đến | Giá tiền | Thanh toán | Trạng thái]
-
-### DỮ LIỆU:
-${historyText}
-
-### NHIỆM VỤ:
-1. Nếu câu hỏi là CHÀO HỎI hoặc KHÔNG LIÊN QUAN đến lịch sử (VD: "Xin chào", "Bạn là ai", "Hôm nay trời đẹp không"): Hãy trả lời thân thiện, xã giao như một trợ lý ảo. KHÔNG cần nhắc đến lịch sử chuyến đi.
-2. Nếu câu hỏi LIÊN QUAN đến thống kê/lịch sử:
-   - Trả lời dựa trên DỮ LIỆU ở trên.
-   - Nếu DỮ LIỆU là "KHÔNG CÓ DỮ LIỆU" hoặc trống, hãy nói: "Bạn chưa có chuyến đi nào gần đây để tôi thống kê."
-3. Câu trả lời cần ngắn gọn, thân thiện và trả về dạng VĂN BẢN THUẦN (TEXT), không trả về JSON.
-
-### CÂU HỎI CỦA NGƯỜI DÙNG:
-${userQuestion}`;
-    }
-
-    /**
-     * Answer user's trip history query using LLM
-     * @param {string} userId
-     * @param {string} userQuestion
-     * @returns {Promise<string>}
+     * Xử lý câu hỏi lịch sử chuyến đi bằng Groq
      */
     async answerTripHistoryQuery(userId, userQuestion) {
-        // Fetch trips: completed in last 3 months
-        const now = new Date();
+        const recentCompleted = await tripService.getUserCompletedTripsWithinMonths(userId, 3, 50);
 
-        const recentCompleted = await tripService.getUserCompletedTripsWithinMonths(userId, 1, 200);
-
-        let historyText = "KHÔNG CÓ DỮ LIỆU (Người dùng chưa đi chuyến nào)";
-
-        if (recentCompleted.length > 0) {
-            // Limit to avoid long prompts
-            const limitedTrips = recentCompleted
-                .sort((a, b) => {
-                    const da = this.parseTripDate(a.completedAt || a.createdAt)?.getTime() || 0;
-                    const db = this.parseTripDate(b.completedAt || b.createdAt)?.getTime() || 0;
-                    return db - da;
-                })
-                .slice(0, 100);
-
-            historyText = this.compressTripHistory(limitedTrips);
+        if (recentCompleted.length === 0) {
+            return 'Tôi không tìm thấy thông tin chuyến đi nào trong khoảng thời gian này';
         }
 
-        const currentDateStr = this.formatDate(now);
+        const historyText = this.compressTripHistory(recentCompleted);
+        const currentDateStr = this.formatDate(new Date());
         const prompt = this.buildHistoryPrompt(historyText, currentDateStr, userQuestion);
 
-        // --- Groq (current) ---
-        const completion = await this.groq.chat.completions.create({
-            model: this.modelName,
-            messages: [
-                { role: 'system', content: 'Bạn là Trợ lý Phân tích Dữ liệu của RideGo.' },
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.2,
-            max_tokens: 512
-        });
-
-        const text = completion.choices?.[0]?.message?.content?.trim();
-        return text || 'Tôi không tìm thấy thông tin chuyến đi nào trong khoảng thời gian này';
-
-        // --- Legacy Gemini (commented out, kept for reference) ---
-        // const result = await this.model.generateContent({
-        //     contents: [{
-        //         role: 'user',
-        //         parts: [{ text: prompt }]
-        //     }]
-        // });
-        // const legacyText = result.response.text()?.trim();
-        // return legacyText || 'Tôi không tìm thấy thông tin chuyến đi nào trong khoảng thời gian này';
-    }
-
-    /**
-     * Apply default values for BOOK_TRIP commands
-     * @param {Object} aiResponse - The response from parseUserCommand
-     * @returns {Object} Response with default values applied
-     */
-    applyDefaultValues(aiResponse) {
-        const intent = aiResponse.data?.intent;
-        const steps = aiResponse.data?.steps || [];
-
-        // Only apply defaults for BOOK_TRIP
-        if (intent !== 'BOOK_TRIP') {
-            return aiResponse;
-        }
-
-        // Check if SET_VEHICLE exists
-        const hasVehicle = steps.some(step => step.cmd === 'SET_VEHICLE');
-
-        // Check if SET_PAYMENT_METHOD exists
-        const hasPayment = steps.some(step => step.cmd === 'SET_PAYMENT_METHOD');
-
-        // Add defaults if missing
-        const enhancedSteps = [...steps];
-
-        if (!hasVehicle) {
-            enhancedSteps.push({
-                cmd: 'SET_VEHICLE',
-                value: 'MOTORBIKE'
-            });
-        }
-
-        if (!hasPayment) {
-            enhancedSteps.push({
-                cmd: 'SET_PAYMENT_METHOD',
-                value: 'WALLET'
-            });
-        }
-
-        return {
-            ...aiResponse,
-            data: {
-                ...aiResponse.data,
-                steps: enhancedSteps
-            }
-        };
-    }
-
-    /**
-     * Process the AI response and add geocoding for location-based commands
-     * @param {Object} aiResponse - The response from parseUserCommand
-     * @returns {Promise<Object>} Enhanced response with coordinates
-     */
-    async enhanceWithCoordinates(aiResponse) {
-        const intent = aiResponse.data?.intent;
-        const steps = aiResponse.data?.steps || [];
-
-        // Only process for BOOK_TRIP and ADD_FAVORITE_LOCATION
-        if (intent !== 'BOOK_TRIP' && intent !== 'ADD_FAVORITE_LOCATION') {
-            return aiResponse;
-        }
-
-        // Find location-based commands and add coordinates
-        const enhancedSteps = await Promise.all(
-            steps.map(async (step) => {
-                const needsGeocoding =
-                    step.cmd === 'SET_DESTINATION' ||
-                    step.cmd === 'SET_LOCATION';
-
-                if (needsGeocoding && step.value) {
-                    try {
-                        const coords = await this.geocodeLocation(step.value);
-                        return {
-                            ...step,
-                            lat: coords.lat,
-                            lng: coords.lng
-                        };
-                    } catch (error) {
-                        console.error(`Failed to geocode "${step.value}":`, error.message);
-                        // Return step without coordinates if geocoding fails
-                        return step;
-                    }
-                }
-
-                return step;
-            })
-        );
-
-        return {
-            ...aiResponse,
-            data: {
-                ...aiResponse.data,
-                steps: enhancedSteps
-            }
-        };
-    }
-
-    /**
-     * Main method to process user command - combines parsing, defaults, and geocoding
-     * @param {string} userText - User's command text
-     * @returns {Promise<Object>} Complete response with intent, steps, and coordinates
-     */
-    async processCommand(userText) {
         try {
-            // Step 1: Parse user intent
+            const completion = await this.groq.chat.completions.create({
+                model: this.modelName,
+                messages: [
+                    { role: 'system', content: 'Bạn là Trợ lý Phân tích Dữ liệu của RideGo.' },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.2
+            });
+
+            return completion.choices?.[0]?.message?.content?.trim() || 'Tôi không tìm thấy dữ liệu.';
+        } catch (error) {
+            console.error('❌ [GROQ HISTORY ERROR]:', error.message);
+            return 'Lỗi khi truy xuất lịch sử.';
+        }
+    }
+
+    /**
+     * Hàm tổng hợp: Parse lệnh + Gán tọa độ Google Maps
+     */
+    async processCommand(userText, userLocation = null) {
+        try {
+            // Bước 1: Groq phân tích intent
             const aiResponse = await this.parseUserCommand(userText);
-
-            // Step 2: Apply default values (MOTORBIKE and WALLET for BOOK_TRIP)
+            
+            // Bước 2: Áp dụng giá trị mặc định cho xe máy và ví
             const responseWithDefaults = this.applyDefaultValues(aiResponse);
-
-            // Step 3: Add coordinates for location-based commands
-            const enhancedResponse = await this.enhanceWithCoordinates(responseWithDefaults);
-
+            
+            // Bước 3: Tìm tọa độ bằng Google Maps
+            const enhancedResponse = await this.enhanceWithCoordinates(responseWithDefaults, userLocation);
+            
             return enhancedResponse;
         } catch (error) {
-            console.error('Command processing error:', error.message);
-
-            // Return error response
             return {
                 success: false,
                 response_type: "ERROR",
-                message: "Xin lỗi, tôi không hiểu yêu cầu của bạn. Vui lòng thử lại.",
+                message: "Xin lỗi, tôi không hiểu yêu cầu của bạn.",
                 error: error.message
             };
         }
     }
+
+    async enhanceWithCoordinates(aiResponse, userLocation = null) {
+        const steps = aiResponse.data?.steps || [];
+        const enhancedSteps = await Promise.all(
+            steps.map(async (step) => {
+                if ((step.cmd === 'SET_DESTINATION' || step.cmd === 'SET_LOCATION') && step.value) {
+                    const coords = await this.geocodeLocation(step.value, userLocation);
+                    if (coords) {
+                        return { ...step, lat: coords.lat, lng: coords.lng, value: coords.address };
+                    }
+                }
+                return step;
+            })
+        );
+        return { ...aiResponse, data: { ...aiResponse.data, steps: enhancedSteps } };
+    }
+
+    applyDefaultValues(aiResponse) {
+        if (aiResponse.data?.intent !== 'BOOK_TRIP') return aiResponse;
+        const steps = aiResponse.data?.steps || [];
+        const enhancedSteps = [...steps];
+        if (!steps.some(s => s.cmd === 'SET_VEHICLE')) enhancedSteps.push({ cmd: 'SET_VEHICLE', value: 'MOTORBIKE' });
+        if (!steps.some(s => s.cmd === 'SET_PAYMENT_METHOD')) enhancedSteps.push({ cmd: 'SET_PAYMENT_METHOD', value: 'WALLET' });
+        return { ...aiResponse, data: { ...aiResponse.data, steps: enhancedSteps } };
+    }
+
+    // --- Các hàm hỗ trợ format (Giữ nguyên của bạn) ---
+    parseTripDate(v) { if (!v) return null; if (v.toDate) return v.toDate(); return new Date(v); }
+    formatDate(d) { return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`; }
+    formatCurrency(a) { return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(a); }
+    compressTripHistory(trips) {
+        return trips.map(t => `[${this.formatDate(this.parseTripDate(t.createdAt))} | ${t.pickup?.address} -> ${t.destination?.address} | ${this.formatCurrency(t.fare)}]`).join('\n');
+    }
+    buildHistoryPrompt(h, c, q) { return `Hôm nay: ${c}. Lịch sử: ${h}. Trả lời câu hỏi: ${q}`; }
 }
 
 export default new AIService();

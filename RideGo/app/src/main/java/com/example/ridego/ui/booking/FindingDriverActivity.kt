@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.ridego.databinding.ActivityFindingDriverBinding
 import com.example.ridego.data.socket.SocketManager
+import com.example.ridego.data.model.CancelTripRequest
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -69,9 +70,33 @@ class FindingDriverActivity : AppCompatActivity(), OnMapReadyCallback {
             finish()
         }
         binding.btnReport.setOnClickListener {
-            Toast.makeText(this, "Đang hủy chuyến...", Toast.LENGTH_SHORT).show()
-            // Gọi API hủy chuyến (Làm sau)
-            finish()
+            if (tripId.isEmpty()) {
+                Toast.makeText(this, "Không tìm thấy ID chuyến đi!", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            binding.btnReport.isEnabled = false
+            binding.btnReport.text = "Đang hủy..."
+
+            val request = CancelTripRequest(tripId, "User requested cancellation")
+            com.example.ridego.data.api.RetrofitClient.instance.cancelTrip(request).enqueue(object : retrofit2.Callback<com.example.ridego.data.model.TripResponse> {
+                override fun onResponse(call: retrofit2.Call<com.example.ridego.data.model.TripResponse>, response: retrofit2.Response<com.example.ridego.data.model.TripResponse>) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(this@FindingDriverActivity, "Hủy chuyến thành công!", Toast.LENGTH_SHORT).show()
+                        finish()
+                    } else {
+                        binding.btnReport.isEnabled = true
+                        binding.btnReport.text = "Hủy chuyến"
+                        Toast.makeText(this@FindingDriverActivity, "Hủy thất bại: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: retrofit2.Call<com.example.ridego.data.model.TripResponse>, t: Throwable) {
+                    binding.btnReport.isEnabled = true
+                    binding.btnReport.text = "Hủy chuyến"
+                    Toast.makeText(this@FindingDriverActivity, "Lỗi mạng: ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
         }
     }
 
@@ -86,12 +111,11 @@ class FindingDriverActivity : AppCompatActivity(), OnMapReadyCallback {
                 val driverId = data.optString("driverId")
                 Toast.makeText(this, "Tài xế đã nhận chuyến! ID: $driverId", Toast.LENGTH_LONG).show()
 
-                // CHUYỂN SANG MÀN HÌNH THEO DÕI TÀI XẾ (TrackingActivity)
-                // val intent = Intent(this, TrackingActivity::class.java)
-                // intent.putExtra("TRIP_ID", tripId)
-                // intent.putExtra("DRIVER_ID", driverId)
-                // startActivity(intent)
-                // finish()
+                // Navigate to TripDetailsActivity
+                val intent = android.content.Intent(this, TripDetailsActivity::class.java)
+                intent.putExtra("TRIP_ID", tripId)
+                startActivity(intent)
+                finish()
             }
         }
     }

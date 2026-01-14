@@ -29,23 +29,17 @@ class ChatAdapter(private val messages: List<ChatMessage>) :
         val message = messages[position]
         holder.tvMessage.text = message.message
 
-        val params = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-
         if (message.isUser) {
             // User message: Align Right, Blue Background, White Text
-            params.gravity = Gravity.END
+            holder.layoutContainer.gravity = Gravity.END
             holder.tvMessage.setBackgroundResource(R.drawable.bg_chat_bubble_user)
             holder.tvMessage.setTextColor(Color.WHITE)
         } else {
-            // Bot message: Align Left, Gray Background, Black Text
-            params.gravity = Gravity.START
+            // Bot/Partner message: Align Left, Gray Background, Black Text
+            holder.layoutContainer.gravity = Gravity.START
             holder.tvMessage.setBackgroundResource(R.drawable.bg_chat_bubble_bot)
             holder.tvMessage.setTextColor(Color.BLACK)
         }
-        holder.layoutContainer.layoutParams = params
     }
 
     override fun getItemCount() = messages.size

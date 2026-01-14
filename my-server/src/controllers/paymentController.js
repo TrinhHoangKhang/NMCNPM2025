@@ -15,8 +15,9 @@ class PaymentController {
             const tripData = tripDoc.data();
 
             // Kiểm tra trạng thái chuyến đi
-            if (tripData.status !== 'COMPLETED') {
-                return res.status(400).json({ success: false, message: "Chuyến đi chưa hoàn thành" });
+            // [FIX] Allow ARRIVED state for payment (previously resulted in 400 because it required COMPLETED)
+            if (tripData.status !== 'ARRIVED' && tripData.status !== 'COMPLETED' && tripData.status !== 'PAYMENT_PROCESSING') {
+                return res.status(400).json({ success: false, message: "Chuyến đi chưa đến đích (Status: " + tripData.status + ")" });
             }
 
             if (tripData.paymentMethod !== 'WALLET') {
@@ -53,6 +54,22 @@ class PaymentController {
             const { id } = req.params; // tripId
             const tripRef = db.collection('trips').doc(id);
 
+            // Load Pricing Config dynamically
+            const fs = (await import('fs')).default;
+            const path = (await import('path')).default;
+            const { fileURLToPath } = await import('url');
+            const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+            let commissionRate = 0.2; // Default
+            try {
+                const pricingConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/pricing.json'), 'utf-8'));
+                if (pricingConfig.commissionPercent !== undefined) {
+                    commissionRate = pricingConfig.commissionPercent;
+                }
+            } catch (err) {
+                console.error("Failed to load pricing config for commission:", err);
+            }
+
             await db.runTransaction(async (transaction) => {
                 const tripDoc = await transaction.get(tripRef);
                 if (!tripDoc.exists) throw new Error("Chuyến đi không tồn tại");
@@ -66,9 +83,11 @@ class PaymentController {
                     paidAt: admin.firestore.FieldValue.serverTimestamp()
                 });
 
-                // 2. Tính toán nợ (Ví dụ chiết khấu 20%)
-                const commission = tripData.fare * 0.2;
+                // 2. Tính toán nợ (Commission fee)
+                const commission = tripData.fare * commissionRate;
                 const driverRef = db.collection('users').doc(tripData.driverId);
+
+                console.log(`[Payment] Confirm Trip ${id}. Fare: ${tripData.fare}. Commission (${commissionRate * 100}%): ${commission}`);
 
                 // 3. Cộng nợ vào data của Driver
                 transaction.update(driverRef, {

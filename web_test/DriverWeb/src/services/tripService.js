@@ -7,16 +7,20 @@ export const tripService = {
 
     getCurrentTrip: async () => {
         // Backend endpoint: GET /api/trips/current
-        // Note: Needs strict error handling if 404
         try {
-            return await apiClient('/trips/current');
+            const res = await apiClient('/trips/current');
+            if (res && res.success && res.data) {
+                return res.data;
+            }
+            return null;
         } catch (e) {
             return null;
         }
     },
 
     getTripDetails: async (id) => {
-        return apiClient(`/trips/${id}`);
+        const res = await apiClient(`/trips/${id}`);
+        return (res && res.success && res.data) ? res.data : res;
     },
 
     acceptTrip: async (id) => {
@@ -27,6 +31,12 @@ export const tripService = {
 
     markPickup: async (id) => {
         return apiClient(`/trips/${id}/pickup`, {
+            method: 'PATCH'
+        });
+    },
+
+    finishPhase: async (id) => {
+        return apiClient(`/trips/${id}/finish_phase`, {
             method: 'PATCH'
         });
     },

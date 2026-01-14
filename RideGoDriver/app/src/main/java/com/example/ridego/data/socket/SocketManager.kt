@@ -9,7 +9,7 @@ import org.json.JSONObject
 object SocketManager {
     private var mSocket: Socket? = null
     // IP của bạn (nhớ giữ nguyên IP 192.168.1.5 và port 3001 như bạn đã sửa)
-    private const val SOCKET_URL = "http://192.168.1.5:3001"
+    private const val SOCKET_URL = "https://superingenious-outdated-lilia.ngrok-free.dev"
 
     // Hàm connect KHÔNG nhận tham số (tự lấy Token)
     fun connect() {

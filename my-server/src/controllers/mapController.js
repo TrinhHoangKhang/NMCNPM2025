@@ -2,6 +2,7 @@ import mapsService from '../services/mapsService.js';
 
 export const calculateRoute = async (req, res) => {
     try {
+        console.log("📍 [SERVER DEBUG] Nhận yêu cầu tính đường:", req.body);
         const { origin, destination, vehicleType } = req.body;
 
         if (!origin || !destination) {

@@ -8,7 +8,17 @@ class TripController {
     async getAllTrips(req, res) {
         try {
             const trips = await tripService.getAllTrips();
-            const withIds = trips.map(trip => ({ id: trip.id, ...trip.toJSON() }));
+            const withIds = trips.map(trip => ({
+                id: trip.id,
+                ...trip.toJSON(),
+                riderName: trip.riderName,
+                driverName: trip.driverName
+            }));
+
+            if (withIds.length > 0) {
+                console.log("DEBUG: First Trip in Response:", JSON.stringify(withIds[0], null, 2));
+            }
+
             res.status(200).json({ success: true, data: withIds });
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });
@@ -58,10 +68,24 @@ class TripController {
 
             const riderId = req.user.uid; // Identified via JWT token
 
+            // [FIX] Ensure User Exists
+            try {
+                await userService.getUser(riderId);
+            } catch (e) {
+                console.log(`[AUTO-FIX] User ${riderId} missing. Creating new user record.`);
+                await userService.createUser(riderId, {
+                    name: req.user.name || "Rider",
+                    email: req.user.email,
+                    role: "RIDER"
+                });
+            }
+
             // CHECK: Prevent new trip if user has active trip
             const existingTrip = await tripService.getCurrentTripForUser(riderId, 'RIDER');
             if (existingTrip) {
-                return res.status(400).json({ error: "You already have an ongoing trip." });
+                // [FIX] Instead of error 400, return the existing trip so the app can recover
+                console.log(`[AUTO-FIX] Returning existing trip ${existingTrip.id} for user ${riderId}`);
+                return res.status(200).json({ id: existingTrip.id, ...existingTrip.toJSON() });
             }
 
             const newTrip = await tripService.createTripRequest(
@@ -69,7 +93,8 @@ class TripController {
                 pickupLocation,
                 dropoffLocation,
                 vehicleType,
-                paymentMethod
+                paymentMethod,
+                req.body.discountId // Pass discountId if present
             );
 
             // Return the trip ID so the client can reference/cancel later
@@ -132,13 +157,47 @@ class TripController {
     async getTripEstimate(req, res) {
         try {
             const { pickupLocation, dropoffLocation, vehicleType, distance } = req.body;
-            const estimate = await tripService.estimateTrip(
+
+            // Calculate for the specific requested type first (backward compatibility)
+            const mainEstimate = await tripService.estimateTrip(
                 pickupLocation,
                 dropoffLocation,
                 vehicleType,
-                distance
+                distance,
+                req.body.discountId
             );
-            res.status(200).json(estimate);
+
+            // NEW: Calculate for all types for comparison
+            const allTypes = ['MOTORBIKE', '4 SEAT', '7 SEAT'];
+            const estimates = [];
+
+            // We can reuse the distance/duration from mainEstimate to save API calls 
+            // if we trust mapsService returns same distance for all (approx true for driving)
+            // Or we can recalculate. For performance, let's reuse distance if available.
+            const distKm = parseFloat(mainEstimate.distance) / 1000;
+
+            for (const type of allTypes) {
+                const est = await tripService.estimateTrip(
+                    pickupLocation,
+                    dropoffLocation,
+                    type,
+                    distKm, // Pass override so we don't call Google Maps 3 times
+                    req.body.discountId
+                );
+                estimates.push({
+                    vehicleType: type,
+                    fare: est.fare,
+                    originalFare: est.originalFare
+                });
+            }
+
+            // Merge estimates into response
+            const response = {
+                ...mainEstimate,
+                allEstimates: estimates
+            };
+
+            res.status(200).json(response);
         } catch (error) {
             res.status(400).json({ error: error.message });
         }
@@ -150,12 +209,11 @@ class TripController {
             const userId = req.user.uid;
             const role = req.user.role;
             const currentTrip = await tripService.getCurrentTripForUser(userId, role);
-            if (!currentTrip) {
-                return res.status(200).json(null);
-            }
-            res.status(200).json(currentTrip);
+
+            // Always return a success envelope, data can be null
+            res.status(200).json({ success: true, data: currentTrip || null });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            res.status(500).json({ success: false, error: error.message });
         }
     }
 
@@ -243,9 +301,9 @@ class TripController {
         try {
             const { id } = req.params;
             const trip = await tripService.getTrip(id);
-            res.status(200).json(trip);
+            res.status(200).json({ success: true, data: trip });
         } catch (error) {
-            res.status(404).json({ error: error.message });
+            res.status(404).json({ success: false, error: error.message });
         }
     }
 
@@ -350,6 +408,96 @@ class TripController {
             const driverId = req.user.uid;
             const { id } = req.params;
             const trip = await tripService.markTripPickup(id, driverId);
+
+            // SOCKET: Notify Rider that trip is in progress
+            const io = req.app.get('socketio');
+            if (io) {
+                const riderSocketIds = await presenceService.getUserSocketIds(trip.riderId);
+                riderSocketIds.forEach(socketId => {
+                    // Update Status
+                    io.to(socketId).emit('trip_status_update', {
+                        tripId: trip.id,
+                        status: 'IN_PROGRESS'
+                    });
+                    // Notification
+                    io.to(socketId).emit('server_notification', {
+                        title: "Driver Arrived",
+                        message: "Your driver has arrived at the pickup location. The trip is now in progress.",
+                        timestamp: new Date().toISOString()
+                    });
+                });
+                console.log(`Socket emitted trip_status_update (IN_PROGRESS) for trip ${id}`);
+            }
+
+            res.status(200).json({ id: trip.id, ...trip.toJSON() });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    // PATCH /api/trips/:id/finish_phase
+    async finishPhase(req, res) {
+        try {
+            const driverId = req.user.uid;
+            const { id } = req.params;
+            const trip = await tripService.finishPhase(id, driverId);
+
+            // SOCKET: Notify Rider to Pay
+            const io = req.app.get('socketio');
+            if (io) {
+                const riderSocketIds = await presenceService.getUserSocketIds(trip.riderId);
+                riderSocketIds.forEach(socketId => {
+                    // Payment Request Logic (Status)
+                    io.to(socketId).emit('payment_required', {
+                        tripId: trip.id,
+                        amount: trip.fare,
+                        status: 'ARRIVED'
+                    });
+                    // Notification
+                    io.to(socketId).emit('server_notification', {
+                        title: "Arrived at Destination",
+                        message: `You have arrived! Please pay ${trip.fare.toLocaleString()} VND to the driver.`,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+                console.log(`Socket emitted payment_required for trip ${id}`);
+            }
+
+            res.status(200).json({ id: trip.id, ...trip.toJSON() });
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    // POST /api/trips/:id/pay
+    async payTrip(req, res) {
+        try {
+            const userId = req.user.uid;
+            const { id } = req.params;
+            const { method } = req.body; // CASH or WALLET
+
+            const trip = await tripService.processPayment(id, userId, method);
+
+            // SOCKET: Notify Driver to Confirm
+            const io = req.app.get('socketio');
+            if (io && trip.driverId) {
+                const driverSocketIds = await presenceService.getUserSocketIds(trip.driverId);
+                driverSocketIds.forEach(socketId => {
+                    io.to(socketId).emit('driver_confirm_payment', {
+                        tripId: trip.id,
+                        method: method,
+                        amount: trip.fare,
+                        status: 'PAYMENT_PROCESSING'
+                    });
+                    // Notification (Optional for Driver Web, but good for consistency)
+                    io.to(socketId).emit('server_notification', {
+                        title: "Payment Received",
+                        message: `Rider has paid via ${method}. Please confirm.`,
+                        timestamp: new Date().toISOString()
+                    });
+                });
+            }
+
             res.status(200).json({ id: trip.id, ...trip.toJSON() });
         } catch (error) {
             res.status(400).json({ error: error.message });
@@ -383,6 +531,13 @@ class TripController {
                         tripId: trip.id,
                         fare: trip.fare,
                         status: 'COMPLETED'
+                    });
+
+                    // Notification
+                    io.to(socketId).emit('server_notification', {
+                        title: "Trip Completed",
+                        message: "Thank you for using RideGo! Please rate your trip.",
+                        timestamp: new Date().toISOString()
                     });
                 });
 

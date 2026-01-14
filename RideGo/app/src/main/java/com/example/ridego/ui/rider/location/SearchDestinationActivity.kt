@@ -46,6 +46,23 @@ class SearchDestinationActivity : AppCompatActivity() {
     private var selectedAddress = ""
     private var selectedName = ""
 
+    // Discount data
+    private var discountId: String? = null
+    private var discountCode: String? = null
+    
+    // Favorites
+    private var homeAddress: String? = null
+    private var homeLat: Double = 0.0
+    private var homeLng: Double = 0.0
+
+    private var workAddress: String? = null
+    private var workLat: Double = 0.0
+
+    private var workLng: Double = 0.0
+
+    // List to hold custom saved places
+    private val savedPlaces = mutableListOf<Map<String, Any>>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -54,6 +71,10 @@ class SearchDestinationActivity : AppCompatActivity() {
 
         binding = ActivitySearchDestinationBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // Receive discount data
+        discountId = intent.getStringExtra("DISCOUNT_ID")
+        discountCode = intent.getStringExtra("DISCOUNT_CODE")
 
         // 2. Khởi tạo Google Places
         val apiKey = getString(R.string.google_maps_key)
@@ -69,9 +90,10 @@ class SearchDestinationActivity : AppCompatActivity() {
         }
         binding.recyclerSearchResults.layoutManager = LinearLayoutManager(this)
         binding.recyclerSearchResults.adapter = adapter
-
+        
         // 4. Load & Setup
         loadCurrentPickupLocation()
+        loadFavoriteLocations()
         setupUI()
         setupSearchLogic()
 
@@ -102,6 +124,32 @@ class SearchDestinationActivity : AppCompatActivity() {
             }
         }
     }
+    
+    private fun loadFavoriteLocations() {
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        val db = FirebaseFirestore.getInstance()
+        val uid = currentUser.uid
+        
+        db.collection("uid_mapping").document(uid).get().addOnSuccessListener { mapping ->
+            val targetId = mapping.getString("customUserId") ?: uid
+            db.collection("users").document(targetId).get().addOnSuccessListener { doc ->
+                homeAddress = doc.getString("homeAddress")
+                homeLat = doc.getDouble("homeLat") ?: 0.0
+                homeLng = doc.getDouble("homeLng") ?: 0.0
+                
+                workAddress = doc.getString("workAddress")
+                workLat = doc.getDouble("workLat") ?: 0.0
+                workLng = doc.getDouble("workLng") ?: 0.0
+                
+                // Load Custom Saved Places
+                savedPlaces.clear()
+                val placesList = doc.get("savedPlaces") as? List<Map<String, Any>>
+                if (placesList != null) {
+                    savedPlaces.addAll(placesList)
+                }
+            }
+        }
+    }
 
     private fun setupUI() {
         binding.btnBack.setOnClickListener { finish() }
@@ -112,6 +160,10 @@ class SearchDestinationActivity : AppCompatActivity() {
             intent.putExtra("LOCATION_TYPE", 2)
             startActivityForResult(intent, 101)
         }
+        
+        binding.btnFavoriteSelect.setOnClickListener {
+            showFavoritesDialog()
+        }
 
         binding.btnConfirmSelection.setOnClickListener {
             if (selectedLat != 0.0 && selectedLng != 0.0) {
@@ -120,6 +172,57 @@ class SearchDestinationActivity : AppCompatActivity() {
                 Toast.makeText(this, "Vui lòng chọn điểm đến", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+    
+    private fun showFavoritesDialog() {
+        val options = mutableListOf<String>()
+        val actions = mutableListOf<() -> Unit>()
+        
+        if (!homeAddress.isNullOrEmpty()) {
+            options.add("🏠 Nhà riêng: $homeAddress")
+            actions.add { selectFavorite(homeAddress!!, homeLat, homeLng) }
+        }
+        if (!workAddress.isNullOrEmpty()) {
+            options.add("🏢 Văn phòng: $workAddress")
+            actions.add { selectFavorite(workAddress!!, workLat, workLng) }
+        }
+        
+        // Add Custom Places to Dialog
+        for (place in savedPlaces) {
+            val name = place["name"] as? String ?: "Địa điểm"
+            val address = place["address"] as? String ?: ""
+            val lat = place["lat"] as? Double ?: 0.0
+            val lng = place["lng"] as? Double ?: 0.0
+            val icon = place["icon"] as? String ?: "📍"
+            
+            if (address.isNotEmpty()) {
+                options.add("$icon $name: $address")
+                actions.add { selectFavorite(address, lat, lng) }
+            }
+        }
+        
+        if (options.isEmpty()) {
+            Toast.makeText(this, "Bạn chưa lưu địa điểm nào. Hãy thiết lập ở màn hình chính!", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val builder = android.app.AlertDialog.Builder(this)
+        builder.setTitle("Chọn điểm đến đã lưu")
+        builder.setItems(options.toTypedArray()) { _, which ->
+            actions[which].invoke()
+        }
+        builder.show()
+    }
+    
+    private fun selectFavorite(address: String, lat: Double, lng: Double) {
+        selectedAddress = address
+        selectedName = address
+        selectedLat = lat
+        selectedLng = lng
+        
+        binding.edtDestination.setText(address)
+        enableConfirmButton()
+        // Optional: Auto navigate logic could go here if checking pickup location validity
     }
 
     private fun setupSearchLogic() {
@@ -188,6 +291,10 @@ class SearchDestinationActivity : AppCompatActivity() {
         intent.putExtra("PICKUP_ADDRESS", pickupAddress)
         intent.putExtra("PICKUP_LAT", pickupLat)
         intent.putExtra("PICKUP_LNG", pickupLng)
+
+        // Pass discount info
+        intent.putExtra("DISCOUNT_ID", discountId)
+        intent.putExtra("DISCOUNT_CODE", discountCode)
 
         // Bắt đầu màn hình Booking
         startActivity(intent)
