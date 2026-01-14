@@ -62,13 +62,9 @@ class AIController {
      * Answer user queries about trip history using LLM
      */
     async getQueryResponse(req, res) {
-        console.log("--> [AI Controller] Query request received");
         try {
             const { text } = req.body;
             const userId = req.user?.uid;
-
-            console.log("--> [AI Controller] User ID:", userId);
-            console.log("--> [AI Controller] Question:", text);
 
             if (!userId) {
                 return res.status(401).json({
@@ -89,19 +85,15 @@ class AIController {
             }
 
             const answer = await aiService.answerTripHistoryQuery(userId, text.trim());
-            console.log("--> [AI Controller] AI answer received:", answer);
 
-            const responseData = {
+            return res.status(200).json({
                 success: true,
                 response_type: "TEXT",
                 message: answer
-            };
-
-            console.log("--> [AI Controller] Sending response:", JSON.stringify(responseData));
-            return res.status(200).json(responseData);
+            });
 
         } catch (error) {
-            console.error('--> [AI Controller] Query Error:', error);
+            console.error('AI Query Error:', error);
             return res.status(500).json({
                 success: false,
                 response_type: "ERROR",

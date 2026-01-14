@@ -100,18 +100,19 @@ class MapsService {
             params.append('vehicle', 'car');
             params.append('locale', 'en');
             params.append('key', this.graphhopperApiKey);
-            params.append('points_encoded', 'true');
+            params.append('points_encoded', 'false');
 
             const response = await axios.get(this.graphhopperBaseUrl, { params, timeout: 8000 });
             const path = response.data?.paths?.[0];
             if (!path) throw new Error('No route returned from GraphHopper');
 
-            const encodedPolyline = path.points || "";
+            const coordinatesLngLat = path.points?.coordinates || [];
+            const coordinatesLatLng = coordinatesLngLat.map(([lng, lat]) => ({ lat, lng }));
 
             return {
                 distance: { text: `${(path.distance / 1000).toFixed(1)} km`, value: path.distance },
                 duration: { text: `${Math.round(path.time / 60000)} mins`, value: Math.round(path.time / 1000) },
-                geometry: { type: 'EncodedPolyline', coordinates: encodedPolyline },
+                geometry: { type: 'LineString', coordinates: coordinatesLatLng },
                 bbox: path.bbox || null
             };
         } catch (error) {

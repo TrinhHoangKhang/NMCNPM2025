@@ -1,7 +1,6 @@
 package com.example.ridego.data.socket
 
 import android.util.Log
-import com.example.ridego.data.Config
 import com.google.firebase.auth.FirebaseAuth
 import io.socket.client.IO
 import io.socket.client.Socket
